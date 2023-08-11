@@ -90,7 +90,7 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 	return func() tea.Msg {
 		err := m.client.DeleteItem(m.ctx, []string{t.item.ID})
 		if err != nil {
-			dbg("del error", err)
+			dbg("del err", err)
 		}
 		return m.sync()
 	}
@@ -118,6 +118,7 @@ func (m *mainModel) addTask() func() tea.Msg {
 	t := todoist.Item{}
 	t.ProjectID = m.projectId
 	t.Content = content
+    t.Priority = 1
 	m.tasks.InsertItem(len(m.client.Store.Items)+1, newTask(m, t))
 	return func() tea.Msg {
 		m.client.AddItem(m.ctx, t)
