@@ -15,7 +15,7 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v2
       - name: Generate build files
-        uses: psethwick/go-cross-build@v1
+        uses: psethwick/go-cross-build@1.2.0
         with:
             platforms: 'linux/amd64, darwin/amd64, windows/amd64'
             package: ''
