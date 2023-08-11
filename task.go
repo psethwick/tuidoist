@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -30,7 +29,7 @@ func (i task) Description() string {
 	// ⏰ ??
     duestring := ""
     if i.Due != nil {
-        log.Printf("%s", i.Due.Date)
+        dbg("date", i.Due.Date)
         duestring += "Due: "
         // heres where reminders is
         // todoist.Store.Reminders
@@ -47,7 +46,7 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 	return func() tea.Msg {
 		err := m.client.DeleteItem(m.ctx, []string{t.ID})
 		if err != nil {
-			log.Printf("%s", err)
+			dbg("del error", err)
 		}
 		return m.sync()
 	}
@@ -59,7 +58,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 	return func() tea.Msg {
 		err := m.client.CloseItem(m.ctx, []string{t.ID})
 		if err != nil {
-			log.Printf("%s", err)
+			dbg("complete task err", err)
 		}
 		return m.sync()
 	}

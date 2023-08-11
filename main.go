@@ -69,10 +69,10 @@ func (m *mainModel) refreshFromStore() {
 
 func (m *mainModel) sync() func() tea.Msg {
 	return func() tea.Msg {
-		log.Printf("Syncing")
+		dbg("Syncing")
 		err := m.client.Sync(m.ctx)
 		m.refreshFromStore()
-		log.Printf("Synced, %s", err)
+		dbg("Synced", err)
 		return nil
 	}
 }
@@ -99,7 +99,6 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
-		log.Printf("W %d H %d", msg.Width, msg.Height)
 		m.tasks.SetSize(msg.Width-h, msg.Height-v)
 		m.projects.SetSize(msg.Width-h, msg.Height-v)
 	case tea.KeyMsg:
@@ -108,7 +107,6 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	}
-	log.Printf("%d %d", m.tasks.Width(), m.tasks.Height())
 	switch m.state {
 	case projectView:
 		cmds = append(cmds, qQuits(m, msg))
@@ -148,18 +146,24 @@ func (m *mainModel) View() string {
 	return s
 }
 
+func dbg(a... any) {
+    if len(os.Getenv("DEBUG")) > 0 {
+        log.Println(a...)
+    }
+}
+
 func main() {
-	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "debug")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
-		defer f.Close()
-	}
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
-		os.Exit(1)
-	}
+    if len(os.Getenv("DEBUG")) > 0 {
+        f, err := tea.LogToFile("debug.log", "debug")
+        if err != nil {
+            fmt.Println("fatal:", err)
+            os.Exit(1)
+        }
+        defer f.Close()
+    }
+    p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+    if _, err := p.Run(); err != nil {
+        fmt.Printf("Alas, there's been an error: %v", err)
+        os.Exit(1)
+    }
 }
