@@ -25,7 +25,6 @@ func reformatDate(d string, from string, to string) string {
 	return t.Format(to)
 }
 
-// todo labels
 // heres where reminders is
 // todoist.Store.Reminders
 // ⏰ ??
@@ -43,11 +42,16 @@ func newTask(m *mainModel, item todoist.Item) task {
 	case 4:
 		checkbox = " 🔴 "
 	}
+
 	if indent != "" {
 		// subtask indicator
 		checkbox = fmt.Sprint("╰", checkbox)
 	}
-	title := fmt.Sprint(indent, checkbox, item.Content)
+	labels := ""
+	for _, l := range item.LabelNames {
+		labels += fmt.Sprint(" 🏷️ ", l)
+	}
+	title := fmt.Sprint(indent, checkbox, item.Content, labels)
 	desc := ""
 	if item.Due != nil {
 		desc += " 🗓️ "
@@ -92,7 +96,7 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 		if err != nil {
 			dbg("del err", err)
 		}
-		return m.sync()
+		return nil
 	}
 }
 
@@ -105,7 +109,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 		if err != nil {
 			dbg("complete task err", err)
 		}
-		return m.sync()
+		return nil
 	}
 }
 
@@ -118,11 +122,11 @@ func (m *mainModel) addTask() func() tea.Msg {
 	t := todoist.Item{}
 	t.ProjectID = m.projectId
 	t.Content = content
-    t.Priority = 1
+	t.Priority = 1
 	m.tasks.InsertItem(len(m.client.Store.Items)+1, newTask(m, t))
 	return func() tea.Msg {
 		m.client.AddItem(m.ctx, t)
-		return m.sync()
+		return nil
 	}
 }
 

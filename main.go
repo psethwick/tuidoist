@@ -89,6 +89,8 @@ func qQuits(m *mainModel, msg tea.Msg) tea.Cmd {
 		switch msg.String() {
 		case "q":
 			return tea.Quit
+		case "r":
+			return m.sync()
 		}
 	}
 	return nil
