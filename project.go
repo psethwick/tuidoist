@@ -18,8 +18,7 @@ func (m *mainModel) setTasks(p *project) {
 	tasks := []list.Item{}
 	for _, i := range m.client.Store.Items {
 		if i.ProjectID == p.ID {
-			i.Indent = len(todoist.SearchItemParents(m.client.Store, &i))
-			tasks = append(tasks, task(i))
+			tasks = append(tasks, newTask(m, i))
 		}
 	}
 	m.tasks.SetItems(tasks)

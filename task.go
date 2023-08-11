@@ -10,21 +10,11 @@ import (
     "github.com/sachaos/todoist/lib"
 )
 
-type task todoist.Item
-
-func (i task) indent() string {
-    return strings.Repeat("  ", i.Indent)
+type task struct {
+    item todoist.Item
+    title string
+    desc string
 }
-
-func (i task) Title() string {
-    prefix := "⚪ "
-    if i.Indent > 0 {
-        prefix = "╰ ⚪ "
-    }
-    return fmt.Sprintf("%s%s%s", i.indent(), prefix, i.Content)
-}
-
-
 
 func reformatDate(d string, from string, to string) string {
     t, err := time.Parse(from, d)
@@ -34,36 +24,56 @@ func reformatDate(d string, from string, to string) string {
     return t.Format(to)
 }
 
-// todo priority
-// todo no reason to recalc this all the time
-func (i task) Description() string {
-    extras := ""
-    if i.Due != nil {
+func newTask(m *mainModel, item todoist.Item) task {
+    indent := strings.Repeat(" ", len(todoist.SearchItemParents(m.client.Store, &item)))
+    prefix := "⚪ "
+    if indent != "" {
+        // subtask indicator
+        prefix = fmt.Sprint("╰ ", prefix)
+    }
+    title := fmt.Sprintf("%s%s%s", indent, prefix, item.Content)
+    desc := ""
+    if item.Due != nil {
         // heres where reminders is
         // todoist.Store.Reminders
         // ⏰ ??
         var df string
-        if strings.Contains(i.Due.Date, "T") {
-            df = reformatDate(i.Due.Date, "2006-01-02T15:04:05", "02 Jan 06 15:04")
+        if strings.Contains(item.Due.Date, "T") {
+            df = reformatDate(item.Due.Date, "2006-01-02T15:04:05", "02 Jan 06 15:04")
         } else {
             // date takes up same amount of space as date + time
-            df = reformatDate(i.Due.Date, "2006-01-02", "02 Jan 06      ")
+            df = reformatDate(item.Due.Date, "2006-01-02", "02 Jan 06      ")
         }
-        extras += fmt.Sprint(" 🗓️ ", df)
-        if i.Due.IsRecurring {
-            extras += fmt.Sprint(" 🔁 ", i.Due.String)
+        desc += fmt.Sprint(" 🗓️ ", df)
+        if item.Due.IsRecurring {
+            desc += fmt.Sprint(" 🔁 ", item.Due.String)
         }
     }
-    return fmt.Sprint(i.indent(), extras)
+    desc = fmt.Sprint(indent, desc)
+    return task {
+        item: item,
+        title: title,
+        desc: desc,
+    }
 }
 
-func (i task) FilterValue() string { return i.Content }
+
+func (t task) Title() string {
+    return t.title
+}
+
+// todo priority
+func (t task) Description() string {
+    return t.desc
+}
+
+func (t task) FilterValue() string { return t.item.Content }
 
 func (m *mainModel) deleteTask() func() tea.Msg {
     t := m.tasks.SelectedItem().(task)
     m.tasks.RemoveItem(m.tasks.Index())
     return func() tea.Msg {
-        err := m.client.DeleteItem(m.ctx, []string{t.ID})
+        err := m.client.DeleteItem(m.ctx, []string{t.item.ID})
         if err != nil {
             dbg("del error", err)
         }
@@ -75,7 +85,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
     t := m.tasks.SelectedItem().(task)
     m.tasks.RemoveItem(m.tasks.Index())
     return func() tea.Msg {
-        err := m.client.CloseItem(m.ctx, []string{t.ID})
+        err := m.client.CloseItem(m.ctx, []string{t.item.ID})
         if err != nil {
             dbg("complete task err", err)
         }
@@ -93,7 +103,7 @@ func (m *mainModel) addTask() func() tea.Msg {
     t.ProjectID = m.projectId
     t.Content = content
     // todo priority, description, labels
-    m.tasks.InsertItem(len(m.client.Store.Items)+1, task(t))
+    m.tasks.InsertItem(len(m.client.Store.Items)+1, newTask(m, t))
     return func() tea.Msg {
         m.client.AddItem(m.ctx, t)
         return m.sync()
