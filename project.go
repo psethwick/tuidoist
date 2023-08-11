@@ -44,7 +44,7 @@ func projectDelegate(m *mainModel) list.DefaultDelegate {
 			case "enter":
 				if p, ok := l.SelectedItem().(project); ok {
 					m.setTasks(&p)
-                    m.switchProject(&p)
+					m.switchProject(&p)
 				}
 			}
 		}
