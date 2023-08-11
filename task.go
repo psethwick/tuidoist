@@ -24,30 +24,41 @@ func reformatDate(d string, from string, to string) string {
     return t.Format(to)
 }
 
+// heres where reminders is
+// todoist.Store.Reminders
+// ⏰ ??
 func newTask(m *mainModel, item todoist.Item) task {
     indent := strings.Repeat(" ", len(todoist.SearchItemParents(m.client.Store, &item)))
-    prefix := "⚪ "
+    var checkbox string
+    switch item.Priority {
+    // mirror the priority colors from the webapp
+    case 1:
+        checkbox = " ⚪ "
+    case 2:
+        checkbox = " 🔵 "
+    case 3:
+        checkbox = " 🟡 "
+    case 4:
+        checkbox = " 🔴 "
+}
     if indent != "" {
         // subtask indicator
-        prefix = fmt.Sprint("╰ ", prefix)
+        checkbox = fmt.Sprint("╰", checkbox)
     }
-    title := fmt.Sprintf("%s%s%s", indent, prefix, item.Content)
+    title := fmt.Sprint(indent, checkbox, item.Content)
     desc := ""
     if item.Due != nil {
-        // heres where reminders is
-        // todoist.Store.Reminders
-        // ⏰ ??
-        var df string
+        desc += " 🗓️ "
+        var fd string
         if strings.Contains(item.Due.Date, "T") {
-            df = reformatDate(item.Due.Date, "2006-01-02T15:04:05", "02 Jan 06 15:04")
+            fd = reformatDate(item.Due.Date, "2006-01-02T15:04:05", "02 Jan 06 15:04")
         } else {
-            // date takes up same amount of space as date + time
-            df = reformatDate(item.Due.Date, "2006-01-02", "02 Jan 06      ")
+            fd = reformatDate(item.Due.Date, "2006-01-02", "02 Jan 06")
         }
-        desc += fmt.Sprint(" 🗓️ ", df)
         if item.Due.IsRecurring {
-            desc += fmt.Sprint(" 🔁 ", item.Due.String)
+            desc += " 🔁"
         }
+        desc += fd
     }
     desc = fmt.Sprint(indent, desc)
     return task {
@@ -62,7 +73,6 @@ func (t task) Title() string {
     return t.title
 }
 
-// todo priority
 func (t task) Description() string {
     return t.desc
 }
