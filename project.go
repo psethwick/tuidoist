@@ -10,13 +10,14 @@ import (
 
 type projectsModel struct {
 	projects *selection.Model[todoist.Project]
+	main     *mainModel
 }
 
 func (pm *projectsModel) initSelect(p []todoist.Project) {
 	sel := selection.New("Choose Project:", p)
 	sm := selection.NewModel(sel)
-    pm.projects = sm
 	sm.Filter = func(filter string, choice *selection.Choice[todoist.Project]) bool {
+		// todo fuzzier matching would be cool
 		return strings.Contains(strings.ToLower(choice.Value.Name), strings.ToLower(filter))
 	}
 	sm.SelectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
@@ -25,12 +26,40 @@ func (pm *projectsModel) initSelect(p []todoist.Project) {
 	sm.UnselectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
 		return c.Value.Name
 	}
+	pm.projects = sm
 	sm.Init()
 }
 
+func (pm *projectsModel) View() string {
+    return listStyle.Render(pm.projects.View())
+}
+
+func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter":
+			p, err := pm.projects.Value()
+			if err == nil {
+				pm.main.projectId = p.ID
+				pm.main.setTasks(&p)
+				pm.main.switchProject(&p)
+			}
+			pm.main.state = tasksState
+			return pm.projects.Init()
+		case "esc":
+            pm.main.state = tasksState
+            return nil
+		}
+	}
+	_, cmd := pm.projects.Update(msg)
+	return cmd
+}
+
 func newProjectsModel(m *mainModel) projectsModel {
-    pm := projectsModel{}
-    pm.initSelect(m.client.Store.Projects)
+	pm := projectsModel{}
+	pm.main = m
+	pm.initSelect(m.client.Store.Projects)
 	return pm
 }
 
@@ -41,6 +70,6 @@ func (m *mainModel) switchProject(p *todoist.Project) {
 }
 
 func (m *mainModel) SetProjects(p []todoist.Project) tea.Cmd {
-    m.projectsModel.initSelect(p)
-    return nil
+	m.projectsModel.initSelect(p)
+	return nil
 }

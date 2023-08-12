@@ -44,7 +44,6 @@ func initialModel() *mainModel {
 	m.ctx = context.Background()
 	m.tasksModel = newTasksModel(&m)
 	m.projectsModel = newProjectsModel(&m)
-
 	m.newTask = newNewTaskModel()
 	return &m
 }
@@ -104,26 +103,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch m.state {
 	case projectState:
-		// todo make each view have its own damn Update
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "enter":
-				p, err := m.projectsModel.projects.Value()
-				if err == nil {
-					m.projectId = p.ID
-					m.setTasks(&p)
-					m.switchProject(&p)
-				}
-				m.state = tasksState
-				return m, m.projectsModel.projects.Init()
-			case "q":
-				return m, tea.Quit
-			}
-
-			_, cmd := m.projectsModel.projects.Update(msg)
-			cmds = append(cmds, cmd)
-		}
+		cmds = append(cmds, m.projectsModel.Update(msg))
 	case tasksState:
 		cmds = append(cmds, qQuits(m, msg))
 		m.tasksModel.tasks, cmd = m.tasksModel.tasks.Update(msg)
@@ -149,9 +129,9 @@ func (m *mainModel) View() string {
 	var s string
 	switch m.state {
 	case projectState:
-		s += listStyle.Render(m.projectsModel.projects.View())
+		s += m.projectsModel.View()
 	case tasksState:
-		s += listStyle.Render(m.tasksModel.tasks.View())
+		s += m.tasksModel.View()
 	case newTaskState:
 		s += m.newTask.input.View()
 	}

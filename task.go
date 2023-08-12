@@ -9,22 +9,23 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sachaos/todoist/lib"
 )
+
 type tasksModel struct {
-    tasks list.Model
+	tasks list.Model
 }
 
 func newTasksModel(m *mainModel) tasksModel {
-    tasks := list.New([]list.Item{}, taskDelegate(m), 40, 30)
+	tasks := list.New([]list.Item{}, taskDelegate(m), 40, 30)
 	tasks.DisableQuitKeybindings()
-    return tasksModel{
-        tasks,
-    }
+	return tasksModel{
+		tasks,
+	}
 }
 
 type task struct {
 	item      todoist.Item
 	title     string
-	summary      string
+	summary   string
 	completed bool
 }
 
@@ -79,9 +80,9 @@ func newTask(m *mainModel, item todoist.Item) task {
 	}
 	summary = fmt.Sprint(indent, summary)
 	return task{
-		item:  item,
-		title: title,
-		summary:  summary,
+		item:    item,
+		title:   title,
+		summary: summary,
 	}
 }
 
@@ -117,8 +118,7 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 		if err != nil {
 			dbg("del err", err)
 		}
-        m.sync()
-		return nil
+		return m.sync()
 	}
 }
 
@@ -131,8 +131,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 		if err != nil {
 			dbg("complete task err", err)
 		}
-        m.sync()
-		return nil
+		return m.sync()
 	}
 }
 
@@ -149,10 +148,12 @@ func (m *mainModel) addTask() func() tea.Msg {
 	m.tasksModel.tasks.InsertItem(len(m.client.Store.Items)+1, newTask(m, t))
 	return func() tea.Msg {
 		m.client.AddItem(m.ctx, t)
-        // todo readd sync
-        m.sync()
-		return nil
+		return m.sync()
 	}
+}
+
+func (tm *tasksModel) View() string {
+	return listStyle.Render(tm.tasks.View())
 }
 
 func taskDelegate(m *mainModel) list.DefaultDelegate {
