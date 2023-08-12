@@ -107,7 +107,7 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 		if err != nil {
 			dbg("del err", err)
 		}
-        // todo readd sync
+        m.sync()
 		return nil
 	}
 }
@@ -121,7 +121,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 		if err != nil {
 			dbg("complete task err", err)
 		}
-        // todo readd sync
+        m.sync()
 		return nil
 	}
 }
@@ -140,6 +140,7 @@ func (m *mainModel) addTask() func() tea.Msg {
 	return func() tea.Msg {
 		m.client.AddItem(m.ctx, t)
         // todo readd sync
+        m.sync()
 		return nil
 	}
 }

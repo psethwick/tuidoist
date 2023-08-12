@@ -9,10 +9,10 @@ import (
 
 	// todo I should make keys configurable if I wanna release it
 	// "github.com/charmbracelet/bubbles/key"
-	todoist "github.com/sachaos/todoist/lib"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/erikgeiser/promptkit/selection"
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 type viewState uint
@@ -31,13 +31,13 @@ var (
 )
 
 type mainModel struct {
-	client    *todoist.Client
-	state     viewState
-	ctx       context.Context
-	projects  projectsModel
-	tasksModel     tasksModel
-	newTask   newTaskModel
-	projectId string
+	client     *todoist.Client
+	state      viewState
+	ctx        context.Context
+	projects   projectsModel
+	tasksModel tasksModel
+	newTask    newTaskModel
+	projectId  string
 }
 
 func initialModel() *mainModel {
@@ -61,7 +61,6 @@ func (m *mainModel) refreshFromStore() tea.Cmd {
 	sel := selection.New("Choose Project:", m.client.Store.Projects)
 	if m.projects.projects == nil {
 		m.projects.projects = selection.NewModel(sel)
-
 	} else {
 		m.projects.projects.Selection = sel
 	}
@@ -77,22 +76,20 @@ func (m *mainModel) refreshFromStore() tea.Cmd {
 	return m.projects.projects.Init()
 }
 
-func (m *mainModel) sync() func() tea.Msg {
-	return func() tea.Msg {
-		dbg("Syncing")
-		err := m.client.Sync(m.ctx)
-		dbg("Synced", err)
-        err = WriteCache(m.client.Store)
-        if err != nil {
-            dbg(err)
-        }
-		m.refreshFromStore()
-		return nil
+func (m *mainModel) sync() tea.Msg {
+	dbg("Syncing")
+	err := m.client.Sync(m.ctx)
+	dbg("Synced", err)
+	err = WriteCache(m.client.Store)
+	if err != nil {
+		dbg(err)
 	}
+	m.refreshFromStore()
+	return nil
 }
 
 func (m *mainModel) Init() tea.Cmd {
-	return tea.Batch(tea.EnterAltScreen, m.refreshFromStore(), m.sync())
+	return tea.Batch(tea.EnterAltScreen, m.refreshFromStore(), m.sync)
 }
 
 func qQuits(m *mainModel, msg tea.Msg) tea.Cmd {
@@ -102,7 +99,7 @@ func qQuits(m *mainModel, msg tea.Msg) tea.Cmd {
 		case "q":
 			return tea.Quit
 		case "r":
-			return m.sync()
+			return m.sync
 		}
 	}
 	return nil
