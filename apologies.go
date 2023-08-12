@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -151,5 +152,10 @@ func GetClient() *todoist.Client {
 
 	client := todoist.NewClient(config)
 	client.Store = &store
+    if len(store.Projects) == 0 {
+        err := client.Sync(context.Background())
+        dbg("Synced", err)
+        WriteCache(&store)
+    }
 	return client
 }

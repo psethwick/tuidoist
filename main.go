@@ -46,10 +46,7 @@ func initialModel() *mainModel {
 	m := mainModel{}
 	m.client = GetClient()
 	m.ctx = context.Background()
-	// todo only sync at start if cache is empty?
-	err := m.client.Sync(m.ctx)
-	dbg("Synced", err)
-	WriteCache(m.client.Store)
+
 	m.tasks = list.New([]list.Item{}, taskDelegate(&m), 40, 30)
 	m.tasks.DisableQuitKeybindings()
 	m.newTask = textinput.New()
@@ -88,7 +85,10 @@ func (m *mainModel) sync() func() tea.Msg {
 		dbg("Syncing")
 		err := m.client.Sync(m.ctx)
 		dbg("Synced", err)
-		WriteCache(m.client.Store)
+        err = WriteCache(m.client.Store)
+        if err != nil {
+            dbg(err)
+        }
 		m.refreshFromStore()
 		return nil
 	}
