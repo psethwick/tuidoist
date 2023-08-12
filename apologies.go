@@ -9,7 +9,7 @@ import (
 	"runtime"
 
 	"github.com/rkoesters/xdg/basedir"
-	"github.com/sachaos/todoist/lib"
+	todoist "github.com/sachaos/todoist/lib"
 	"github.com/spf13/viper"
 )
 
@@ -39,7 +39,7 @@ func AssureExists(filePath string) error {
 	return nil
 }
 
-var cachePath = filepath.Join(basedir.CacheHome, "todoist", "cache.json")
+var cachePath = filepath.Join(basedir.CacheHome, "tuidoist", "cache.json")
 
 func LoadCache(s *todoist.Store) error {
 	err := ReadCache(s)
@@ -82,7 +82,7 @@ func WriteCache(s *todoist.Store) error {
 }
 
 var (
-	configPath          = filepath.Join(basedir.ConfigHome, "todoist")
+	configPath          = filepath.Join(basedir.ConfigHome, "tuidoist")
 	ShortDateTimeFormat = "06/01/02(Mon) 15:04"
 	ShortDateFormat     = "06/01/02(Mon)"
 )
@@ -103,7 +103,7 @@ func GetClient() *todoist.Client {
 	viper.SetConfigName(configName)
 	viper.AddConfigPath(configPath)
 	viper.AddConfigPath(".")
-	viper.SetEnvPrefix("todoist") // uppercased automatically by viper
+	viper.SetEnvPrefix("tuidoist") // uppercased automatically by viper
 	viper.AutomaticEnv()
 
 	var token string
