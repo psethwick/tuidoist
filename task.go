@@ -138,8 +138,8 @@ func (m *mainModel) completeTask() func() tea.Msg {
 }
 
 func (m *mainModel) addTask() func() tea.Msg {
-	content := m.newTask.input.Value()
-	m.newTask.input.SetValue("")
+	content := m.newTaskModel.input.Value()
+	m.newTaskModel.input.SetValue("")
 	if content == "" {
 		return func() tea.Msg { return nil }
 	}
@@ -190,8 +190,8 @@ func taskDelegate(m *mainModel) list.DefaultDelegate {
 			case "D":
 				cmds = append(cmds, m.deleteTask())
 			case "n":
-				m.newTask.input.Prompt = "> "
-				m.newTask.input.Focus()
+				m.newTaskModel.input.Prompt = "> "
+				m.newTaskModel.input.Focus()
 				cmds = append(cmds, tea.ClearScreen)
 				m.state = newTaskState
 			}

@@ -34,7 +34,7 @@ type mainModel struct {
 	ctx           context.Context
 	projectsModel projectsModel
 	tasksModel    tasksModel
-	newTask       newTaskModel
+	newTaskModel       newTaskModel
 	projectId     string
 }
 
@@ -44,7 +44,7 @@ func initialModel() *mainModel {
 	m.ctx = context.Background()
 	m.tasksModel = newTasksModel(&m)
 	m.projectsModel = newProjectsModel(&m)
-	m.newTask = newNewTaskModel()
+	m.newTaskModel = newNewTaskModel(&m)
 	return &m
 }
 
@@ -89,7 +89,6 @@ func qQuits(m *mainModel, msg tea.Msg) tea.Cmd {
 }
 
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -107,18 +106,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tasksState:
 		cmds = append(cmds, m.tasksModel.Update(msg))
 	case newTaskState:
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "enter":
-				cmds = append(cmds, m.addTask())
-			case "esc":
-				m.newTask.input.SetValue("")
-				m.state = tasksState
-			}
-		}
-		m.newTask.input, cmd = m.newTask.input.Update(msg)
-		cmds = append(cmds, cmd)
+		cmds = append(cmds, m.newTaskModel.Update(msg))
 	}
 	return m, tea.Batch(cmds...)
 }
@@ -131,7 +119,7 @@ func (m *mainModel) View() string {
 	case tasksState:
 		s += m.tasksModel.View()
 	case newTaskState:
-		s += m.newTask.input.View()
+		s += m.newTaskModel.View()
 	}
 	return s
 }
