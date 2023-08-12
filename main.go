@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	// todo I should make keys configurable if I wanna release it
 	// "github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/erikgeiser/promptkit/selection"
 	todoist "github.com/sachaos/todoist/lib"
 )
 
@@ -31,13 +29,13 @@ var (
 )
 
 type mainModel struct {
-	client     *todoist.Client
-	state      viewState
-	ctx        context.Context
-	projects   projectsModel
-	tasksModel tasksModel
-	newTask    newTaskModel
-	projectId  string
+	client        *todoist.Client
+	state         viewState
+	ctx           context.Context
+	projectsModel projectsModel
+	tasksModel    tasksModel
+	newTask       newTaskModel
+	projectId     string
 }
 
 func initialModel() *mainModel {
@@ -45,6 +43,7 @@ func initialModel() *mainModel {
 	m.client = GetClient()
 	m.ctx = context.Background()
 	m.tasksModel = newTasksModel(&m)
+	m.projectsModel = newProjectsModel(&m)
 
 	m.newTask = newNewTaskModel()
 	return &m
@@ -58,22 +57,7 @@ func (m *mainModel) refreshFromStore() tea.Cmd {
 			m.setTasks(&p)
 		}
 	}
-	sel := selection.New("Choose Project:", m.client.Store.Projects)
-	if m.projects.projects == nil {
-		m.projects.projects = selection.NewModel(sel)
-	} else {
-		m.projects.projects.Selection = sel
-	}
-	m.projects.projects.Filter = func(filter string, choice *selection.Choice[todoist.Project]) bool {
-		return strings.Contains(strings.ToLower(choice.Value.Name), strings.ToLower(filter))
-	}
-	m.projects.projects.SelectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
-		return c.Value.Name
-	}
-	m.projects.projects.UnselectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
-		return c.Value.Name
-	}
-	return m.projects.projects.Init()
+	return m.SetProjects(m.client.Store.Projects)
 }
 
 func (m *mainModel) sync() tea.Msg {
@@ -125,19 +109,19 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "enter":
-				p, err := m.projects.projects.Value()
+				p, err := m.projectsModel.projects.Value()
 				if err == nil {
 					m.projectId = p.ID
 					m.setTasks(&p)
 					m.switchProject(&p)
 				}
 				m.state = tasksState
-				return m, m.projects.projects.Init()
+				return m, m.projectsModel.projects.Init()
 			case "q":
 				return m, tea.Quit
 			}
 
-			_, cmd := m.projects.projects.Update(msg)
+			_, cmd := m.projectsModel.projects.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 	case tasksState:
@@ -165,7 +149,7 @@ func (m *mainModel) View() string {
 	var s string
 	switch m.state {
 	case projectState:
-		s += listStyle.Render(m.projects.projects.View())
+		s += listStyle.Render(m.projectsModel.projects.View())
 	case tasksState:
 		s += listStyle.Render(m.tasksModel.tasks.View())
 	case newTaskState:

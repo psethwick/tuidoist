@@ -1,28 +1,46 @@
 package main
 
 import (
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/sachaos/todoist/lib"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/erikgeiser/promptkit/selection"
+	"github.com/sachaos/todoist/lib"
 )
 
 type projectsModel struct {
-	projects  *selection.Model[todoist.Project]
+	projects *selection.Model[todoist.Project]
 }
 
-func (m *mainModel) setTasks(p *todoist.Project) {
-	tasks := []list.Item{}
-	for _, i := range m.client.Store.Items {
-		if i.ProjectID == p.ID {
-			tasks = append(tasks, newTask(m, i))
-		}
+func (pm *projectsModel) initSelect(p []todoist.Project) {
+	sel := selection.New("Choose Project:", p)
+	sm := selection.NewModel(sel)
+    pm.projects = sm
+	sm.Filter = func(filter string, choice *selection.Choice[todoist.Project]) bool {
+		return strings.Contains(strings.ToLower(choice.Value.Name), strings.ToLower(filter))
 	}
-	m.tasksModel.tasks.SetItems(tasks)
+	sm.SelectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
+		return c.Value.Name
+	}
+	sm.UnselectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
+		return c.Value.Name
+	}
+	sm.Init()
 }
 
-/// set/switch are separate so we can sync + update in the background
+func newProjectsModel(m *mainModel) projectsModel {
+    pm := projectsModel{}
+    pm.initSelect(m.client.Store.Projects)
+	return pm
+}
+
 func (m *mainModel) switchProject(p *todoist.Project) {
 	m.tasksModel.tasks.Title = p.Name
 	m.projectId = p.ID
 	m.state = projectState
+}
+
+func (m *mainModel) SetProjects(p []todoist.Project) tea.Cmd {
+    m.projectsModel.initSelect(p)
+    return nil
 }

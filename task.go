@@ -98,6 +98,16 @@ func (t task) Description() string {
 
 func (t task) FilterValue() string { return t.item.Content }
 
+func (m *mainModel) setTasks(p *todoist.Project) {
+	tasks := []list.Item{}
+	for _, i := range m.client.Store.Items {
+		if i.ProjectID == p.ID {
+			tasks = append(tasks, newTask(m, i))
+		}
+	}
+	m.tasksModel.tasks.SetItems(tasks)
+}
+
 // todo confirm
 func (m *mainModel) deleteTask() func() tea.Msg {
 	t := m.tasksModel.tasks.SelectedItem().(task)
