@@ -9,11 +9,22 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sachaos/todoist/lib"
 )
+type tasksModel struct {
+    tasks list.Model
+}
+
+func newTasksModel(m *mainModel) tasksModel {
+    tasks := list.New([]list.Item{}, taskDelegate(m), 40, 30)
+	tasks.DisableQuitKeybindings()
+    return tasksModel{
+        tasks,
+    }
+}
 
 type task struct {
 	item      todoist.Item
 	title     string
-	desc      string
+	summary      string
 	completed bool
 }
 
@@ -52,9 +63,9 @@ func newTask(m *mainModel, item todoist.Item) task {
 		labels += fmt.Sprint(" 🏷️ ", l)
 	}
 	title := fmt.Sprint(indent, checkbox, item.Content, labels)
-	desc := ""
+	summary := ""
 	if item.Due != nil {
-		desc += " 🗓️ "
+		summary += " 🗓️ "
 		var fd string
 		if strings.Contains(item.Due.Date, "T") {
 			fd = reformatDate(item.Due.Date, "2006-01-02T15:04:05", "02 Jan 06 15:04")
@@ -62,15 +73,15 @@ func newTask(m *mainModel, item todoist.Item) task {
 			fd = reformatDate(item.Due.Date, "2006-01-02", "02 Jan 06")
 		}
 		if item.Due.IsRecurring {
-			desc += " 🔁"
+			summary += " 🔁"
 		}
-		desc += fd
+		summary += fd
 	}
-	desc = fmt.Sprint(indent, desc)
+	summary = fmt.Sprint(indent, summary)
 	return task{
 		item:  item,
 		title: title,
-		desc:  desc,
+		summary:  summary,
 	}
 }
 
@@ -82,40 +93,42 @@ func (t task) Title() string {
 }
 
 func (t task) Description() string {
-	return t.desc
+	return t.summary
 }
 
 func (t task) FilterValue() string { return t.item.Content }
 
 // todo confirm
 func (m *mainModel) deleteTask() func() tea.Msg {
-	t := m.tasks.SelectedItem().(task)
-	m.tasks.RemoveItem(m.tasks.Index())
+	t := m.tasksModel.tasks.SelectedItem().(task)
+	m.tasksModel.tasks.RemoveItem(m.tasksModel.tasks.Index())
 	return func() tea.Msg {
 		err := m.client.DeleteItem(m.ctx, []string{t.item.ID})
 		if err != nil {
 			dbg("del err", err)
 		}
+        // todo readd sync
 		return nil
 	}
 }
 
 func (m *mainModel) completeTask() func() tea.Msg {
-	t := m.tasks.SelectedItem().(task)
+	t := m.tasksModel.tasks.SelectedItem().(task)
 	t.completed = true
-	m.tasks.SetItem(m.tasks.Index(), t)
+	m.tasksModel.tasks.SetItem(m.tasksModel.tasks.Index(), t)
 	return func() tea.Msg {
 		err := m.client.CloseItem(m.ctx, []string{t.item.ID})
 		if err != nil {
 			dbg("complete task err", err)
 		}
+        // todo readd sync
 		return nil
 	}
 }
 
 func (m *mainModel) addTask() func() tea.Msg {
-	content := m.newTask.Value()
-	m.newTask.SetValue("")
+	content := m.newTask.input.Value()
+	m.newTask.input.SetValue("")
 	if content == "" {
 		return func() tea.Msg { return nil }
 	}
@@ -123,9 +136,10 @@ func (m *mainModel) addTask() func() tea.Msg {
 	t.ProjectID = m.projectId
 	t.Content = content
 	t.Priority = 1
-	m.tasks.InsertItem(len(m.client.Store.Items)+1, newTask(m, t))
+	m.tasksModel.tasks.InsertItem(len(m.client.Store.Items)+1, newTask(m, t))
 	return func() tea.Msg {
 		m.client.AddItem(m.ctx, t)
+        // todo readd sync
 		return nil
 	}
 }
@@ -139,16 +153,16 @@ func taskDelegate(m *mainModel) list.DefaultDelegate {
 			switch msg.String() {
 			case "p":
 				cmds = append(cmds, tea.ClearScreen)
-				m.state = projectView
+				m.state = projectState
 			case "C":
 				cmds = append(cmds, m.completeTask())
 			case "D":
 				cmds = append(cmds, m.deleteTask())
 			case "n":
-				m.newTask.Prompt = "> "
-				m.newTask.Focus()
+				m.newTask.input.Prompt = "> "
+				m.newTask.input.Focus()
 				cmds = append(cmds, tea.ClearScreen)
-				m.state = newTaskView
+				m.state = newTaskState
 			}
 		}
 

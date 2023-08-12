@@ -9,20 +9,18 @@ import (
 
 	// todo I should make keys configurable if I wanna release it
 	// "github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/textinput"
+	todoist "github.com/sachaos/todoist/lib"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/erikgeiser/promptkit/selection"
-	todoist "github.com/sachaos/todoist/lib"
 )
 
-type sessionState uint
+type viewState uint
 
 const (
-	tasksView sessionState = iota
-	projectView
-	newTaskView
+	tasksState viewState = iota
+	projectState
+	newTaskState
 )
 
 var (
@@ -34,11 +32,11 @@ var (
 
 type mainModel struct {
 	client    *todoist.Client
-	state     sessionState
+	state     viewState
 	ctx       context.Context
-	projects  *selection.Model[todoist.Project]
-	tasks     list.Model
-	newTask   textinput.Model
+	projects  projectsModel
+	tasksModel     tasksModel
+	newTask   newTaskModel
 	projectId string
 }
 
@@ -46,10 +44,9 @@ func initialModel() *mainModel {
 	m := mainModel{}
 	m.client = GetClient()
 	m.ctx = context.Background()
+	m.tasksModel = newTasksModel(&m)
 
-	m.tasks = list.New([]list.Item{}, taskDelegate(&m), 40, 30)
-	m.tasks.DisableQuitKeybindings()
-	m.newTask = textinput.New()
+	m.newTask = newNewTaskModel()
 	return &m
 }
 
@@ -62,22 +59,22 @@ func (m *mainModel) refreshFromStore() tea.Cmd {
 		}
 	}
 	sel := selection.New("Choose Project:", m.client.Store.Projects)
-	if m.projects == nil {
-		m.projects = selection.NewModel(sel)
+	if m.projects.projects == nil {
+		m.projects.projects = selection.NewModel(sel)
 
 	} else {
-		m.projects.Selection = sel
+		m.projects.projects.Selection = sel
 	}
-	m.projects.Filter = func(filter string, choice *selection.Choice[todoist.Project]) bool {
+	m.projects.projects.Filter = func(filter string, choice *selection.Choice[todoist.Project]) bool {
 		return strings.Contains(strings.ToLower(choice.Value.Name), strings.ToLower(filter))
 	}
-	m.projects.SelectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
+	m.projects.projects.SelectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
 		return c.Value.Name
 	}
-	m.projects.UnselectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
+	m.projects.projects.UnselectedChoiceStyle = func(c *selection.Choice[todoist.Project]) string {
 		return c.Value.Name
 	}
-	return m.projects.Init()
+	return m.projects.projects.Init()
 }
 
 func (m *mainModel) sync() func() tea.Msg {
@@ -117,7 +114,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
-		m.tasks.SetSize(msg.Width-h, msg.Height-v)
+		m.tasksModel.tasks.SetSize(msg.Width-h, msg.Height-v)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -125,43 +122,43 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	switch m.state {
-	case projectView:
+	case projectState:
 		// todo make each view have its own damn Update
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "enter":
-				p, err := m.projects.Value()
+				p, err := m.projects.projects.Value()
 				if err == nil {
 					m.projectId = p.ID
 					m.setTasks(&p)
 					m.switchProject(&p)
 				}
-				m.state = tasksView
-				return m, m.projects.Init()
+				m.state = tasksState
+				return m, m.projects.projects.Init()
 			case "q":
 				return m, tea.Quit
 			}
 
-			_, cmd := m.projects.Update(msg)
+			_, cmd := m.projects.projects.Update(msg)
 			cmds = append(cmds, cmd)
 		}
-	case tasksView:
+	case tasksState:
 		cmds = append(cmds, qQuits(m, msg))
-		m.tasks, cmd = m.tasks.Update(msg)
+		m.tasksModel.tasks, cmd = m.tasksModel.tasks.Update(msg)
 		cmds = append(cmds, cmd)
-	case newTaskView:
+	case newTaskState:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "enter":
 				cmds = append(cmds, m.addTask())
 			case "esc":
-				m.newTask.SetValue("")
-				m.state = tasksView
+				m.newTask.input.SetValue("")
+				m.state = tasksState
 			}
 		}
-		m.newTask, cmd = m.newTask.Update(msg)
+		m.newTask.input, cmd = m.newTask.input.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 	return m, tea.Batch(cmds...)
@@ -170,12 +167,12 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *mainModel) View() string {
 	var s string
 	switch m.state {
-	case projectView:
-		s += listStyle.Render(m.projects.View())
-	case tasksView:
-		s += listStyle.Render(m.tasks.View())
-	case newTaskView:
-		s += m.newTask.View()
+	case projectState:
+		s += listStyle.Render(m.projects.projects.View())
+	case tasksState:
+		s += listStyle.Render(m.tasksModel.tasks.View())
+	case newTaskState:
+		s += m.newTask.input.View()
 	}
 	return s
 }

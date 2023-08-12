@@ -3,7 +3,12 @@ package main
 import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/sachaos/todoist/lib"
+	"github.com/erikgeiser/promptkit/selection"
 )
+
+type projectsModel struct {
+	projects  *selection.Model[todoist.Project]
+}
 
 func (m *mainModel) setTasks(p *todoist.Project) {
 	tasks := []list.Item{}
@@ -12,11 +17,12 @@ func (m *mainModel) setTasks(p *todoist.Project) {
 			tasks = append(tasks, newTask(m, i))
 		}
 	}
-	m.tasks.SetItems(tasks)
+	m.tasksModel.tasks.SetItems(tasks)
 }
 
+/// set/switch are separate so we can sync + update in the background
 func (m *mainModel) switchProject(p *todoist.Project) {
-	m.tasks.Title = p.Name
+	m.tasksModel.tasks.Title = p.Name
 	m.projectId = p.ID
-	m.state = tasksView
+	m.state = projectState
 }
