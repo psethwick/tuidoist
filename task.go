@@ -12,6 +12,7 @@ import (
 
 type tasksModel struct {
 	tasks list.Model
+	main  *mainModel
 }
 
 func newTasksModel(m *mainModel) tasksModel {
@@ -19,6 +20,7 @@ func newTasksModel(m *mainModel) tasksModel {
 	tasks.DisableQuitKeybindings()
 	return tasksModel{
 		tasks,
+		m,
 	}
 }
 
@@ -154,6 +156,23 @@ func (m *mainModel) addTask() func() tea.Msg {
 
 func (tm *tasksModel) View() string {
 	return listStyle.Render(tm.tasks.View())
+}
+
+func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
+	var cmds []tea.Cmd
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q":
+			cmds = append(cmds, tea.Quit)
+		case "r":
+			cmds = append(cmds, tm.main.sync)
+		}
+	}
+	tasks, cmd := tm.tasks.Update(msg)
+	tm.tasks = tasks
+    cmds = append(cmds, cmd)
+	return tea.Batch(cmds...)
 }
 
 func taskDelegate(m *mainModel) list.DefaultDelegate {

@@ -105,9 +105,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case projectState:
 		cmds = append(cmds, m.projectsModel.Update(msg))
 	case tasksState:
-		cmds = append(cmds, qQuits(m, msg))
-		m.tasksModel.tasks, cmd = m.tasksModel.tasks.Update(msg)
-		cmds = append(cmds, cmd)
+		cmds = append(cmds, m.tasksModel.Update(msg))
 	case newTaskState:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
