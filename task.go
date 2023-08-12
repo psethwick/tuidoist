@@ -42,6 +42,8 @@ func reformatDate(d string, from string, to string) string {
 // heres where reminders is
 // todoist.Store.Reminders
 // ⏰ ??
+// todo overdue should be red somewhere
+// today, maybe also highlighted?
 func newTask(m *mainModel, item todoist.Item) task {
 	indent := strings.Repeat(" ", len(todoist.SearchItemParents(m.client.Store, &item)))
 	var checkbox string
@@ -137,23 +139,6 @@ func (m *mainModel) completeTask() func() tea.Msg {
 	}
 }
 
-func (m *mainModel) addTask() func() tea.Msg {
-	content := m.newTaskModel.input.Value()
-	m.newTaskModel.input.SetValue("")
-	if content == "" {
-		return func() tea.Msg { return nil }
-	}
-	t := todoist.Item{}
-	t.ProjectID = m.projectId
-	t.Content = content
-	t.Priority = 1
-	m.tasksModel.tasks.InsertItem(len(m.client.Store.Items)+1, newTask(m, t))
-	return func() tea.Msg {
-		m.client.AddItem(m.ctx, t)
-		return m.sync()
-	}
-}
-
 func (tm *tasksModel) View() string {
 	return listStyle.Render(tm.tasks.View())
 }
@@ -190,8 +175,8 @@ func taskDelegate(m *mainModel) list.DefaultDelegate {
 			case "D":
 				cmds = append(cmds, m.deleteTask())
 			case "n":
-				m.newTaskModel.input.Prompt = "> "
-				m.newTaskModel.input.Focus()
+				m.newTaskModel.content.Prompt = "> "
+				m.newTaskModel.content.Focus()
 				cmds = append(cmds, tea.ClearScreen)
 				m.state = newTaskState
 			}

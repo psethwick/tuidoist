@@ -3,10 +3,11 @@ package main
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 type newTaskModel struct {
-	input textinput.Model
+	content textinput.Model
 	main  *mainModel
 }
 
@@ -17,25 +18,42 @@ func newNewTaskModel(m *mainModel) newTaskModel {
 	}
 }
 
+func (ntm *newTaskModel) addTask() func() tea.Msg {
+	content := ntm.content.Value()
+	ntm.content.SetValue("")
+	if content == "" {
+		return func() tea.Msg { return nil }
+	}
+	t := todoist.Item{}
+	t.ProjectID = ntm.main.projectId
+	t.Content = content
+	t.Priority = 1
+	ntm.main.tasksModel.tasks.InsertItem(len(ntm.main.client.Store.Items)+1, newTask(ntm.main, t))
+	return func() tea.Msg {
+		ntm.main.client.AddItem(ntm.main.ctx, t)
+		return ntm.main.sync()
+	}
+}
+
 func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			cmds = append(cmds, ntm.main.addTask())
+			cmds = append(cmds, ntm.addTask())
 		case "esc":
-			ntm.input.SetValue("")
+			ntm.content.SetValue("")
 			ntm.main.state = tasksState
 		}
 	}
-	input, cmd := ntm.input.Update(msg)
-	ntm.input = input
+	input, cmd := ntm.content.Update(msg)
+	ntm.content = input
 	cmds = append(cmds, cmd)
 
 	return tea.Batch(cmds...)
 }
 
 func (ntm *newTaskModel) View() string {
-	return ntm.input.View()
+	return ntm.content.View()
 }
