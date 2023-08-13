@@ -16,7 +16,7 @@ type tasksModel struct {
 }
 
 func newTasksModel(m *mainModel) tasksModel {
-	tasks := list.New([]list.Item{}, taskDelegate(m), 40, 30)
+	tasks := list.New([]list.Item{}, list.NewDefaultDelegate(), 40, 30)
 	tasks.DisableQuitKeybindings()
 	return tasksModel{
 		tasks,
@@ -152,42 +152,30 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, tea.Quit)
 		case "r":
 			cmds = append(cmds, tm.main.sync)
+		case "p":
+			cmds = append(cmds, tea.ClearScreen)
+			tm.main.projectsModel.projects.Prompt = "Switch Project"
+			tm.main.projectsModel.purpose = chooseProject
+			tm.main.state = projectState
+		case "v":
+			cmds = append(cmds, tea.ClearScreen)
+			tm.main.projectsModel.projects.Prompt = "Move to Project"
+			tm.main.projectsModel.purpose = moveToProject
+			tm.main.state = projectState
+		case "C":
+			cmds = append(cmds, tm.main.completeTask())
+		case "D":
+			cmds = append(cmds, tm.main.deleteTask())
+		case "n":
+			h, _ := listStyle.GetFrameSize()
+			tm.main.tasksModel.tasks.SetHeight(tm.main.size.Height - tm.main.newTaskModel.Height() - h)
+			tm.main.newTaskModel.content.Prompt = "> "
+			tm.main.newTaskModel.content.Focus()
+			tm.main.state = newTaskState
 		}
 	}
 	tasks, cmd := tm.tasks.Update(msg)
 	tm.tasks = tasks
 	cmds = append(cmds, cmd)
 	return tea.Batch(cmds...)
-}
-
-func taskDelegate(m *mainModel) list.DefaultDelegate {
-	d := list.NewDefaultDelegate()
-	d.UpdateFunc = func(msg tea.Msg, l *list.Model) tea.Cmd {
-		var cmds []tea.Cmd
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "p":
-				cmds = append(cmds, tea.ClearScreen)
-				m.projectsModel.purpose = chooseProject
-				m.state = projectState
-			case "v":
-				cmds = append(cmds, tea.ClearScreen)
-				m.projectsModel.purpose = moveToProject
-				m.state = projectState
-			case "C":
-				cmds = append(cmds, m.completeTask())
-			case "D":
-				cmds = append(cmds, m.deleteTask())
-			case "n":
-				m.newTaskModel.content.Prompt = "> "
-				m.newTaskModel.content.Focus()
-				cmds = append(cmds, tea.ClearScreen)
-				m.state = newTaskState
-			}
-		}
-
-		return tea.Batch(cmds...)
-	}
-	return d
 }

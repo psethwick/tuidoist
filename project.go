@@ -22,7 +22,7 @@ type projectsModel struct {
 }
 
 func (pm *projectsModel) initSelect(p []todoist.Project) {
-	sel := selection.New("Choose Project:", p)
+	sel := selection.New("Switch Project", p)
 	sm := selection.NewModel(sel)
 	sm.Filter = func(filter string, choice *selection.Choice[todoist.Project]) bool {
 		// todo fuzzier matching would be cool

@@ -18,6 +18,10 @@ func newNewTaskModel(m *mainModel) newTaskModel {
 	}
 }
 
+func (ntm *newTaskModel) Height() int {
+    return 1 // height of textinput
+}
+
 func (ntm *newTaskModel) addTask() func() tea.Msg {
 	content := ntm.content.Value()
 	ntm.content.SetValue("")

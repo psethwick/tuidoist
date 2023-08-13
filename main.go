@@ -30,6 +30,7 @@ var (
 
 type mainModel struct {
 	client        *todoist.Client
+	size          tea.WindowSizeMsg
 	state         viewState
 	ctx           context.Context
 	projectsModel projectsModel
@@ -93,6 +94,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
+		m.size = msg
+		dbg("window size", msg)
 		m.tasksModel.tasks.SetSize(msg.Width-h, msg.Height-v)
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -119,7 +122,13 @@ func (m *mainModel) View() string {
 	case tasksState:
 		s += m.tasksModel.View()
 	case newTaskState:
-		s += m.newTaskModel.View()
+		// h, _ := listStyle.GetFrameSize()
+		// m.tasksModel.tasks.SetHeight(m.size.Height - m.newTaskModel.Height() - h)
+		s += lipgloss.JoinVertical(
+			lipgloss.Left,
+			m.newTaskModel.View(),
+			m.tasksModel.View(),
+		)
 	}
 	return s
 }
