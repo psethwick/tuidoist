@@ -38,6 +38,10 @@ func (pm *projectsModel) initSelect(p []todoist.Project) {
 	sm.Init()
 }
 
+func (ntm *projectsModel) Height() int {
+	return ntm.projects.MaxWidth
+}
+
 func (pm *projectsModel) View() string {
 	return listStyle.Render(pm.projects.View())
 }
@@ -45,9 +49,13 @@ func (pm *projectsModel) View() string {
 func (m *mainModel) MoveItem(item *todoist.Item, projectId string) func() tea.Msg {
 	return func() tea.Msg {
 		err := m.client.MoveItem(m.ctx, item, projectId)
-		dbg(err)
+		if err != nil {
+			dbg(err)
+		}
 		err = m.client.Sync(m.ctx)
-		dbg(err)
+		if err != nil {
+			dbg(err)
+		}
 		return nil
 	}
 }

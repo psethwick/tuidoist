@@ -3,8 +3,11 @@ package main
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	todoist "github.com/sachaos/todoist/lib"
 )
+
+var subtle = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
 
 type newTaskModel struct {
 	content textinput.Model
@@ -19,7 +22,7 @@ func newNewTaskModel(m *mainModel) newTaskModel {
 }
 
 func (ntm *newTaskModel) Height() int {
-    return 1 // height of textinput
+	return 8 // height of textinput + dialog
 }
 
 func (ntm *newTaskModel) addTask() func() tea.Msg {
@@ -34,6 +37,7 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	t.Priority = 1
 	ntm.main.tasksModel.tasks.InsertItem(len(ntm.main.client.Store.Items)+1, newTask(ntm.main, t))
 	return func() tea.Msg {
+        // todo separate quick add?
 		ntm.main.client.AddItem(ntm.main.ctx, t)
 		return ntm.main.sync()
 	}
@@ -48,7 +52,7 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, ntm.addTask())
 		case "esc":
 			ntm.content.SetValue("")
-			ntm.main.state = tasksState
+			ntm.main.tasksModel.Focus()
 		}
 	}
 	input, cmd := ntm.content.Update(msg)
@@ -59,5 +63,18 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (ntm *newTaskModel) View() string {
-	return ntm.content.View()
+	title := lipgloss.NewStyle().Width(50).Align(lipgloss.Center).Render("Add Task")
+    help := lipgloss.NewStyle().
+        Align(lipgloss.Center).
+        Width(50).
+        Foreground(subtle).
+        Render("esc cancels           enter accepts")
+	ui := lipgloss.JoinVertical(lipgloss.Left, title, ntm.content.View(), "", help)
+
+	dialog := lipgloss.Place(ntm.main.size.Width, 5,
+		lipgloss.Center, lipgloss.Left,
+		dialogBoxStyle.Render(ui),
+	)
+
+	return dialog
 }

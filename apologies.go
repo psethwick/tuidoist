@@ -154,7 +154,9 @@ func GetClient() *todoist.Client {
 	client.Store = &store
 	if len(store.Projects) == 0 {
 		err := client.Sync(context.Background())
-		dbg("Synced", err)
+        if err != nil {
+            dbg("Sync err", err)
+        }
 		WriteCache(&store)
 	}
 	return client
