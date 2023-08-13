@@ -42,7 +42,18 @@ func (pm *projectsModel) View() string {
 	return listStyle.Render(pm.projects.View())
 }
 
+func (m *mainModel) MoveItem(item *todoist.Item, projectId string) func() tea.Msg {
+	return func() tea.Msg {
+		err := m.client.MoveItem(m.ctx, item, projectId)
+		dbg(err)
+		err = m.client.Sync(m.ctx)
+		dbg(err)
+		return nil
+	}
+}
+
 func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -56,10 +67,8 @@ func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
 					pm.main.switchProject(&p)
 				case moveToProject:
 					task := pm.main.tasksModel.tasks.SelectedItem().(task)
-					err := pm.main.client.MoveItem(pm.main.ctx, &task.item, p.ID)
-					dbg(err)
-					err = pm.main.client.Sync(pm.main.ctx)
-					dbg(err)
+					pm.main.tasksModel.tasks.RemoveItem(pm.main.tasksModel.tasks.Index())
+					cmds = append(cmds, pm.main.MoveItem(&task.item, p.ID))
 				}
 			}
 			pm.main.state = tasksState
@@ -70,7 +79,8 @@ func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 	_, cmd := pm.projects.Update(msg)
-	return cmd
+	cmds = append(cmds, cmd)
+	return tea.Batch(cmds...)
 }
 
 func newProjectsModel(m *mainModel) projectsModel {
