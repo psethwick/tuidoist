@@ -67,7 +67,6 @@ func newTask(m *mainModel, item todoist.Item) task {
 	for _, l := range item.LabelNames {
 		labels += fmt.Sprint(" 🏷️ ", l)
 	}
-	title := fmt.Sprint(indent, checkbox, item.Content, labels)
 	summary := ""
 	if item.Due != nil {
 		summary += " 🗓️ "
@@ -78,11 +77,12 @@ func newTask(m *mainModel, item todoist.Item) task {
 			fd = reformatDate(item.Due.Date, "2006-01-02", "02 Jan 06")
 		}
 		if item.Due.IsRecurring {
-			summary += " 🔁"
+			checkbox += "🔁 "
 		}
 		summary += fd
 	}
-	summary = fmt.Sprint(indent, summary)
+	title := fmt.Sprint(indent, checkbox, item.Content, labels)
+	summary = fmt.Sprint(indent, "   ", summary)
 	return task{
 		item:    item,
 		title:   title,
@@ -156,7 +156,7 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	}
 	tasks, cmd := tm.tasks.Update(msg)
 	tm.tasks = tasks
-    cmds = append(cmds, cmd)
+	cmds = append(cmds, cmd)
 	return tea.Batch(cmds...)
 }
 
@@ -169,6 +169,11 @@ func taskDelegate(m *mainModel) list.DefaultDelegate {
 			switch msg.String() {
 			case "p":
 				cmds = append(cmds, tea.ClearScreen)
+				m.projectsModel.purpose = chooseProject
+				m.state = projectState
+			case "v":
+				cmds = append(cmds, tea.ClearScreen)
+				m.projectsModel.purpose = moveToProject
 				m.state = projectState
 			case "C":
 				cmds = append(cmds, m.completeTask())

@@ -34,7 +34,7 @@ type mainModel struct {
 	ctx           context.Context
 	projectsModel projectsModel
 	tasksModel    tasksModel
-	newTaskModel       newTaskModel
+	newTaskModel  newTaskModel
 	projectId     string
 }
 

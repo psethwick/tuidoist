@@ -8,7 +8,7 @@ import (
 
 type newTaskModel struct {
 	content textinput.Model
-	main  *mainModel
+	main    *mainModel
 }
 
 func newNewTaskModel(m *mainModel) newTaskModel {

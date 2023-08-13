@@ -8,9 +8,17 @@ import (
 	"github.com/sachaos/todoist/lib"
 )
 
+type projectPurpose uint
+
+const (
+	chooseProject projectPurpose = iota
+	moveToProject
+)
+
 type projectsModel struct {
 	projects *selection.Model[todoist.Project]
 	main     *mainModel
+	purpose  projectPurpose
 }
 
 func (pm *projectsModel) initSelect(p []todoist.Project) {
@@ -31,7 +39,7 @@ func (pm *projectsModel) initSelect(p []todoist.Project) {
 }
 
 func (pm *projectsModel) View() string {
-    return listStyle.Render(pm.projects.View())
+	return listStyle.Render(pm.projects.View())
 }
 
 func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
@@ -41,15 +49,24 @@ func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
 		case "enter":
 			p, err := pm.projects.Value()
 			if err == nil {
-				pm.main.projectId = p.ID
-				pm.main.setTasks(&p)
-				pm.main.switchProject(&p)
+				switch pm.purpose {
+				case chooseProject:
+					pm.main.projectId = p.ID
+					pm.main.setTasks(&p)
+					pm.main.switchProject(&p)
+				case moveToProject:
+					task := pm.main.tasksModel.tasks.SelectedItem().(task)
+					err := pm.main.client.MoveItem(pm.main.ctx, &task.item, p.ID)
+					dbg(err)
+					err = pm.main.client.Sync(pm.main.ctx)
+					dbg(err)
+				}
 			}
 			pm.main.state = tasksState
 			return pm.projects.Init()
 		case "esc":
-            pm.main.state = tasksState
-            return nil
+			pm.main.state = tasksState
+			return nil
 		}
 	}
 	_, cmd := pm.projects.Update(msg)
