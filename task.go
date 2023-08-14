@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-    "github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -15,7 +14,6 @@ import (
 type tasksModel struct {
 	tasks list.Model
 	main  *mainModel
-    glam  *glamour.TermRenderer
 }
 
 func newTasksModel(m *mainModel) tasksModel {
@@ -30,15 +28,9 @@ func newTasksModel(m *mainModel) tasksModel {
 
     tasks.DisableQuitKeybindings()
 
-    r, _ := glamour.NewTermRenderer(
-        // detect background color and pick either the default dark or light theme
-        glamour.WithAutoStyle(),
-        glamour.WithWordWrap(120),
-        )
     return tasksModel{
         tasks,
         m,
-        r,
     }
 }
 
@@ -95,17 +87,12 @@ func newTask(m *mainModel, item todoist.Item) task {
             fd = reformatDate(item.Due.Date, "2006-01-02", "02 Jan 06")
         }
         if item.Due.IsRecurring {
-            checkbox += "🔁 "
+            fd += " 🔁"
         }
         summary += fd
     }
     dbg(item.Content)
-    content, err := m.tasksModel.glam.Render(item.Content) 
-    dbg(content)
-    if err != nil {
-        dbg(err)
-    }
-    title := fmt.Sprint(indent, checkbox, strings.TrimSpace(content), labels)
+    title := fmt.Sprint(indent, checkbox, item.Content, labels)
     summary = fmt.Sprint(indent, "   ", summary)
     return task{
         item:    item,
