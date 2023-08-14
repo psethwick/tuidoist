@@ -37,7 +37,7 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	t.Priority = 1
 	ntm.main.tasksModel.tasks.InsertItem(len(ntm.main.client.Store.Items)+1, newTask(ntm.main, t))
 	return func() tea.Msg {
-        // todo separate quick add?
+		// todo separate quick add?
 		ntm.main.client.AddItem(ntm.main.ctx, t)
 		return ntm.main.sync()
 	}
@@ -64,11 +64,11 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 
 func (ntm *newTaskModel) View() string {
 	title := lipgloss.NewStyle().Width(50).Align(lipgloss.Center).Render("Add Task")
-    help := lipgloss.NewStyle().
-        Align(lipgloss.Center).
-        Width(50).
-        Foreground(subtle).
-        Render("esc cancels           enter accepts")
+	help := lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(50).
+		Foreground(subtle).
+		Render("esc cancels           enter accepts")
 	ui := lipgloss.JoinVertical(lipgloss.Left, title, ntm.content.View(), "", help)
 
 	dialog := lipgloss.Place(ntm.main.size.Width, 5,
