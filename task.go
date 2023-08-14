@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+    "os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,12 +14,16 @@ import (
 )
 
 type tasksModel struct {
-	tasks list.Model
-	main  *mainModel
+	tasks      list.Model
+	main       *mainModel
+	mdUrlRegex *regexp.Regexp
 }
+
+var underlineStyle = lipgloss.NewStyle().Underline(false)
 
 func newTasksModel(m *mainModel) tasksModel {
 	tasks := list.New([]list.Item{}, list.NewDefaultDelegate(), 40, 30)
+	re := regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
 
 	tasks.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 2)
 
@@ -31,6 +37,7 @@ func newTasksModel(m *mainModel) tasksModel {
 	return tasksModel{
 		tasks,
 		m,
+		re,
 	}
 }
 
@@ -39,10 +46,13 @@ type task struct {
 	title     string
 	summary   string
 	completed bool
+	url       string
 }
 
 func reformatDate(d string, from string, to string) string {
-	t, err := time.Parse(from, d)
+	// slicing d because _sometimes_ there's timezone info on the date
+	// ain't nobody got time for that
+	t, err := time.Parse(from, d[:len(from)])
 	if err != nil {
 		dbg(err)
 	}
@@ -58,7 +68,6 @@ func newTask(m *mainModel, item todoist.Item) task {
 	indent := strings.Repeat(" ", len(todoist.SearchItemParents(m.client.Store, &item)))
 	var checkbox string
 	switch item.Priority {
-	// mirror the priority colors from the webapp
 	case 1:
 		checkbox = " ⚪ "
 	case 2:
@@ -91,13 +100,25 @@ func newTask(m *mainModel, item todoist.Item) task {
 		}
 		summary += fd
 	}
-	dbg(item.Content)
-	title := fmt.Sprint(indent, checkbox, item.Content, labels)
+
+	content := item.Content
+	// todo this only handles one url
+	// guess I could just loop until there are none?
+	// also doesn't handle bare urls
+	urlMatch := m.tasksModel.mdUrlRegex.FindStringSubmatch(item.Content)
+	url := ""
+	if len(urlMatch) > 0 {
+		content = underlineStyle.Render(strings.Replace(content, urlMatch[0], urlMatch[1], 1))
+		content += "🔗"
+		url = urlMatch[2]
+	}
+	title := fmt.Sprint(indent, checkbox, content, labels)
 	summary = fmt.Sprint(indent, "   ", summary)
 	return task{
 		item:    item,
 		title:   title,
 		summary: summary,
+		url:     url,
 	}
 }
 
@@ -164,30 +185,39 @@ func (tm *tasksModel) View() string {
 	return listStyle.Render(tm.tasks.View())
 }
 
+func (tm *tasksModel) OpenUrl(url string) func() tea.Msg {
+    return func() tea.Msg {
+        openCmd := exec.Command("xdg-open", url)
+        openCmd.Run()
+        return nil
+    }
+}
+
 func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q":
-			cmds = append(cmds, tea.Quit)
-		case "r":
-			cmds = append(cmds, tm.main.sync)
 		case "p":
 			cmds = append(cmds, tea.ClearScreen)
 			tm.main.projectsModel.projects.Prompt = "Switch Project"
 			tm.main.projectsModel.purpose = chooseProject
 			tm.main.state = projectState
-		case "v":
+		case "m":
 			cmds = append(cmds, tea.ClearScreen)
 			tm.main.projectsModel.projects.Prompt = "Move to Project"
 			tm.main.projectsModel.purpose = moveToProject
 			tm.main.state = projectState
-		case "C":
+		case "v":
+			t := tm.tasks.SelectedItem().(task)
+			if t.url != "" {
+                cmds = append(cmds, tm.OpenUrl(t.url))
+			}
+		case "c":
 			cmds = append(cmds, tm.main.completeTask())
-		case "D":
+		case "d":
 			cmds = append(cmds, tm.main.deleteTask())
-		case "n":
+		case "a":
 			tm.GiveHeight(tm.main.newTaskModel.Height())
 			tm.main.newTaskModel.content.Prompt = "> "
 			tm.main.newTaskModel.content.Focus()
