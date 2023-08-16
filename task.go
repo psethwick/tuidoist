@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-    "os/exec"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -186,11 +186,11 @@ func (tm *tasksModel) View() string {
 }
 
 func (tm *tasksModel) OpenUrl(url string) func() tea.Msg {
-    return func() tea.Msg {
-        openCmd := exec.Command("xdg-open", url)
-        openCmd.Run()
-        return nil
-    }
+	return func() tea.Msg {
+		openCmd := exec.Command("xdg-open", url)
+		openCmd.Run()
+		return nil
+	}
 }
 
 func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
@@ -198,20 +198,16 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "F":
+            tm.main.OpenFilters()
 		case "p":
-			cmds = append(cmds, tea.ClearScreen)
-			tm.main.projectsModel.projects.Prompt = "Switch Project"
-			tm.main.projectsModel.purpose = chooseProject
-			tm.main.state = projectState
+            tm.main.OpenProjects(chooseProject, "asdfasdf", "Switch Project")
 		case "m":
-			cmds = append(cmds, tea.ClearScreen)
-			tm.main.projectsModel.projects.Prompt = "Move to Project"
-			tm.main.projectsModel.purpose = moveToProject
-			tm.main.state = projectState
+            tm.main.OpenProjects(moveToProject, "asdfasdf", "Move to Project")
 		case "v":
 			t := tm.tasks.SelectedItem().(task)
 			if t.url != "" {
-                cmds = append(cmds, tm.OpenUrl(t.url))
+				cmds = append(cmds, tm.OpenUrl(t.url))
 			}
 		case "c":
 			cmds = append(cmds, tm.main.completeTask())

@@ -72,7 +72,7 @@ func (ntm *newTaskModel) View() string {
 	ui := lipgloss.JoinVertical(lipgloss.Left, title, ntm.content.View(), "", help)
 
 	dialog := lipgloss.Place(ntm.main.size.Width, 5,
-		lipgloss.Center, lipgloss.Left,
+		lipgloss.Left, lipgloss.Left,
 		dialogBoxStyle.Render(ui),
 	)
 

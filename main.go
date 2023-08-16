@@ -18,6 +18,7 @@ type viewState uint
 const (
 	tasksState viewState = iota
 	projectState
+	// filtersState
 	newTaskState
 )
 
@@ -138,14 +139,14 @@ func (m *mainModel) View() string {
 	var s string
 	switch m.state {
 	case projectState:
-		s += m.projectsModel.View()
+		s = m.projectsModel.View()
 	case tasksState:
-		s += m.tasksModel.View()
+		s = m.tasksModel.View()
 	case newTaskState:
-		s += lipgloss.JoinVertical(
+		s = lipgloss.JoinVertical(
 			lipgloss.Left,
-			m.newTaskModel.View(),
 			m.tasksModel.View(),
+			m.newTaskModel.View(),
 		)
 	}
 	return s

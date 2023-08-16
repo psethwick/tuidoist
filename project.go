@@ -13,17 +13,48 @@ type projectPurpose uint
 const (
 	chooseProject projectPurpose = iota
 	moveToProject
+	chooseFilter
 )
 
 type projectsModel struct {
 	projects *selection.Model[todoist.Project]
+	filters  *selection.Model[filter]
 	main     *mainModel
 	purpose  projectPurpose
+	title    string
 }
 
-func (pm *projectsModel) initSelect(p []todoist.Project) {
+type filter struct {
+	Color     string
+	ID        string
+	IsDeleted bool
+	ItemOrder int
+	Name      string
+	Query     string
+}
+
+func (pm *projectsModel) initSelectFilters(p []filter) {
+	sel := selection.New("Select Filter", p)
+	sm := selection.NewModel(sel)
+	sm.PageSize = 10
+	sm.Filter = func(filter string, choice *selection.Choice[filter]) bool {
+		// todo fuzzier matching would be cool
+		return strings.Contains(strings.ToLower(choice.Value.Name), strings.ToLower(filter))
+	}
+	sm.SelectedChoiceStyle = func(c *selection.Choice[filter]) string {
+		return c.Value.Name
+	}
+	sm.UnselectedChoiceStyle = func(c *selection.Choice[filter]) string {
+		return c.Value.Name
+	}
+	pm.filters = sm
+	sm.Init()
+}
+
+func (pm *projectsModel) initSelectProjects(p []todoist.Project) {
 	sel := selection.New("Switch Project", p)
 	sm := selection.NewModel(sel)
+	sm.PageSize = 10
 	sm.Filter = func(filter string, choice *selection.Choice[todoist.Project]) bool {
 		// todo fuzzier matching would be cool
 		return strings.Contains(strings.ToLower(choice.Value.Name), strings.ToLower(filter))
@@ -38,12 +69,16 @@ func (pm *projectsModel) initSelect(p []todoist.Project) {
 	sm.Init()
 }
 
-func (ntm *projectsModel) Height() int {
-	return ntm.projects.MaxWidth
-}
-
 func (pm *projectsModel) View() string {
-	return listStyle.Render(pm.projects.View())
+	switch pm.purpose {
+	case chooseProject:
+    fallthrough
+	case moveToProject:
+		return listStyle.Render(pm.projects.View())
+	case chooseFilter:
+		return listStyle.Render(pm.filters.View())
+	}
+	return "aaaahhh"
 }
 
 func (m *mainModel) MoveItem(item *todoist.Item, projectId string) func() tea.Msg {
@@ -58,6 +93,18 @@ func (m *mainModel) MoveItem(item *todoist.Item, projectId string) func() tea.Ms
 		}
 		return nil
 	}
+}
+
+func (m *mainModel) OpenFilters() {
+    m.projectsModel.purpose = chooseFilter
+	m.state = projectState
+}
+
+func (m *mainModel) OpenProjects(purpose projectPurpose, title string, prompt string) {
+    m.projectsModel.purpose = purpose
+	m.projectsModel.title = title
+	m.projectsModel.projects.Prompt = prompt
+	m.state = projectState
 }
 
 func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
@@ -77,16 +124,20 @@ func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
 					task := pm.main.tasksModel.tasks.SelectedItem().(task)
 					pm.main.tasksModel.tasks.RemoveItem(pm.main.tasksModel.tasks.Index())
 					cmds = append(cmds, pm.main.MoveItem(&task.item, p.ID))
+                case chooseFilter:
+                    dbg("todo filter projects")
 				}
 			}
 			pm.main.state = tasksState
-			return pm.projects.Init()
+			return tea.Batch(pm.projects.Init(), pm.filters.Init()) 
 		case "esc":
 			pm.main.state = tasksState
 			return nil
 		}
 	}
-	_, cmd := pm.projects.Update(msg)
+    _, cmd := pm.filters.Update(msg)
+	cmds = append(cmds, cmd)
+	_, cmd = pm.projects.Update(msg)
 	cmds = append(cmds, cmd)
 	return tea.Batch(cmds...)
 }
@@ -94,7 +145,13 @@ func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
 func newProjectsModel(m *mainModel) projectsModel {
 	pm := projectsModel{}
 	pm.main = m
-	pm.initSelect(m.client.Store.Projects)
+	var filters []filter
+	for _, f := range m.client.Store.Filters {
+		filters = append(filters, filter(f))
+        dbg(filters)
+	}
+	pm.initSelectFilters(filters)
+	pm.initSelectProjects(m.client.Store.Projects)
 	return pm
 }
 
@@ -105,6 +162,6 @@ func (m *mainModel) switchProject(p *todoist.Project) {
 }
 
 func (m *mainModel) SetProjects(p []todoist.Project) tea.Cmd {
-	m.projectsModel.initSelect(p)
+	m.projectsModel.initSelectProjects(p)
 	return nil
 }
