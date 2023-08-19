@@ -1,4 +1,5 @@
-package main
+// package adapted from upstream: https://github.com/sachaos/todoist
+package client
 
 import (
 	"context"
@@ -12,6 +13,18 @@ import (
 	"github.com/rkoesters/xdg/basedir"
 	todoist "github.com/sachaos/todoist/lib"
 	"github.com/spf13/viper"
+)
+
+const (
+	configName = "config"
+	configType = "json"
+)
+
+var (
+	cachePath           = filepath.Join(basedir.CacheHome, "tuidoist", "cache.json")
+	configPath          = filepath.Join(basedir.ConfigHome, "tuidoist")
+	ShortDateTimeFormat = "06/01/02(Mon) 15:04"
+	ShortDateFormat     = "06/01/02(Mon)"
 )
 
 func Exists(path string) (bool, error) {
@@ -39,8 +52,6 @@ func AssureExists(filePath string) error {
 	}
 	return nil
 }
-
-var cachePath = filepath.Join(basedir.CacheHome, "tuidoist", "cache.json")
 
 func LoadCache(s *todoist.Store) error {
 	err := ReadCache(s)
@@ -82,18 +93,7 @@ func WriteCache(s *todoist.Store) error {
 	return nil
 }
 
-var (
-	configPath          = filepath.Join(basedir.ConfigHome, "tuidoist")
-	ShortDateTimeFormat = "06/01/02(Mon) 15:04"
-	ShortDateFormat     = "06/01/02(Mon)"
-)
-
-const (
-	configName = "config"
-	configType = "json"
-)
-
-func GetClient() *todoist.Client {
+func GetClient(logger func(...any)) *todoist.Client {
 	var store todoist.Store
 
 	if err := LoadCache(&store); err != nil {
@@ -148,14 +148,19 @@ func GetClient() *todoist.Client {
 			panic(fmt.Errorf("Config file has wrong permissions. Make sure to give permissions 600 to file %s \n", configFile))
 		}
 	}
-	config := &todoist.Config{AccessToken: viper.GetString("token"), Color: viper.GetBool("color"), DateFormat: viper.GetString("shortdateformat"), DateTimeFormat: viper.GetString("shortdatetimeformat")}
+	config := &todoist.Config{
+		AccessToken:    viper.GetString("token"),
+		Color:          viper.GetBool("color"),
+		DateFormat:     viper.GetString("shortdateformat"),
+		DateTimeFormat: viper.GetString("shortdatetimeformat"),
+	}
 
 	client := todoist.NewClient(config)
 	client.Store = &store
 	if len(store.Projects) == 0 {
 		err := client.Sync(context.Background())
 		if err != nil {
-			dbg("Sync err", err)
+			logger("Sync err", err)
 		}
 		WriteCache(&store)
 	}

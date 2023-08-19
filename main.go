@@ -6,11 +6,13 @@ import (
 	"log"
 	"os"
 
+
 	// todo I should make keys configurable if I wanna release it
 	// "github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	todoist "github.com/sachaos/todoist/lib"
+	"github.com/psethwick/tuidoist/client"
 )
 
 type viewState uint
@@ -18,7 +20,6 @@ type viewState uint
 const (
 	tasksState viewState = iota
 	projectState
-	// filtersState
 	newTaskState
 )
 
@@ -61,7 +62,7 @@ type mainModel struct {
 
 func initialModel() *mainModel {
 	m := mainModel{}
-	m.client = GetClient()
+	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
 	m.tasksModel = newTasksModel(&m)
 	m.projectsModel = newProjectsModel(&m)
@@ -86,7 +87,7 @@ func (m *mainModel) sync() tea.Msg {
 	if err != nil {
 		dbg("Synced", err)
 	}
-	err = WriteCache(m.client.Store)
+	err = client.WriteCache(m.client.Store)
 	if err != nil {
 		dbg(err)
 	}
