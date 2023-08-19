@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sachaos/todoist/lib"
+    filt "github.com/psethwick/tuidoist/filter"
 )
 
 type tasksModel struct {
@@ -139,6 +140,17 @@ func (m *mainModel) setTasks(p *todoist.Project) {
 	tasks := []list.Item{}
 	for _, i := range m.client.Store.Items {
 		if i.ProjectID == p.ID {
+			tasks = append(tasks, newTask(m, i))
+		}
+	}
+	m.tasksModel.tasks.SetItems(tasks)
+}
+
+func (m *mainModel) setTasksFromFilter(expr filt.Expression) {
+	tasks := []list.Item{}
+    projects := m.client.Store.Projects
+	for _, i := range m.client.Store.Items {
+        if res, _ := filt.Eval(expr, i, projects); res {
 			tasks = append(tasks, newTask(m, i))
 		}
 	}

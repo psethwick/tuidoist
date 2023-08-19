@@ -10,8 +10,8 @@ import __yyfmt__ "fmt"
 //line filter/filter_parser.y:3
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"text/scanner"
@@ -139,7 +139,7 @@ const yyInitialStackSize = 16
 type Lexer struct {
 	scanner.Scanner
 	result Expression
-	logger func(...any)
+	error  string
 }
 
 var MonthIdentHash = map[string]time.Month{
@@ -229,16 +229,19 @@ func (l *Lexer) Lex(lval *yySymType) int {
 }
 
 func (l *Lexer) Error(e string) {
-	l.logger(fmt.Sprintf("Filter error: %s \nFor proper filter syntax see https://support.todoist.com/hc/en-us/articles/205248842-Filters\n", e))
+	l.error = fmt.Sprintf("Filter error: %s \nFor proper filter syntax see https://support.todoist.com/hc/en-us/articles/205248842-Filters\n", e)
 }
 
-func Filter(f string) (e Expression) {
+func Filter(f string) (e Expression, err error) {
 	l := new(Lexer)
 	l.Init(strings.NewReader(f))
 	// important to exclude scanner.ScanFloats because afternoon times in am/pm format trigger float parsing
 	l.Mode = scanner.ScanIdents | scanner.ScanInts | scanner.SkipComments
 	yyParse(l)
-	return l.result
+	if l.error != "" {
+		return nil, errors.New(l.error)
+	}
+	return l.result, nil
 }
 
 //line yacctab:1

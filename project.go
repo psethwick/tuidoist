@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/erikgeiser/promptkit/selection"
+	filt "github.com/psethwick/tuidoist/filter"
 	"github.com/sachaos/todoist/lib"
 )
 
@@ -72,7 +73,7 @@ func (pm *projectsModel) initSelectProjects(p []todoist.Project) {
 func (pm *projectsModel) View() string {
 	switch pm.purpose {
 	case chooseProject:
-    fallthrough
+		fallthrough
 	case moveToProject:
 		return listStyle.Render(pm.projects.View())
 	case chooseFilter:
@@ -96,15 +97,45 @@ func (m *mainModel) MoveItem(item *todoist.Item, projectId string) func() tea.Ms
 }
 
 func (m *mainModel) OpenFilters() {
-    m.projectsModel.purpose = chooseFilter
+	m.projectsModel.purpose = chooseFilter
 	m.state = projectState
 }
 
 func (m *mainModel) OpenProjects(purpose projectPurpose, title string, prompt string) {
-    m.projectsModel.purpose = purpose
+	m.projectsModel.purpose = purpose
 	m.projectsModel.title = title
 	m.projectsModel.projects.Prompt = prompt
 	m.state = projectState
+}
+
+func (pm *projectsModel) handleChooseProject() tea.Cmd {
+	p, err := pm.projects.Value()
+	var cmd tea.Cmd
+	if err == nil {
+		switch pm.purpose {
+		case chooseProject:
+			pm.main.projectId = p.ID
+			pm.main.setTasks(&p)
+			pm.main.switchProject(&p)
+		case moveToProject:
+			task := pm.main.tasksModel.tasks.SelectedItem().(task)
+			pm.main.tasksModel.tasks.RemoveItem(pm.main.tasksModel.tasks.Index())
+			cmd = pm.main.MoveItem(&task.item, p.ID)
+		}
+	}
+	return cmd
+}
+
+func (pm *projectsModel) handleChooseFilter() tea.Cmd {
+	f, err := pm.filters.Value()
+	expr, err := filt.Filter(f.Query)
+	if err != nil {
+		dbg(err)
+		return nil
+	}
+	pm.main.setTasksFromFilter(expr)
+
+	return nil
 }
 
 func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
@@ -113,29 +144,22 @@ func (pm *projectsModel) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			p, err := pm.projects.Value()
-			if err == nil {
-				switch pm.purpose {
-				case chooseProject:
-					pm.main.projectId = p.ID
-					pm.main.setTasks(&p)
-					pm.main.switchProject(&p)
-				case moveToProject:
-					task := pm.main.tasksModel.tasks.SelectedItem().(task)
-					pm.main.tasksModel.tasks.RemoveItem(pm.main.tasksModel.tasks.Index())
-					cmds = append(cmds, pm.main.MoveItem(&task.item, p.ID))
-                case chooseFilter:
-                    dbg("todo filter projects")
-				}
+			switch pm.purpose {
+			case chooseProject:
+				fallthrough
+			case moveToProject:
+				cmds = append(cmds, pm.handleChooseProject())
+			case chooseFilter:
+				cmds = append(cmds, pm.handleChooseFilter())
 			}
 			pm.main.state = tasksState
-			return tea.Batch(pm.projects.Init(), pm.filters.Init()) 
+			return tea.Batch(pm.projects.Init(), pm.filters.Init())
 		case "esc":
 			pm.main.state = tasksState
 			return nil
 		}
 	}
-    _, cmd := pm.filters.Update(msg)
+	_, cmd := pm.filters.Update(msg)
 	cmds = append(cmds, cmd)
 	_, cmd = pm.projects.Update(msg)
 	cmds = append(cmds, cmd)

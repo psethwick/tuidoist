@@ -9,6 +9,13 @@ import (
 	"github.com/sachaos/todoist/lib"
 )
 
+var priorityMapping = map[int]int{
+	1: 4,
+	2: 3,
+	3: 2,
+	4: 1,
+}
+
 var priorityRegex = regexp.MustCompile("^p([1-4])$")
 
 func Eval(e Expression, item todoist.AbstractItem, projects todoist.Projects) (result bool, err error) {
