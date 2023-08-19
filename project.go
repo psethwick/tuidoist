@@ -148,7 +148,6 @@ func newProjectsModel(m *mainModel) projectsModel {
 	var filters []filter
 	for _, f := range m.client.Store.Filters {
 		filters = append(filters, filter(f))
-        dbg(filters)
 	}
 	pm.initSelectFilters(filters)
 	pm.initSelectProjects(m.client.Store.Projects)
