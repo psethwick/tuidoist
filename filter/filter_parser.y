@@ -4,7 +4,6 @@ package filter
 
 import (
     "fmt"
-    "errors"
     "strconv"
     "strings"
     "text/scanner"
@@ -297,7 +296,7 @@ s_time
 type Lexer struct {
     scanner.Scanner
     result Expression
-    error  string
+    logger func(...any)
 }
 
 var MonthIdentHash = map[string]time.Month{
@@ -388,17 +387,14 @@ func (l *Lexer) Lex(lval *yySymType) int {
 }
 
 func (l *Lexer) Error(e string) {
-    l.error = fmt.Sprintf("Filter error: %s \nFor proper filter syntax see https://support.todoist.com/hc/en-us/articles/205248842-Filters\n", e)
+    l.logger(e)
 }
 
-func Filter(f string) (e Expression, err error) {
+func Filter(f string) (e Expression) {
     l := new(Lexer)
     l.Init(strings.NewReader(f))
     // important to exclude scanner.ScanFloats because afternoon times in am/pm format trigger float parsing
     l.Mode = scanner.ScanIdents | scanner.ScanInts | scanner.SkipComments
     yyParse(l)
-    if l.error != "" {
-        return nil, errors.New(l.error)
-    }
-    return l.result, nil
+    return l.result
 }

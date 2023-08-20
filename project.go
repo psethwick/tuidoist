@@ -128,7 +128,7 @@ func (pm *projectsModel) handleChooseProject() tea.Cmd {
 
 func (pm *projectsModel) handleChooseFilter() tea.Cmd {
 	f, err := pm.filters.Value()
-	expr, err := filt.Filter(f.Query)
+	expr := filt.Filter(f.Query)
 	if err != nil {
 		dbg(err)
 		return nil
