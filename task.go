@@ -128,7 +128,7 @@ func (t task) Description() string {
 
 func (t task) FilterValue() string { return t.item.Content }
 
-func (m *mainModel) setTasks(p *todoist.Project) {
+func (m *mainModel) setTasks(p *project) {
 	tasks := []list.Item{}
 	for _, i := range m.client.Store.Items {
 		if i.ProjectID == p.ID {
@@ -191,6 +191,7 @@ func (tm *tasksModel) View() string {
 
 func (tm *tasksModel) OpenUrl(url string) func() tea.Msg {
 	return func() tea.Msg {
+        // todo mac: open, win: ???
 		openCmd := exec.Command("xdg-open", url)
 		openCmd.Run()
 		return nil
@@ -205,9 +206,9 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 		case "F":
             tm.main.OpenFilters()
 		case "p":
-            tm.main.OpenProjects(chooseProject, "asdfasdf", "Switch Project")
+            tm.main.OpenProjects(chooseProject)
 		case "m":
-            tm.main.OpenProjects(moveToProject, "asdfasdf", "Move to Project")
+            tm.main.OpenProjects(moveToProject)
 		case "v":
 			t := tm.tasks.SelectedItem().(task)
 			if t.url != "" {

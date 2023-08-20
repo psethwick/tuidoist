@@ -17,7 +17,7 @@ type viewState uint
 
 const (
 	tasksState viewState = iota
-	projectState
+	chooseState
 	newTaskState
 )
 
@@ -26,7 +26,7 @@ type mainModel struct {
 	size          tea.WindowSizeMsg
 	state         viewState
 	ctx           context.Context
-	projectsModel projectsModel
+	chooseModel chooseModel
 	tasksModel    tasksModel
 	newTaskModel  newTaskModel
 	projectId     string
@@ -37,13 +37,15 @@ func initialModel() *mainModel {
 	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
 	m.tasksModel = newTasksModel(&m)
-	m.projectsModel = newProjectsModel(&m)
+	m.chooseModel = newChooseModel(&m)
 	m.newTaskModel = newNewTaskModel(&m)
 	return &m
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
-	for i, p := range m.client.Store.Projects {
+    // todo delegate to whatever tasks are live
+	for i, tp := range m.client.Store.Projects {
+        p := project(tp)
 		if i == 0 && m.projectId == "" {
 			m.tasksModel.tasks.Title = p.Name
 			m.setTasks(&p)
@@ -51,7 +53,7 @@ func (m *mainModel) refreshFromStore() tea.Cmd {
 			m.setTasks(&p)
 		}
 	}
-	return m.SetProjects(m.client.Store.Projects)
+	return nil
 }
 
 func (m *mainModel) sync() tea.Msg {
@@ -85,8 +87,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	switch m.state {
-	case projectState:
-		cmds = append(cmds, m.projectsModel.Update(msg))
+	case chooseState:
+		cmds = append(cmds, m.chooseModel.Update(msg))
 	case tasksState:
 		cmds = append(cmds, m.tasksModel.Update(msg))
 	case newTaskState:
@@ -98,8 +100,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *mainModel) View() string {
 	var s string
 	switch m.state {
-	case projectState:
-		s = m.projectsModel.View()
+	case chooseState:
+		s = m.chooseModel.View()
 	case tasksState:
 		s = m.tasksModel.View()
 	case newTaskState:
@@ -127,6 +129,7 @@ func main() {
 		}
 		defer f.Close()
 	}
+    dbg("loading")
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
