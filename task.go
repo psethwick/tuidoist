@@ -73,7 +73,6 @@ func newTask(m *mainModel, item todoist.Item) task {
 	}
 
 	if indent != "" {
-		// subtask indicator
 		checkbox = fmt.Sprint("╰", checkbox)
 	}
 	labels := ""
@@ -204,11 +203,11 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "F":
-            tm.main.OpenFilters()
+            cmds = append(cmds, tm.main.OpenFilters())
 		case "p":
-            tm.main.OpenProjects(chooseProject)
+            cmds = append(cmds, tm.main.OpenProjects(chooseProject))
 		case "m":
-            tm.main.OpenProjects(moveToProject)
+            cmds = append(cmds, tm.main.OpenProjects(moveToProject))
 		case "v":
 			t := tm.tasks.SelectedItem().(task)
 			if t.url != "" {

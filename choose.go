@@ -55,22 +55,23 @@ const (
 
 {{- range  $i, $choice := .Choices }}
   {{- if IsScrollUpHintPosition $i }}
-    {{- print "⇡ " -}}
+    {{- "⇡ " -}}
   {{- else if IsScrollDownHintPosition $i -}}
-    {{- print "⇣ " -}} 
+    {{- "⇣ " -}}
   {{- else -}}
-    {{- print "  " -}}
-  {{- end -}} 
+    {{- "  " -}}
+  {{- end -}}
 
   {{- if eq $.SelectedIndex $i }}
-   {{- print "[" (Foreground "32" (Bold "x")) "] " (Selected $choice) "\n" }}
+   {{- print (Foreground "32" (Bold "▸ ")) (Selected $choice) "\n" }}
   {{- else }}
-    {{- print "[ ] " (Unselected $choice) "\n" }}
+    {{- print "  " (Unselected $choice) "\n" }}
   {{- end }}
 {{- end}}`
+
 	resultTemplate = `
-		{{- print .Prompt " " (Foreground "32"  (name .FinalChoice)) "\n" -}}
-		`
+	{{- print .Prompt " " (Final .FinalChoice) "\n" -}}
+	`
 )
 
 type selectable interface {
@@ -86,7 +87,7 @@ func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
 	// sm.FilterInputTextStyle        lipgloss.Style
 	// sm.FilterInputPlaceholderStyle lipgloss.Style
 	// sm.FilterInputCursorStyle      lipgloss.Style
-	// sm.ResultTemplate = resultTemplate
+	sm.ResultTemplate = resultTemplate
 	sm.Filter = func(filter string, choice *selection.Choice[selectable]) bool {
 		// todo fuzzier matching would be cool
 		return strings.Contains(strings.ToLower(choice.Value.Display()), strings.ToLower(filter))
@@ -207,11 +208,6 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 func newChooseModel(m *mainModel) chooseModel {
 	pm := chooseModel{}
 	pm.main = m
-	// fls := make([]selectable, len(m.client.Store.Filters))
-	// for i, f := range m.client.Store.Filters {
-	// 	fls[i] = filter(f)
-	// }
-	// pm.initChooser(fls)
 	return pm
 }
 

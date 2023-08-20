@@ -22,14 +22,14 @@ const (
 )
 
 type mainModel struct {
-	client        *todoist.Client
-	size          tea.WindowSizeMsg
-	state         viewState
-	ctx           context.Context
-	chooseModel chooseModel
-	tasksModel    tasksModel
-	newTaskModel  newTaskModel
-	projectId     string
+	client       *todoist.Client
+	size         tea.WindowSizeMsg
+	state        viewState
+	ctx          context.Context
+	chooseModel  chooseModel
+	tasksModel   tasksModel
+	newTaskModel newTaskModel
+	projectId    string
 }
 
 func initialModel() *mainModel {
@@ -43,9 +43,9 @@ func initialModel() *mainModel {
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
-    // todo delegate to whatever tasks are live
+	// todo delegate to whatever tasks are live
 	for i, tp := range m.client.Store.Projects {
-        p := project(tp)
+		p := project(tp)
 		if i == 0 && m.projectId == "" {
 			m.tasksModel.tasks.Title = p.Name
 			m.setTasks(&p)
@@ -129,7 +129,7 @@ func main() {
 		}
 		defer f.Close()
 	}
-    dbg("loading")
+	dbg("loading")
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
