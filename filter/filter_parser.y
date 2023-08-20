@@ -3,7 +3,6 @@
 package filter
 
 import (
-    "fmt"
     "strconv"
     "strings"
     "text/scanner"
@@ -14,6 +13,10 @@ type Expression interface{}
 type Token struct {
     token int
     literal string
+}
+
+type ErrorExpr struct {
+    error string
 }
 
 type VoidExpr struct {}
@@ -296,7 +299,6 @@ s_time
 type Lexer struct {
     scanner.Scanner
     result Expression
-    logger func(...any)
 }
 
 var MonthIdentHash = map[string]time.Month{
@@ -387,7 +389,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 }
 
 func (l *Lexer) Error(e string) {
-    l.logger(e)
+    l.result = ErrorExpr{e}
 }
 
 func Filter(f string) (e Expression) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -43,10 +44,10 @@ func (pm *projectsModel) initSelectFilters(p []filter) {
 		return strings.Contains(strings.ToLower(choice.Value.Name), strings.ToLower(filter))
 	}
 	sm.SelectedChoiceStyle = func(c *selection.Choice[filter]) string {
-		return c.Value.Name
+		return fmt.Sprint(c.Value.Name, c.Value.Query)
 	}
 	sm.UnselectedChoiceStyle = func(c *selection.Choice[filter]) string {
-		return c.Value.Name
+		return fmt.Sprint(c.Value.Name, c.Value.Query)
 	}
 	pm.filters = sm
 	sm.Init()
@@ -79,7 +80,7 @@ func (pm *projectsModel) View() string {
 	case chooseFilter:
 		return listStyle.Render(pm.filters.View())
 	}
-	return "aaaahhh"
+	return "aaaaaaaaaaaaaaaa"
 }
 
 func (m *mainModel) MoveItem(item *todoist.Item, projectId string) func() tea.Msg {

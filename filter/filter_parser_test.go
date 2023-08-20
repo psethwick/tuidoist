@@ -3,7 +3,6 @@ package filter
 
 import (
 	"testing"
-
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -89,13 +88,27 @@ func TestDateTimeFilter(t *testing.T) {
 		DateExpr{operation: DUE_ON, datetime: time.Date(2017, time.October, 5, 0, 0, 0, 0, testTimeZone), allDay: true},
 		Filter("10/5/2017"), "they should be equal")
 
-	assert.Equal(t,
-		DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), time.January, 3, 0, 0, 0, 0, testTimeZone), allDay: true},
-		Filter("Jan 3"), "they should be equal")
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), time.January, 3, 0, 0, 0, 0, testTimeZone),
+			allDay:    true,
+		},
+		Filter("Jan 3"),
+		"they should be equal",
+	)
 
-	assert.Equal(t,
-		DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), time.August, 8, 0, 0, 0, 0, testTimeZone), allDay: true},
-		Filter("8 August"), "they should be equal")
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), time.August, 8, 0, 0, 0, 0, testTimeZone),
+			allDay:    true,
+		},
+		Filter("8 August"),
+		"they should be equal",
+	)
 
 	assert.Equal(t,
 		DateExpr{operation: DUE_ON, datetime: time.Date(2020, time.February, 10, 0, 0, 0, 0, testTimeZone), allDay: true},
@@ -105,29 +118,64 @@ func TestDateTimeFilter(t *testing.T) {
 		DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), time.May, 16, 0, 0, 0, 0, testTimeZone), allDay: true},
 		Filter("16/05"), "they should be equal")
 
-	assert.Equal(t,
-		DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 16, 0, 0, 0, testTimeZone), allDay: false},
-		Filter("16:00"), "they should be equal")
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 16, 0, 0, 0, testTimeZone),
+			allDay:    false,
+		},
+		Filter("16:00"),
+		"they should be equal",
+	)
+
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 16, 10, 3, 0, testTimeZone),
+			allDay:    false,
+		},
+		Filter("16:10:03"),
+		"they should be equal",
+	)
+
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 15, 0, 0, 0, testTimeZone),
+			allDay:    false,
+		},
+		Filter("3pm"),
+		"they should be equal",
+	)
+
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 7, 0, 0, 0, testTimeZone),
+			allDay:    false,
+		},
+		Filter("7am"),
+		"they should be equal",
+	)
 
 	assert.Equal(t,
-		DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 16, 10, 3, 0, testTimeZone), allDay: false},
-		Filter("16:10:03"), "they should be equal")
+		DateExpr{operation: DUE_ON, datetime: time.Date(2020, time.February, 10, 15, 0, 0, 0, testTimeZone), allDay: false},
+		Filter("10 Feb 2020 3pm"), "they should be equal")
 
-	assert.Equal(t,
-	DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 15, 0, 0, 0, testTimeZone), allDay: false},
-	Filter("3pm"), "they should be equal")
-	
-	assert.Equal(t,
-	DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 7, 0, 0, 0, testTimeZone), allDay: false},
-	Filter("7am"), "they should be equal")
-
-	assert.Equal(t,
-	DateExpr{operation: DUE_ON, datetime: time.Date(2020, time.February, 10, 15, 0, 0, 0, testTimeZone), allDay: false},
-	Filter("10 Feb 2020 3pm"), "they should be equal")
-
-	assert.Equal(t,
-	DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 7, 0, 0, 0, testTimeZone), allDay: false},
-	Filter("7am"), "they should be equal")
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 7, 0, 0, 0, testTimeZone),
+			allDay:    false,
+		},
+		Filter("7am"),
+		"they should be equal",
+	)
 }
 
 func TestSpecialDateTimeFilter(t *testing.T) {
@@ -161,9 +209,16 @@ func TestSpecialDateTimeFilter(t *testing.T) {
 func TestDateTimeElapsedFilter(t *testing.T) {
 	timeNow := time.Date(2017, time.January, 2, 18, 0, 0, 0, testTimeZone)
 	setNow(timeNow)
-	assert.Equal(t,
-		DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day()+1, 16, 0, 0, 0, testTimeZone), allDay: false},
-		Filter("16:00"), "they should be equal")
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day()+1, 16, 0, 0, 0, testTimeZone),
+			allDay:    false,
+		},
+		Filter("16:00"),
+		"they should be equal",
+	)
 
 	timeNow = time.Date(2017, time.May, 16, 23, 59, 59, 0, testTimeZone)
 	setNow(timeNow)
@@ -173,7 +228,46 @@ func TestDateTimeElapsedFilter(t *testing.T) {
 
 	timeNow = time.Date(2017, time.May, 17, 0, 0, 0, 0, testTimeZone)
 	setNow(timeNow)
-	assert.Equal(t,
-		DateExpr{operation: DUE_ON, datetime: time.Date(timeNow.Year()+1, time.May, 16, 0, 0, 0, 0, testTimeZone), allDay: true},
-		Filter("16/05"), "they should be equal")
+	assert.Equal(
+		t,
+		DateExpr{
+			operation: DUE_ON,
+			datetime:  time.Date(timeNow.Year()+1, time.May, 16, 0, 0, 0, 0, testTimeZone),
+			allDay:    true,
+		},
+		Filter("16/05"),
+		"they should be equal",
+	)
+}
+
+func TestNoSyntaxErrorAllOfficialExamples(t *testing.T) {
+	tests := []string{
+		"(today | overdue) & #Work",
+		"no date",
+		"shared & !assigned",
+		"subtask",
+		"!subtask",
+		"#Work & no due date",
+		"Saturday & @night",
+
+		// TODO: these all fail
+		// "(P1 | P2) & 14 days",
+		// "view all",
+		// "#Work & assigned to: me",
+		// "due before: +8 hours & !overdue",
+		// "created before: -30 days",
+		// "created before: -365 days",
+		// "assigned by: me",
+		// "assigned to: Becky",
+		// "added by: me",
+		// "added by: Becky",
+		// "7 days & @waiting",
+		// "no time",
+	}
+    for _, input := range tests {
+        e := Filter(input)
+		if err, ok := e.(ErrorExpr); ok {
+			assert.True(t, false, input, err.error)
+		}
+    }
 }
