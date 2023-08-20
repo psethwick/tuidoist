@@ -9,7 +9,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/sachaos/todoist/lib"
     filt "github.com/psethwick/tuidoist/filter"
 )
@@ -20,19 +19,13 @@ type tasksModel struct {
 	mdUrlRegex *regexp.Regexp
 }
 
-var underlineStyle = lipgloss.NewStyle().Underline(false)
 
 func newTasksModel(m *mainModel) tasksModel {
 	tasks := list.New([]list.Item{}, list.NewDefaultDelegate(), 40, 30)
 	re := regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
 
-	tasks.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 2)
-
-	tasks.Styles.Title = lipgloss.NewStyle().
-		Background(lipgloss.Color("62")).
-		Foreground(lipgloss.Color("230")).
-		Padding(0, 1)
-
+	tasks.Styles.TitleBar = listTitleBarStyle
+	tasks.Styles.Title = listTitleStyle
 	tasks.DisableQuitKeybindings()
 
 	return tasksModel{
@@ -104,13 +97,12 @@ func newTask(m *mainModel, item todoist.Item) task {
 
 	content := item.Content
 	// todo this only handles one url
-	// guess I could just loop until there are none?
 	// also doesn't handle bare urls
 	urlMatch := m.tasksModel.mdUrlRegex.FindStringSubmatch(item.Content)
 	url := ""
 	if len(urlMatch) > 0 {
 		content = underlineStyle.Render(strings.Replace(content, urlMatch[0], urlMatch[1], 1))
-		content += "🔗"
+		content += " 🔗"
 		url = urlMatch[2]
 	}
 	title := fmt.Sprint(indent, checkbox, content, labels)

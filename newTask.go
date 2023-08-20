@@ -7,7 +7,6 @@ import (
 	todoist "github.com/sachaos/todoist/lib"
 )
 
-var subtle = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
 
 type newTaskModel struct {
 	content textinput.Model
@@ -63,12 +62,8 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (ntm *newTaskModel) View() string {
-	title := lipgloss.NewStyle().Width(50).Align(lipgloss.Center).Render("Add Task")
-	help := lipgloss.NewStyle().
-		Align(lipgloss.Center).
-		Width(50).
-		Foreground(subtle).
-		Render("esc cancels           enter accepts")
+	title := dialogTitle.Render("Add Task")
+	help := helpStyle.Render("esc cancels           enter accepts")
 	ui := lipgloss.JoinVertical(lipgloss.Left, title, ntm.content.View(), "", help)
 
 	dialog := lipgloss.Place(ntm.main.size.Width, 5,

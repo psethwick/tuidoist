@@ -6,12 +6,10 @@ import (
 	"log"
 	"os"
 
-
-	// todo I should make keys configurable if I wanna release it
-	// "github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	todoist "github.com/sachaos/todoist/lib"
+
 	"github.com/psethwick/tuidoist/client"
 )
 
@@ -21,32 +19,6 @@ const (
 	tasksState viewState = iota
 	projectState
 	newTaskState
-)
-
-var (
-	listStyle = lipgloss.NewStyle().
-			Align(lipgloss.Left).
-			BorderStyle(lipgloss.HiddenBorder())
-	strikeThroughStyle = lipgloss.NewStyle().Strikethrough(true)
-	dialogBoxStyle     = lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("#874BFD")).
-				Padding(1, 0).
-				BorderTop(true).
-				BorderLeft(true).
-				BorderRight(true).
-				BorderBottom(true)
-	buttonStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFF7DB")).
-			Background(lipgloss.Color("#888B7E")).
-			Padding(0, 3).
-			MarginTop(1)
-
-	activeButtonStyle = buttonStyle.Copy().
-				Foreground(lipgloss.Color("#FFF7DB")).
-				Background(lipgloss.Color("#F25D94")).
-				MarginRight(2).
-				Underline(true)
 )
 
 type mainModel struct {
@@ -97,19 +69,6 @@ func (m *mainModel) sync() tea.Msg {
 
 func (m *mainModel) Init() tea.Cmd {
 	return tea.Batch(tea.EnterAltScreen, m.refreshFromStore(), m.sync)
-}
-
-func qQuits(m *mainModel, msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
-			return tea.Quit
-		case "r":
-			return m.sync
-		}
-	}
-	return nil
 }
 
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
