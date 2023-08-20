@@ -43,15 +43,8 @@ func initialModel() *mainModel {
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
-	// todo delegate to whatever tasks are live
-	for i, tp := range m.client.Store.Projects {
-		p := project(tp)
-		if i == 0 && m.projectId == "" {
-			m.tasksModel.tasks.Title = p.Name
-			m.setTasks(&p)
-		} else if m.projectId == p.ID {
-			m.setTasks(&p)
-		}
+	if m.tasksModel.refresh != nil {
+		m.tasksModel.refresh()
 	}
 	return nil
 }

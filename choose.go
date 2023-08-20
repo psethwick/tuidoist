@@ -154,9 +154,13 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 	if err == nil {
 		switch pm.purpose {
 		case chooseProject:
-			pm.main.projectId = prj.ID
-			pm.main.setTasks(&prj)
-			pm.main.switchProject(&prj)
+            refresh := func() {
+                pm.main.projectId = prj.ID
+                pm.main.setTasks(&prj)
+                pm.main.switchProject(&prj)
+            }
+            pm.main.tasksModel.refresh = refresh
+            refresh()
 		case moveToProject:
 			task := pm.main.tasksModel.tasks.SelectedItem().(task)
 			pm.main.tasksModel.tasks.RemoveItem(pm.main.tasksModel.tasks.Index())
@@ -174,7 +178,11 @@ func (pm *chooseModel) handleChooseFilter() tea.Cmd {
 		dbg(err)
 		return nil
 	}
-	pm.main.setTasksFromFilter(expr)
+    refresh := func() {
+        pm.main.setTasksFromFilter(expr)
+    }
+    pm.main.tasksModel.refresh = refresh
+    refresh()
 
 	return nil
 }
