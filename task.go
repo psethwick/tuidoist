@@ -17,6 +17,7 @@ type tasksModel struct {
 	tasks   list.Model
 	main    *mainModel
 	refresh func()
+	gMenu   bool
 }
 
 var mdUrlRegex = regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
@@ -209,15 +210,49 @@ func (tm *tasksModel) OpenUrl(url string) func() tea.Msg {
 	}
 }
 
+func (tm *tasksModel) openInbox() tea.Cmd {
+	if len(tm.main.client.Store.Projects) == 0 {
+		return nil
+	}
+	prj := project(tm.main.client.Store.Projects[0])
+	var cmd tea.Cmd
+	refresh := func() {
+		tm.main.setTasks(&prj)
+	}
+	tm.main.tasksModel.refresh = refresh
+	refresh()
+	tm.main.tasksModel.tasks.FilterInput.SetValue("")
+    tm.main.tasksModel.tasks.Title = "Inbox"
+	return cmd
+}
+
 func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "F":
-			cmds = append(cmds, tm.main.OpenFilters())
+		case "g":
+			tm.gMenu = true
+		case "f":
+			if tm.gMenu {
+				cmds = append(cmds, tm.main.OpenFilters())
+				tm.gMenu = false
+			}
+		case "i":
+			if tm.gMenu {
+				cmds = append(cmds, tm.openInbox())
+				tm.gMenu = false
+			}
+		case "t":
+			if tm.gMenu {
+				cmds = append(cmds, tm.main.chooseModel.gotoFilter("today"))
+				tm.gMenu = false
+			}
 		case "p":
-			cmds = append(cmds, tm.main.OpenProjects(chooseProject))
+			if tm.gMenu {
+				cmds = append(cmds, tm.main.OpenProjects(chooseProject))
+				tm.gMenu = false
+			}
 		case "m":
 			cmds = append(cmds, tm.main.OpenProjects(moveToProject))
 		case "v":
@@ -234,6 +269,8 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 			tm.main.newTaskModel.content.Prompt = "> "
 			tm.main.newTaskModel.content.Focus()
 			tm.main.state = newTaskState
+        default:
+        tm.gMenu = false
 		}
 	}
 	tasks, cmd := tm.tasks.Update(msg)

@@ -60,11 +60,11 @@ func (m *mainModel) sync() tea.Msg {
 }
 
 func (m *mainModel) Init() tea.Cmd {
-	return tea.Batch(tea.EnterAltScreen, m.refreshFromStore(), m.sync)
+	return tea.Batch(m.refreshFromStore(), m.sync)
 }
 
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
@@ -78,13 +78,13 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch m.state {
 	case chooseState:
-		cmds = append(cmds, m.chooseModel.Update(msg))
+		cmd = m.chooseModel.Update(msg)
 	case tasksState:
-		cmds = append(cmds, m.tasksModel.Update(msg))
+		cmd = m.tasksModel.Update(msg)
 	case newTaskState:
-		cmds = append(cmds, m.newTaskModel.Update(msg))
+		cmd = m.newTaskModel.Update(msg)
 	}
-	return m, tea.Batch(cmds...)
+	return m, cmd
 }
 
 func (m *mainModel) View() string {
@@ -119,7 +119,6 @@ func main() {
 		}
 		defer f.Close()
 	}
-	dbg("loading")
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)

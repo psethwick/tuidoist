@@ -170,22 +170,25 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 	return cmd
 }
 
-func (pm *chooseModel) handleChooseFilter() tea.Cmd {
-	f, err := pm.chooser.Value()
-	flt := f.(filter)
-	expr := filt.Filter(flt.Query)
-	if err != nil {
-		dbg(err)
-		return nil
-	}
+func (pm *chooseModel) gotoFilter(filterQuery string) tea.Cmd {
+	expr := filt.Filter(filterQuery)
 	refresh := func() {
 		pm.main.setTasksFromFilter(expr)
 	}
 	pm.main.tasksModel.tasks.FilterInput.SetValue("")
 	pm.main.tasksModel.refresh = refresh
 	refresh()
+    return nil
+}
 
-	return nil
+func (pm *chooseModel) handleChooseFilter() tea.Cmd {
+	f, err := pm.chooser.Value()
+    if err != nil {
+        dbg(err)
+        return nil
+    }
+	flt := f.(filter)
+    return pm.gotoFilter(flt.Query)
 }
 
 func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
