@@ -29,6 +29,7 @@ type mainModel struct {
 	chooseModel  chooseModel
 	tasksModel   tasksModel
 	newTaskModel newTaskModel
+	// do I need this
 	projectId    string
 }
 
@@ -43,9 +44,7 @@ func initialModel() *mainModel {
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
-	if m.tasksModel.refresh != nil {
-		m.tasksModel.refresh()
-	}
+	m.tasksModel.refresh()
 	return nil
 }
 
