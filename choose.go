@@ -154,20 +154,16 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 	if err == nil {
 		switch pm.purpose {
 		case chooseProject:
-            refresh := func() {
-                pm.main.projectId = prj.ID
-                pm.main.setTasks(&prj)
-                pm.main.switchProject(&prj)
-            }
-            pm.main.tasksModel.refresh = refresh
-            pm.main.tasksModel.tasks.FilterInput.SetValue("")
-
-            refresh()
+			refresh := func() {
+				pm.main.setTasks(&prj)
+			}
+			pm.main.tasksModel.refresh = refresh
+			pm.main.tasksModel.tasks.FilterInput.SetValue("")
+			refresh()
+			pm.main.switchProject(&prj)
 		case moveToProject:
 			task := pm.main.tasksModel.tasks.SelectedItem().(task)
-            dbg("moving", task.item.Content, prj.Name)
 			pm.main.tasksModel.tasks.RemoveItem(pm.main.tasksModel.tasks.Index())
-            dbg("removed")
 			cmd = pm.main.MoveItem(&task.item, prj.ID)
 		}
 	}
@@ -182,12 +178,12 @@ func (pm *chooseModel) handleChooseFilter() tea.Cmd {
 		dbg(err)
 		return nil
 	}
-    refresh := func() {
-        pm.main.setTasksFromFilter(expr)
-    }
-    pm.main.tasksModel.tasks.FilterInput.SetValue("")
-    pm.main.tasksModel.refresh = refresh
-    refresh()
+	refresh := func() {
+		pm.main.setTasksFromFilter(expr)
+	}
+	pm.main.tasksModel.tasks.FilterInput.SetValue("")
+	pm.main.tasksModel.refresh = refresh
+	refresh()
 
 	return nil
 }
@@ -207,7 +203,8 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 				cmds = append(cmds, pm.handleChooseFilter())
 			}
 			pm.main.state = tasksState
-			return tea.Batch(pm.chooser.Init())
+			cmds = append(cmds, pm.chooser.Init())
+			return tea.Batch(cmds...)
 		case "esc":
 			pm.main.state = tasksState
 			return nil
@@ -226,6 +223,5 @@ func newChooseModel(m *mainModel) chooseModel {
 
 func (m *mainModel) switchProject(p *project) {
 	m.tasksModel.tasks.Title = p.Name
-	m.projectId = p.ID
 	m.state = chooseState
 }

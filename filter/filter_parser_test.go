@@ -264,10 +264,10 @@ func TestNoSyntaxErrorAllOfficialExamples(t *testing.T) {
 		// "7 days & @waiting",
 		// "no time",
 	}
-    for _, input := range tests {
-        e := Filter(input)
+	for _, input := range tests {
+		e := Filter(input)
 		if err, ok := e.(ErrorExpr); ok {
 			assert.True(t, false, input, err.error)
 		}
-    }
+	}
 }

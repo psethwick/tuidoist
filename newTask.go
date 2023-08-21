@@ -7,7 +7,6 @@ import (
 	todoist "github.com/sachaos/todoist/lib"
 )
 
-
 type newTaskModel struct {
 	content textinput.Model
 	main    *mainModel
@@ -31,7 +30,6 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 		return func() tea.Msg { return nil }
 	}
 	t := todoist.Item{}
-	t.ProjectID = ntm.main.projectId
 	t.Content = content
 	t.Priority = 1
 	ntm.main.tasksModel.tasks.InsertItem(len(ntm.main.client.Store.Items)+1, newTask(ntm.main, t))

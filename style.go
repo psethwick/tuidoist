@@ -32,7 +32,7 @@ var (
 				MarginRight(2).
 				Underline(true)
 
-    // List
+		// List
 	listStyle = lipgloss.NewStyle().
 			Align(lipgloss.Left).
 			BorderStyle(lipgloss.HiddenBorder())

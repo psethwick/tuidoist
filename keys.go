@@ -22,9 +22,8 @@ Open more project actions W
 */
 
 import (
-    "github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/key"
 )
-
 
 /*
 Navigate
@@ -37,27 +36,27 @@ Open project… G then P
 Open label… G then L
 */
 type globalKeyMap struct {
-    Quit key.Binding
+	Quit key.Binding
 }
 
-var globalKeys = globalKeyMap {
-    Quit: key.NewBinding(key.WithKeys("ctrl+c", "ctrl+w")),
+var globalKeys = globalKeyMap{
+	Quit: key.NewBinding(key.WithKeys("ctrl+c", "ctrl+w")),
 }
 
 type gKeyMap struct {
-    Home key.Binding
-    Inbox key.Binding
-    Today key.Binding
-    Project key.Binding
-    Filter key.Binding
+	Home    key.Binding
+	Inbox   key.Binding
+	Today   key.Binding
+	Project key.Binding
+	Filter  key.Binding
 }
 
-var gKeys = gKeyMap {
-    Home: key.NewBinding(key.WithKeys("h")),
-    Inbox: key.NewBinding(key.WithKeys("i")),
-    Today: key.NewBinding(key.WithKeys("t")),
-    Project: key.NewBinding(key.WithKeys("p")),
-    Filter: key.NewBinding(key.WithKeys("f")),
+var gKeys = gKeyMap{
+	Home:    key.NewBinding(key.WithKeys("h")),
+	Inbox:   key.NewBinding(key.WithKeys("i")),
+	Today:   key.NewBinding(key.WithKeys("t")),
+	Project: key.NewBinding(key.WithKeys("p")),
+	Filter:  key.NewBinding(key.WithKeys("f")),
 }
 
 /*
@@ -71,15 +70,15 @@ Open/close sidebar menu M
 */
 
 type taskListKeyMap struct {
-    Open key.Binding
-    Add key.Binding
-    Undo key.Binding
+	Open key.Binding
+	Add  key.Binding
+	Undo key.Binding
 }
 
-var taskListKeys = taskListKeyMap {
-    Open: key.NewBinding(key.WithKeys("enter")),
-    Add: key.NewBinding(key.WithKeys("a")),
-    Undo: key.NewBinding(key.WithKeys("z")),
+var taskListKeys = taskListKeyMap{
+	Open: key.NewBinding(key.WithKeys("enter")),
+	Add:  key.NewBinding(key.WithKeys("a")),
+	Undo: key.NewBinding(key.WithKeys("z")),
 }
 
 /*
@@ -95,4 +94,3 @@ Change labels L
 Move to … V
 Delete task permanently… ⇧ Delete
 */
-

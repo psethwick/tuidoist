@@ -29,8 +29,6 @@ type mainModel struct {
 	chooseModel  chooseModel
 	tasksModel   tasksModel
 	newTaskModel newTaskModel
-	// do I need this
-	projectId    string
 }
 
 func initialModel() *mainModel {
