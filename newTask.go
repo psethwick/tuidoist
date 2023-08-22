@@ -12,6 +12,8 @@ type newTaskModel struct {
 	main    *mainModel
 }
 
+var ProjectID = ""
+
 func newNewTaskModel(m *mainModel) newTaskModel {
 	return newTaskModel{
 		textinput.New(),
@@ -32,6 +34,9 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	t := todoist.Item{}
 	t.Content = content
 	t.Priority = 1
+	if ProjectID != "" {
+		t.ProjectID = ProjectID
+	}
 	ntm.main.tasksModel.tasks.InsertItem(len(ntm.main.client.Store.Items)+1, newTask(ntm.main, t))
 	return func() tea.Msg {
 		// todo separate quick add?

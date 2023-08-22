@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	filt "github.com/psethwick/tuidoist/filter"
-	"github.com/sachaos/todoist/lib"
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 type tasksModel struct {
@@ -222,55 +222,65 @@ func (tm *tasksModel) openInbox() tea.Cmd {
 	tm.main.tasksModel.refresh = refresh
 	refresh()
 	tm.main.tasksModel.tasks.FilterInput.SetValue("")
-    tm.main.tasksModel.tasks.Title = "Inbox"
+	tm.main.tasksModel.tasks.Title = "Inbox"
 	return cmd
 }
 
+/*
+Navigate
+Open label… G then L
+*/
 func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "g":
-			tm.gMenu = true
-		case "f":
-			if tm.gMenu {
-				cmds = append(cmds, tm.main.OpenFilters())
+	if tm.tasks.FilterState() != list.Filtering {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "g":
+				tm.gMenu = true
+			case "u":
+				if tm.gMenu {
+
+				}
+			case "f":
+				if tm.gMenu {
+					cmds = append(cmds, tm.main.OpenFilters())
+					tm.gMenu = false
+				}
+			case "i":
+				if tm.gMenu {
+					cmds = append(cmds, tm.openInbox())
+					tm.gMenu = false
+				}
+			case "t":
+				if tm.gMenu {
+					cmds = append(cmds, tm.main.chooseModel.gotoFilter(filter{Name: "Today", Query: "today"}))
+					tm.gMenu = false
+				}
+			case "p":
+				if tm.gMenu {
+					cmds = append(cmds, tm.main.OpenProjects(chooseProject))
+					tm.gMenu = false
+				}
+			case "m":
+				cmds = append(cmds, tm.main.OpenProjects(moveToProject))
+			case "v":
+				t := tm.tasks.SelectedItem().(task)
+				if t.url != "" {
+					cmds = append(cmds, tm.OpenUrl(t.url))
+				}
+			case "c":
+				cmds = append(cmds, tm.main.completeTask())
+			case "d":
+				cmds = append(cmds, tm.main.deleteTask())
+			case "a":
+				tm.GiveHeight(tm.main.newTaskModel.Height())
+				tm.main.newTaskModel.content.Prompt = "> "
+				tm.main.newTaskModel.content.Focus()
+				tm.main.state = newTaskState
+			default:
 				tm.gMenu = false
 			}
-		case "i":
-			if tm.gMenu {
-				cmds = append(cmds, tm.openInbox())
-				tm.gMenu = false
-			}
-		case "t":
-			if tm.gMenu {
-				cmds = append(cmds, tm.main.chooseModel.gotoFilter("today"))
-				tm.gMenu = false
-			}
-		case "p":
-			if tm.gMenu {
-				cmds = append(cmds, tm.main.OpenProjects(chooseProject))
-				tm.gMenu = false
-			}
-		case "m":
-			cmds = append(cmds, tm.main.OpenProjects(moveToProject))
-		case "v":
-			t := tm.tasks.SelectedItem().(task)
-			if t.url != "" {
-				cmds = append(cmds, tm.OpenUrl(t.url))
-			}
-		case "c":
-			cmds = append(cmds, tm.main.completeTask())
-		case "d":
-			cmds = append(cmds, tm.main.deleteTask())
-		case "a":
-			tm.GiveHeight(tm.main.newTaskModel.Height())
-			tm.main.newTaskModel.content.Prompt = "> "
-			tm.main.newTaskModel.content.Focus()
-			tm.main.state = newTaskState
-        default:
-        tm.gMenu = false
 		}
 	}
 	tasks, cmd := tm.tasks.Update(msg)

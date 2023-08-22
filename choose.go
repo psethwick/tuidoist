@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -93,10 +92,10 @@ func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
 		return strings.Contains(strings.ToLower(choice.Value.Display()), strings.ToLower(filter))
 	}
 	sm.SelectedChoiceStyle = func(c *selection.Choice[selectable]) string {
-		return fmt.Sprint(c.Value.Display())
+		return selectedTitle.Render(c.Value.Display())
 	}
 	sm.UnselectedChoiceStyle = func(c *selection.Choice[selectable]) string {
-		return fmt.Sprint(c.Value.Display())
+		return normalTitle.Render(c.Value.Display())
 	}
 	pm.chooser = sm
 	return sm.Init()
@@ -159,6 +158,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			}
 			pm.main.tasksModel.refresh = refresh
 			pm.main.tasksModel.tasks.FilterInput.SetValue("")
+			ProjectID = prj.ID
 			refresh()
 			pm.main.switchProject(&prj)
 		case moveToProject:
@@ -170,25 +170,27 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 	return cmd
 }
 
-func (pm *chooseModel) gotoFilter(filterQuery string) tea.Cmd {
-	expr := filt.Filter(filterQuery)
+func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
+	expr := filt.Filter(f.Query)
 	refresh := func() {
 		pm.main.setTasksFromFilter(expr)
 	}
 	pm.main.tasksModel.tasks.FilterInput.SetValue("")
 	pm.main.tasksModel.refresh = refresh
+	pm.main.tasksModel.tasks.Title = f.Name
 	refresh()
-    return nil
+	return nil
 }
 
 func (pm *chooseModel) handleChooseFilter() tea.Cmd {
 	f, err := pm.chooser.Value()
-    if err != nil {
-        dbg(err)
-        return nil
-    }
+	if err != nil {
+		dbg(err)
+		return nil
+	}
 	flt := f.(filter)
-    return pm.gotoFilter(flt.Query)
+	ProjectID = ""
+	return pm.gotoFilter(flt)
 }
 
 func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {

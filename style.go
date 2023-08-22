@@ -41,6 +41,22 @@ var (
 			Foreground(lipgloss.Color("230")).
 			Padding(0, 1)
 
+		// from default delegate, keep here for now?
+		// eventually I might use the full ItemDelegate interface
+		// that might actually be how I get section titles in?
+	normalTitle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#dddddd"}).
+			Padding(0, 0, 0, 2)
+	normalDesc = normalTitle.Copy().
+			Foreground(lipgloss.AdaptiveColor{Light: "#A49FA5", Dark: "#777777"})
+	selectedTitle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), false, false, false, true).
+			BorderForeground(lipgloss.AdaptiveColor{Light: "#F793FF", Dark: "#AD58B4"}).
+			Foreground(lipgloss.AdaptiveColor{Light: "#EE6FF8", Dark: "#EE6FF8"}).
+			Padding(0, 0, 0, 1)
+	selectedDesc = selectedTitle.Copy().
+			Foreground(lipgloss.AdaptiveColor{Light: "#F793FF", Dark: "#AD58B4"})
+
 	underlineStyle     = lipgloss.NewStyle().Underline(false)
 	listTitleBarStyle  = lipgloss.NewStyle().Padding(0, 0, 1, 2)
 	strikeThroughStyle = lipgloss.NewStyle().Strikethrough(true)
