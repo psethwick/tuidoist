@@ -19,16 +19,18 @@ const (
 	tasksState viewState = iota
 	chooseState
 	newTaskState
+	taskMenuState
 )
 
 type mainModel struct {
-	client       *todoist.Client
-	size         tea.WindowSizeMsg
-	state        viewState
-	ctx          context.Context
-	chooseModel  chooseModel
-	tasksModel   tasksModel
-	newTaskModel newTaskModel
+	client        *todoist.Client
+	size          tea.WindowSizeMsg
+	state         viewState
+	ctx           context.Context
+	chooseModel   chooseModel
+	tasksModel    tasksModel
+	newTaskModel  newTaskModel
+	taskMenuModel taskMenuModel
 }
 
 func initialModel() *mainModel {
@@ -38,6 +40,7 @@ func initialModel() *mainModel {
 	m.tasksModel = newTasksModel(&m)
 	m.chooseModel = newChooseModel(&m)
 	m.newTaskModel = newNewTaskModel(&m)
+	m.taskMenuModel = newTaskMenuModel(&m)
 	return &m
 }
 
@@ -72,6 +75,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tasksModel.tasks.SetSize(msg.Width-h, msg.Height-v)
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "ctrl+w":
+			fallthrough
 		case "ctrl+c":
 			return m, tea.Quit
 		}
@@ -83,6 +88,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = m.tasksModel.Update(msg)
 	case newTaskState:
 		cmd = m.newTaskModel.Update(msg)
+	case taskMenuState:
+		cmd = m.taskMenuModel.Update(msg)
 	}
 	return m, cmd
 }
@@ -94,6 +101,8 @@ func (m *mainModel) View() string {
 		s = m.chooseModel.View()
 	case tasksState:
 		s = m.tasksModel.View()
+	case taskMenuState:
+		s = m.taskMenuModel.View()
 	case newTaskState:
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,

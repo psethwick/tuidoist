@@ -229,7 +229,22 @@ func (tm *tasksModel) openInbox() tea.Cmd {
 /*
 Navigate
 Open label… G then L
+
+# Add new task to the top of list ⇧ A
+
+z ctrl-z undo
 */
+type sort uint
+
+const (
+	priority sort = iota
+	name
+	date
+	assignee
+)
+
+var Sort sort = date
+
 func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	if tm.tasks.FilterState() != list.Filtering {
@@ -238,10 +253,10 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 			switch msg.String() {
 			case "g":
 				tm.gMenu = true
-			case "u":
-				if tm.gMenu {
-
-				}
+			// case "u":
+			// 	if tm.gMenu {
+			// todo how to do upcoming
+			// 	}
 			case "f":
 				if tm.gMenu {
 					cmds = append(cmds, tm.main.OpenFilters())
@@ -261,18 +276,25 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 				if tm.gMenu {
 					cmds = append(cmds, tm.main.OpenProjects(chooseProject))
 					tm.gMenu = false
+				} else {
+					Sort = priority
 				}
+				// todo apply this sort
+			case "n":
+				Sort = name
+			case "d":
+				Sort = date
+			case "r":
+				Sort = assignee
 			case "m":
 				cmds = append(cmds, tm.main.OpenProjects(moveToProject))
-			case "v":
+			case "enter":
 				t := tm.tasks.SelectedItem().(task)
-				if t.url != "" {
-					cmds = append(cmds, tm.OpenUrl(t.url))
-				}
-			case "c":
-				cmds = append(cmds, tm.main.completeTask())
-			case "d":
-				cmds = append(cmds, tm.main.deleteTask())
+				tm.main.taskMenuModel.project = tm.main.client.Store.FindProject(t.item.ProjectID)
+				tm.main.taskMenuModel.item = t.item
+				tm.main.taskMenuModel.content.SetValue(t.item.Content)
+				tm.main.taskMenuModel.desc.SetValue(t.item.Description)
+				tm.main.state = taskMenuState
 			case "a":
 				tm.GiveHeight(tm.main.newTaskModel.Height())
 				tm.main.newTaskModel.content.Prompt = "> "

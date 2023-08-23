@@ -45,6 +45,9 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	}
 }
 
+// Save a newly created task and create a new one below Enter
+// Save changes to an existing task and create a new task below ⇧ Enter
+// Save a new task or save changes to an existing one and create a new task above Ctrl Enter
 func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
