@@ -18,7 +18,8 @@ type viewState uint
 const (
 	tasksState viewState = iota
 	chooseState
-	newTaskState
+	newTaskTopState
+	newTaskBottomState
 	taskMenuState
 )
 
@@ -71,8 +72,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
+		h2, v2 := tuiStyle.GetFrameSize()
 		m.size = msg
-		m.tasksModel.tasks.SetSize(msg.Width-h, msg.Height-v)
+		m.tasksModel.tasks.SetSize(msg.Width-h-h2, msg.Height-v-v2)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+w":
@@ -86,7 +88,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = m.chooseModel.Update(msg)
 	case tasksState:
 		cmd = m.tasksModel.Update(msg)
-	case newTaskState:
+	case newTaskTopState:
+		fallthrough
+	case newTaskBottomState:
 		cmd = m.newTaskModel.Update(msg)
 	case taskMenuState:
 		cmd = m.taskMenuModel.Update(msg)
@@ -103,14 +107,20 @@ func (m *mainModel) View() string {
 		s = m.tasksModel.View()
 	case taskMenuState:
 		s = m.taskMenuModel.View()
-	case newTaskState:
+	case newTaskBottomState:
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.tasksModel.View(),
 			m.newTaskModel.View(),
 		)
+	case newTaskTopState:
+		s = lipgloss.JoinVertical(
+			lipgloss.Left,
+			m.newTaskModel.View(),
+			m.tasksModel.View(),
+		)
 	}
-	return s
+	return tuiStyle.Render(s)
 }
 
 func dbg(a ...any) {

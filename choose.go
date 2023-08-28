@@ -45,12 +45,11 @@ func (f filter) Display() string {
 
 const (
 	customTemplate = `
-{{- if .Prompt -}}
-  {{ Bold .Prompt }}
-{{ end -}}
+{{- print "\n"}}
 {{ if .IsFiltered }}
-  {{- print .FilterPrompt " " .FilterInput }}
+  {{- print "   " .FilterInput }}
 {{ end }}
+    {{- print "\n"}}
 
 {{- range  $i, $choice := .Choices }}
   {{- if IsScrollUpHintPosition $i }}
@@ -62,15 +61,11 @@ const (
   {{- end -}}
 
   {{- if eq $.SelectedIndex $i }}
-   {{- print (Foreground "32" (Bold "▸ ")) (Selected $choice) "\n" }}
+   {{- print (Foreground "32" (Bold "  ▸ ")) (Selected $choice) "\n\n" }}
   {{- else }}
-    {{- print "  " (Unselected $choice) "\n" }}
+    {{- print "    " (Unselected $choice) "\n\n" }}
   {{- end }}
 {{- end}}`
-
-	resultTemplate = `
-	{{- print .Prompt " " (Final .FinalChoice) "\n" -}}
-	`
 )
 
 type selectable interface {
@@ -78,15 +73,14 @@ type selectable interface {
 }
 
 func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
-	sel := selection.New(prompt, p)
+	sel := selection.New("", p)
 	sm := selection.NewModel(sel)
 	sm.Template = customTemplate
-
+	sm.FilterPlaceholder = prompt
 	// todo
 	// sm.FilterInputTextStyle        lipgloss.Style
 	// sm.FilterInputPlaceholderStyle lipgloss.Style
 	// sm.FilterInputCursorStyle      lipgloss.Style
-	sm.ResultTemplate = resultTemplate
 	sm.Filter = func(filter string, choice *selection.Choice[selectable]) bool {
 		// todo fuzzier matching would be cool
 		return strings.Contains(strings.ToLower(choice.Value.Display()), strings.ToLower(filter))
@@ -177,7 +171,7 @@ func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
 	}
 	pm.main.tasksModel.tasks.FilterInput.SetValue("")
 	pm.main.tasksModel.refresh = refresh
-	pm.main.tasksModel.tasks.Title = f.Name
+	pm.main.tasksModel.title = f.Name
 	refresh()
 	return nil
 }
@@ -227,6 +221,6 @@ func newChooseModel(m *mainModel) chooseModel {
 }
 
 func (m *mainModel) switchProject(p *project) {
-	m.tasksModel.tasks.Title = p.Name
+	m.tasksModel.title = p.Name
 	m.state = chooseState
 }

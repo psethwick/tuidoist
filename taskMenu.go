@@ -72,7 +72,7 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, tm.main.completeTask())
 			// todo tick, wait then exit
 			tm.main.state = tasksState
-		case "d":
+		case "delete":
 			// TODO confirmation
 			cmds = append(cmds, tm.main.deleteTask())
 		case "enter":

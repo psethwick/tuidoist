@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -10,12 +9,12 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/muesli/reflow/truncate"
 	filt "github.com/psethwick/tuidoist/filter"
 	todoist "github.com/sachaos/todoist/lib"
 )
 
 type tasksModel struct {
+	title   string
 	tasks   list.Model
 	main    *mainModel
 	refresh func()
@@ -24,81 +23,12 @@ type tasksModel struct {
 
 var mdUrlRegex = regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
 
-type taskDelegate struct {
-	// todo enrich later, get it working first, dummy
-	// mode taskMode
-	height int
-}
-
-func (td taskDelegate) Height() int {
-	return td.height
-}
-
-func (td taskDelegate) Spacing() int {
-	return 0
-}
-
-func (td taskDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
-	return nil
-}
-
-// right now list.Item will always be `task`
-// later I might need to dispatch on add/edit list.Items
-func (td taskDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	var (
-		title, desc string
-		s           = list.NewDefaultItemStyles()
-		ellipsis    = "…"
-	)
-
-	if i, ok := item.(task); ok {
-		title = i.Title()
-		desc = i.Description()
-	} else {
-		return
-	}
-
-	if m.Width() <= 0 {
-		// short-circuit
-		return
-	}
-
-	// Prevent text from exceeding list width
-	textwidth := uint(m.Width() - s.NormalTitle.GetPaddingLeft() - s.NormalTitle.GetPaddingRight())
-	title = truncate.StringWithTail(title, textwidth, ellipsis)
-	var lines []string
-	for i, line := range strings.Split(desc, "\n") {
-		if i >= td.height-1 {
-			break
-		}
-		lines = append(lines, truncate.StringWithTail(line, textwidth, ellipsis))
-	}
-	desc = strings.Join(lines, "\n")
-
-	var (
-		isSelected  = index == m.Index()
-		emptyFilter = m.FilterState() == list.Filtering && m.FilterValue() == ""
-	)
-
-	if emptyFilter {
-		title = s.DimmedTitle.Render(title)
-		desc = s.DimmedDesc.Render(desc)
-	} else if isSelected && m.FilterState() != list.Filtering {
-		title = s.SelectedTitle.Render(title)
-		desc = s.SelectedDesc.Render(desc)
-	} else {
-		title = s.NormalTitle.Render(title)
-		desc = s.NormalDesc.Render(desc)
-	}
-
-	fmt.Fprintf(w, "%s\n%s", title, desc)
-}
-
 func newTasksModel(m *mainModel) tasksModel {
-	tasks := list.New([]list.Item{}, taskDelegate{4}, 40, 30)
-	tasks.Title = "Inbox"
-	tasks.Styles.TitleBar = listTitleBarStyle
-	tasks.Styles.Title = listTitleStyle
+	tasks := list.New([]list.Item{}, taskDelegate{}, 40, 30)
+	tasks.SetShowTitle(false)
+	tasks.SetShowHelp(false)
+	tasks.SetShowPagination(false)
+	tasks.SetShowStatusBar(false)
 	tasks.DisableQuitKeybindings()
 	refresh := func() {
 		ts := []list.Item{}
@@ -117,6 +47,7 @@ func newTasksModel(m *mainModel) tasksModel {
 		tasks:   tasks,
 		main:    m,
 		refresh: refresh,
+		title:   "Inbox",
 	}
 }
 
@@ -294,7 +225,7 @@ func (tm *tasksModel) openInbox() tea.Cmd {
 	tm.main.tasksModel.refresh = refresh
 	refresh()
 	tm.main.tasksModel.tasks.FilterInput.SetValue("")
-	tm.main.tasksModel.tasks.Title = "Inbox"
+	tm.main.tasksModel.title = "Inbox"
 	return cmd
 }
 
@@ -325,10 +256,16 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 			switch msg.String() {
 			case "g":
 				tm.gMenu = true
-			// case "u":
-			// 	if tm.gMenu {
-			// todo how to do upcoming
-			// 	}
+				// case "u":
+				// 	if tm.gMenu {
+				// todo how to do upcoming
+				// 	}
+			case "c":
+				cmds = append(cmds, tm.main.completeTask())
+				tm.main.state = tasksState
+			case "delete":
+				// TODO confirmation
+				cmds = append(cmds, tm.main.deleteTask())
 			case "f":
 				if tm.gMenu {
 					cmds = append(cmds, tm.main.OpenFilters())
@@ -369,9 +306,12 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 				tm.main.state = taskMenuState
 			case "a":
 				tm.GiveHeight(tm.main.newTaskModel.Height())
-				tm.main.newTaskModel.content.Prompt = "> "
 				tm.main.newTaskModel.content.Focus()
-				tm.main.state = newTaskState
+				tm.main.state = newTaskBottomState
+			case "A":
+				tm.GiveHeight(tm.main.newTaskModel.Height())
+				tm.main.newTaskModel.content.Focus()
+				tm.main.state = newTaskTopState
 			default:
 				tm.gMenu = false
 			}

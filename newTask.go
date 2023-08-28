@@ -15,14 +15,16 @@ type newTaskModel struct {
 var ProjectID = ""
 
 func newNewTaskModel(m *mainModel) newTaskModel {
+	ti := textinput.New()
+	ti.Prompt = "   > "
 	return newTaskModel{
-		textinput.New(),
+		ti,
 		m,
 	}
 }
 
 func (ntm *newTaskModel) Height() int {
-	return 8 // height of textinput + dialog
+	return 4 // height of textinput + dialog
 }
 
 func (ntm *newTaskModel) addTask() func() tea.Msg {
@@ -37,7 +39,14 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	if ProjectID != "" {
 		t.ProjectID = ProjectID
 	}
-	ntm.main.tasksModel.tasks.InsertItem(len(ntm.main.client.Store.Items)+1, newTask(ntm.main, t))
+	var idx int
+	if ntm.main.state == newTaskBottomState {
+		idx = len(ntm.main.client.Store.Items) + 1
+	} else {
+		idx = 0
+	}
+	ntm.main.tasksModel.tasks.InsertItem(idx, newTask(ntm.main, t))
+	ntm.main.tasksModel.tasks.Select(idx)
 	return func() tea.Msg {
 		// todo separate quick add?
 		ntm.main.client.AddItem(ntm.main.ctx, t)
@@ -68,13 +77,9 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (ntm *newTaskModel) View() string {
-	title := dialogTitle.Render("Add Task")
-	help := helpStyle.Render("esc cancels           enter accepts")
-	ui := lipgloss.JoinVertical(lipgloss.Left, title, ntm.content.View(), "", help)
-
-	dialog := lipgloss.Place(ntm.main.size.Width, 5,
+	dialog := lipgloss.Place(ntm.main.size.Width, 3,
 		lipgloss.Left, lipgloss.Left,
-		dialogBoxStyle.Render(ui),
+		dialogBoxStyle.Render(ntm.content.View()),
 	)
 
 	return dialog
