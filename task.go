@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/muesli/reflow/truncate"
 	filt "github.com/psethwick/tuidoist/filter"
 	todoist "github.com/sachaos/todoist/lib"
 )
@@ -24,78 +22,8 @@ type tasksModel struct {
 
 var mdUrlRegex = regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
 
-type taskDelegate struct {
-	// todo enrich later, get it working first, dummy
-	// mode taskMode
-	height int
-}
-
-func (td taskDelegate) Height() int {
-	return td.height
-}
-
-func (td taskDelegate) Spacing() int {
-	return 0
-}
-
-func (td taskDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
-	return nil
-}
-
-// right now list.Item will always be `task`
-// later I might need to dispatch on add/edit list.Items
-func (td taskDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	var (
-		title, desc string
-		s           = list.NewDefaultItemStyles()
-		ellipsis    = "…"
-	)
-
-	if i, ok := item.(task); ok {
-		title = i.Title()
-		desc = i.Description()
-	} else {
-		return
-	}
-
-	if m.Width() <= 0 {
-		// short-circuit
-		return
-	}
-
-	// Prevent text from exceeding list width
-	textwidth := uint(m.Width() - s.NormalTitle.GetPaddingLeft() - s.NormalTitle.GetPaddingRight())
-	title = truncate.StringWithTail(title, textwidth, ellipsis)
-	var lines []string
-	for i, line := range strings.Split(desc, "\n") {
-		if i >= td.height-1 {
-			break
-		}
-		lines = append(lines, truncate.StringWithTail(line, textwidth, ellipsis))
-	}
-	desc = strings.Join(lines, "\n")
-
-	var (
-		isSelected  = index == m.Index()
-		emptyFilter = m.FilterState() == list.Filtering && m.FilterValue() == ""
-	)
-
-	if emptyFilter {
-		title = s.DimmedTitle.Render(title)
-		desc = s.DimmedDesc.Render(desc)
-	} else if isSelected && m.FilterState() != list.Filtering {
-		title = s.SelectedTitle.Render(title)
-		desc = s.SelectedDesc.Render(desc)
-	} else {
-		title = s.NormalTitle.Render(title)
-		desc = s.NormalDesc.Render(desc)
-	}
-
-	fmt.Fprintf(w, "%s\n%s", title, desc)
-}
-
 func newTasksModel(m *mainModel) tasksModel {
-	tasks := list.New([]list.Item{}, taskDelegate{4}, 40, 30)
+	tasks := list.New([]list.Item{}, list.NewDefaultDelegate(), 40, 30)
 	tasks.Title = "Inbox"
 	tasks.Styles.TitleBar = listTitleBarStyle
 	tasks.Styles.Title = listTitleStyle
@@ -190,7 +118,7 @@ func newTask(m *mainModel, item todoist.Item) task {
 		url = urlMatch[2]
 	}
 	title := fmt.Sprint(indent, checkbox, content, labels)
-	summary = fmt.Sprintf("%s\n%s", fmt.Sprint(indent, "   ", summary), fmt.Sprint(indent, item.Description))
+	summary = fmt.Sprint(indent, "   ", summary)
 	return task{
 		item:    item,
 		title:   title,
