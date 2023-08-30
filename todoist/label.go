@@ -1,3 +1,4 @@
+// adapted from upstream https://github.com/sachaos/todoist
 package todoist
 
 type Label struct {
