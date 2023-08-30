@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	todoist "github.com/sachaos/todoist/lib"
+	"github.com/psethwick/tuidoist/todoist"
 )
 
 type newTaskModel struct {
@@ -41,8 +41,15 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	}
 	var idx int
 	if ntm.main.state == newTaskBottomState {
-		idx = len(ntm.main.client.Store.Items) + 1
+		idx = len(ntm.main.tasksModel.tasks.Items()) + 1
 	} else {
+		minOrder := 0
+		for _, t := range ntm.main.tasksModel.tasks.Items() {
+			task := t.(task)
+			minOrder = min(minOrder, task.item.ChildOrder)
+			dbg(minOrder)
+		}
+		t.ChildOrder = minOrder - 1
 		idx = 0
 	}
 	ntm.main.tasksModel.tasks.InsertItem(idx, newTask(ntm.main, t))
@@ -77,7 +84,7 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (ntm *newTaskModel) View() string {
-	dialog := lipgloss.Place(ntm.main.size.Width, 3,
+	dialog := lipgloss.Place(ntm.main.width, 3,
 		lipgloss.Left, lipgloss.Left,
 		dialogBoxStyle.Render(ntm.content.View()),
 	)

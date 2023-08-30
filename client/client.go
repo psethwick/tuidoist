@@ -11,8 +11,9 @@ import (
 	"runtime"
 
 	"github.com/rkoesters/xdg/basedir"
-	todoist "github.com/sachaos/todoist/lib"
 	"github.com/spf13/viper"
+
+	"github.com/psethwick/tuidoist/todoist"
 )
 
 const (

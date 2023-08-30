@@ -8,7 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	todoist "github.com/sachaos/todoist/lib"
+	"github.com/psethwick/tuidoist/todoist"
 
 	"github.com/psethwick/tuidoist/client"
 )
@@ -25,7 +25,8 @@ const (
 
 type mainModel struct {
 	client        *todoist.Client
-	size          tea.WindowSizeMsg
+	height        int
+	width         int
 	state         viewState
 	ctx           context.Context
 	chooseModel   chooseModel
@@ -73,7 +74,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
 		h2, v2 := tuiStyle.GetFrameSize()
-		m.size = msg
+		m.height = msg.Height - v2
+		m.width = msg.Width - h2
 		m.tasksModel.tasks.SetSize(msg.Width-h-h2, msg.Height-v-v2)
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -120,7 +122,9 @@ func (m *mainModel) View() string {
 			m.tasksModel.View(),
 		)
 	}
-	return tuiStyle.Render(s)
+	return tuiStyle.Render(
+		lipgloss.Place(m.width, m.height, lipgloss.Left, lipgloss.Top, s),
+	)
 }
 
 func dbg(a ...any) {

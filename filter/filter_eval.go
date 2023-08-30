@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sachaos/todoist/lib"
+	"github.com/psethwick/tuidoist/todoist"
 )
 
 var priorityMapping = map[int]int{

@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+
 	filt "github.com/psethwick/tuidoist/filter"
-	todoist "github.com/sachaos/todoist/lib"
+	"github.com/psethwick/tuidoist/todoist"
 )
 
 type tasksModel struct {
@@ -143,12 +145,23 @@ func (t task) Description() string {
 
 func (t task) FilterValue() string { return t.item.Content }
 
+type SortByChildOrder []todoist.Item
+
+func (a SortByChildOrder) Len() int           { return len(a) }
+func (a SortByChildOrder) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a SortByChildOrder) Less(i, j int) bool { return a[i].ChildOrder < a[j].ChildOrder }
+
 func (m *mainModel) setTasks(p *project) {
-	tasks := []list.Item{}
+	items := []todoist.Item{}
 	for _, i := range m.client.Store.Items {
 		if i.ProjectID == p.ID {
-			tasks = append(tasks, newTask(m, i))
+			items = append(items, i)
 		}
+	}
+	sort.Sort(SortByChildOrder(items))
+	tasks := []list.Item{}
+	for _, i := range items {
+		tasks = append(tasks, newTask(m, i))
 	}
 	m.tasksModel.tasks.SetItems(tasks)
 }
@@ -192,7 +205,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 
 func (tm *tasksModel) GiveHeight(h int) {
 	fh, _ := listStyle.GetFrameSize()
-	tm.tasks.SetHeight(tm.main.size.Height - fh - h)
+	tm.tasks.SetHeight(tm.main.height - fh - h)
 }
 
 func (tm *tasksModel) Focus() {
@@ -237,16 +250,16 @@ Open label… G then L
 
 z ctrl-z undo
 */
-type sort uint
+// type sort uint
+//
+// const (
+// 	priority sort = iota
+// 	name
+// 	date
+// 	assignee
+// )
 
-const (
-	priority sort = iota
-	name
-	date
-	assignee
-)
-
-var Sort sort = date
+// var Sort sort = date
 
 func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
@@ -286,15 +299,15 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 					cmds = append(cmds, tm.main.OpenProjects(chooseProject))
 					tm.gMenu = false
 				} else {
-					Sort = priority
+					// Sort = priority
 				}
 				// todo apply this sort
-			case "n":
-				Sort = name
-			case "d":
-				Sort = date
-			case "r":
-				Sort = assignee
+			// case "n":
+			// 	Sort = name
+			// case "d":
+			// 	Sort = date
+			// case "r":
+			// 	Sort = assignee
 			case "m":
 				cmds = append(cmds, tm.main.OpenProjects(moveToProject))
 			case "enter":

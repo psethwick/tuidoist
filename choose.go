@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/erikgeiser/promptkit/selection"
 	filt "github.com/psethwick/tuidoist/filter"
-	todoist "github.com/sachaos/todoist/lib"
+	"github.com/psethwick/tuidoist/todoist"
 )
 
 type choosePurpose uint
@@ -76,6 +76,8 @@ func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
 	sel := selection.New("", p)
 	sm := selection.NewModel(sel)
 	sm.Template = customTemplate
+	// we're double spacing + some room for the prompt
+	sm.PageSize = pm.main.height/2 - 3
 	sm.FilterPlaceholder = prompt
 	// todo
 	// sm.FilterInputTextStyle        lipgloss.Style

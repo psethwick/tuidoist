@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	todoist "github.com/sachaos/todoist/lib"
+	"github.com/psethwick/tuidoist/todoist"
 )
 
 type taskMenuModel struct {
@@ -105,7 +105,7 @@ func (tm *taskMenuModel) View() string {
 	help := helpStyle.Render("(e)dit (c)complete (m)ove (d)elete")
 	ui := lipgloss.JoinVertical(lipgloss.Left, title, tm.content.View(), tm.desc.View(), tm.project.Name, help)
 
-	dialog := lipgloss.Place(tm.main.size.Width, tm.main.size.Height,
+	dialog := lipgloss.Place(tm.main.width, tm.main.height,
 		lipgloss.Left, lipgloss.Center,
 		dialogBoxStyle.Render(ui),
 	)
