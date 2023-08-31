@@ -47,7 +47,6 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 		for _, t := range ntm.main.tasksModel.tasks.Items() {
 			task := t.(task)
 			minOrder = min(minOrder, task.item.ChildOrder)
-			dbg(minOrder)
 		}
 		t.ChildOrder = minOrder - 1
 		idx = 0

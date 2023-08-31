@@ -85,6 +85,8 @@ func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
 	// sm.FilterInputCursorStyle      lipgloss.Style
 	sm.Filter = func(filter string, choice *selection.Choice[selectable]) bool {
 		// todo fuzzier matching would be cool
+		// https://github.com/charmbracelet/bubbles/blob/master/list/list.go#L87
+		// short answer sahilm/fuzzy
 		return strings.Contains(strings.ToLower(choice.Value.Display()), strings.ToLower(filter))
 	}
 	sm.SelectedChoiceStyle = func(c *selection.Choice[selectable]) string {
