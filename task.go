@@ -41,6 +41,12 @@ func newTasksModel(m *mainModel) tasksModel {
 					ts = append(ts, newTask(m, i))
 				}
 			}
+			switch listSort {
+			case defaultSort:
+				sort.Sort(SortByChildOrder(ts))
+			case nameSort:
+				sort.Sort(SortByName(ts))
+			}
 			m.tasksModel.tasks.SetItems(ts)
 		}
 	}
@@ -145,11 +151,21 @@ func (t task) Description() string {
 
 func (t task) FilterValue() string { return t.item.Content }
 
-type SortByChildOrder []todoist.Item
+type ItemSort []list.Item
 
-func (a SortByChildOrder) Len() int           { return len(a) }
-func (a SortByChildOrder) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a SortByChildOrder) Less(i, j int) bool { return a[i].ChildOrder < a[j].ChildOrder }
+type SortByChildOrder ItemSort
+
+func (a SortByChildOrder) Len() int      { return len(a) }
+func (a SortByChildOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a SortByChildOrder) Less(i, j int) bool {
+	return a[i].(task).item.ChildOrder < a[j].(task).item.ChildOrder
+}
+
+type SortByName ItemSort
+
+func (a SortByName) Len() int           { return len(a) }
+func (a SortByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a SortByName) Less(i, j int) bool { return a[i].(task).item.Content < a[j].(task).item.Content }
 
 func (m *mainModel) setTasks(p *project) {
 	items := []todoist.Item{}
@@ -158,10 +174,15 @@ func (m *mainModel) setTasks(p *project) {
 			items = append(items, i)
 		}
 	}
-	sort.Sort(SortByChildOrder(items))
 	tasks := []list.Item{}
 	for _, i := range items {
 		tasks = append(tasks, newTask(m, i))
+	}
+	switch listSort {
+	case defaultSort:
+		sort.Sort(SortByChildOrder(tasks))
+	case nameSort:
+		sort.Sort(SortByName(tasks))
 	}
 	m.tasksModel.tasks.SetItems(tasks)
 }
@@ -250,16 +271,26 @@ Open label… G then L
 
 z ctrl-z undo
 */
-// type sort uint
-//
-// const (
-// 	priority sort = iota
-// 	name
-// 	date
-// 	assignee
-// )
+type projectSort uint
 
-// var Sort sort = date
+const (
+	defaultSort projectSort = iota
+	prioritySort
+	nameSort
+	dateSort
+	assigneeSort
+)
+
+var listSort projectSort = defaultSort
+
+func (tm *tasksModel) setSort(ps projectSort) {
+	if ps == listSort { // toggle off
+		listSort = defaultSort
+	} else {
+		listSort = ps
+	}
+	tm.refresh()
+}
 
 func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
@@ -267,6 +298,11 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch msg.String() {
+			case "v":
+				t := tm.main.tasksModel.tasks.SelectedItem().(task)
+				if t.url != "" {
+					cmds = append(cmds, tm.main.tasksModel.OpenUrl(t.url))
+				}
 			case "g":
 				tm.gMenu = true
 				// case "u":
@@ -299,15 +335,14 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 					cmds = append(cmds, tm.main.OpenProjects(chooseProject))
 					tm.gMenu = false
 				} else {
-					// Sort = priority
+					tm.setSort(prioritySort)
 				}
-				// todo apply this sort
-			// case "n":
-			// 	Sort = name
-			// case "d":
-			// 	Sort = date
-			// case "r":
-			// 	Sort = assignee
+			case "n":
+				tm.setSort(nameSort)
+			case "d":
+				tm.setSort(dateSort)
+			case "r":
+				tm.setSort(assigneeSort)
 			case "m":
 				cmds = append(cmds, tm.main.OpenProjects(moveToProject))
 			case "enter":
