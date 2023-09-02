@@ -171,7 +171,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
 	expr := filt.Filter(f.Query)
 	refresh := func() {
-		pm.main.setTasksFromFilter(expr)
+		pm.main.setTasksFromFilter(f.Name, expr)
 	}
 	pm.main.tasksModel.tasks.FilterInput.SetValue("")
 	pm.main.tasksModel.refresh = refresh

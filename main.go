@@ -11,6 +11,7 @@ import (
 	"github.com/psethwick/tuidoist/todoist"
 
 	"github.com/psethwick/tuidoist/client"
+	"github.com/psethwick/tuidoist/status"
 )
 
 type viewState uint
@@ -24,15 +25,16 @@ const (
 )
 
 type mainModel struct {
-	client        *todoist.Client
-	height        int
-	width         int
-	state         viewState
-	ctx           context.Context
-	chooseModel   chooseModel
-	tasksModel    tasksModel
-	newTaskModel  newTaskModel
-	taskMenuModel taskMenuModel
+	client         *todoist.Client
+	height         int
+	width          int
+	state          viewState
+	ctx            context.Context
+	chooseModel    chooseModel
+	tasksModel     tasksModel
+	newTaskModel   newTaskModel
+	taskMenuModel  taskMenuModel
+	statusBarModel status.Model
 }
 
 func initialModel() *mainModel {
@@ -43,6 +45,7 @@ func initialModel() *mainModel {
 	m.chooseModel = newChooseModel(&m)
 	m.newTaskModel = newNewTaskModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
+	m.statusBarModel = status.New()
 	return &m
 }
 
@@ -52,15 +55,22 @@ func (m *mainModel) refreshFromStore() tea.Cmd {
 }
 
 func (m *mainModel) sync() tea.Msg {
+	m.statusBarModel.SetSyncStatus(status.Syncing)
 	err := m.client.Sync(m.ctx)
 	if err != nil {
 		dbg("Synced", err)
+		m.statusBarModel.SetSyncStatus(status.Error)
+		return nil
 	}
 	err = client.WriteCache(m.client.Store)
 	if err != nil {
 		dbg(err)
+		m.statusBarModel.SetSyncStatus(status.Error)
+		return nil
 	}
 	m.refreshFromStore()
+	m.statusBarModel.SetSyncStatus(status.Synced)
+
 	return nil
 }
 
@@ -69,14 +79,14 @@ func (m *mainModel) Init() tea.Cmd {
 }
 
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := listStyle.GetFrameSize()
-		h2, v2 := tuiStyle.GetFrameSize()
-		m.height = msg.Height - v2
-		m.width = msg.Width - h2
-		m.tasksModel.tasks.SetSize(msg.Width-h-h2, msg.Height-v-v2)
+		// h2, v2 := tuiStyle.GetFrameSize()
+		m.height = msg.Height - 1 // statusbar
+		m.width = msg.Width
+		m.tasksModel.tasks.SetSize(msg.Width-h, msg.Height-v-1)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+w":
@@ -87,17 +97,18 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	switch m.state {
 	case chooseState:
-		cmd = m.chooseModel.Update(msg)
+		cmds = append(cmds, m.chooseModel.Update(msg))
 	case tasksState:
-		cmd = m.tasksModel.Update(msg)
+		cmds = append(cmds, m.tasksModel.Update(msg))
 	case newTaskTopState:
 		fallthrough
 	case newTaskBottomState:
-		cmd = m.newTaskModel.Update(msg)
+		cmds = append(cmds, m.newTaskModel.Update(msg))
 	case taskMenuState:
-		cmd = m.taskMenuModel.Update(msg)
+		cmds = append(cmds, m.taskMenuModel.Update(msg))
 	}
-	return m, cmd
+	cmds = append(cmds, m.statusBarModel.Update(msg))
+	return m, tea.Batch(cmds...)
 }
 
 func (m *mainModel) View() string {
@@ -122,9 +133,7 @@ func (m *mainModel) View() string {
 			m.tasksModel.View(),
 		)
 	}
-	return tuiStyle.Render(
-		lipgloss.Place(m.width, m.height, lipgloss.Left, lipgloss.Top, s),
-	)
+	return lipgloss.JoinVertical(lipgloss.Left, m.statusBarModel.View(), s)
 }
 
 func dbg(a ...any) {

@@ -184,10 +184,11 @@ func (m *mainModel) setTasks(p *project) {
 	case nameSort:
 		sort.Sort(SortByName(tasks))
 	}
+	m.statusBarModel.SetTitle(p.Name)
 	m.tasksModel.tasks.SetItems(tasks)
 }
 
-func (m *mainModel) setTasksFromFilter(expr filt.Expression) {
+func (m *mainModel) setTasksFromFilter(title string, expr filt.Expression) {
 	tasks := []list.Item{}
 	projects := m.client.Store.Projects
 	for _, i := range m.client.Store.Items {
@@ -195,6 +196,7 @@ func (m *mainModel) setTasksFromFilter(expr filt.Expression) {
 			tasks = append(tasks, newTask(m, i))
 		}
 	}
+	m.statusBarModel.SetTitle(title)
 	m.tasksModel.tasks.SetItems(tasks)
 }
 
