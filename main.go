@@ -12,6 +12,7 @@ import (
 
 	"github.com/psethwick/tuidoist/client"
 	"github.com/psethwick/tuidoist/status"
+	"github.com/psethwick/tuidoist/tasklist"
 )
 
 type viewState uint
@@ -32,9 +33,12 @@ type mainModel struct {
 	ctx            context.Context
 	chooseModel    chooseModel
 	tasksModel     tasksModel
+	taskList       tasklist.TaskList
 	newTaskModel   newTaskModel
 	taskMenuModel  taskMenuModel
 	statusBarModel status.Model
+	refresh        func()
+	gMenu          bool
 }
 
 func initialModel() *mainModel {
@@ -42,6 +46,7 @@ func initialModel() *mainModel {
 	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
 	m.tasksModel = newTasksModel(&m)
+	m.taskList = tasklist.New(dbg)
 	m.chooseModel = newChooseModel(&m)
 	m.newTaskModel = newNewTaskModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
@@ -50,7 +55,7 @@ func initialModel() *mainModel {
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
-	m.tasksModel.refresh()
+	m.refresh()
 	return nil
 }
 
@@ -75,6 +80,24 @@ func (m *mainModel) sync() tea.Msg {
 }
 
 func (m *mainModel) Init() tea.Cmd {
+	m.refresh = func() {
+		ts := []fmt.Stringer{}
+		if len(m.client.Store.Projects) > 0 {
+			p := m.client.Store.Projects[0]
+			for _, i := range m.client.Store.Items {
+				if i.ProjectID == p.ID {
+					ts = append(ts, newTask(m, i))
+				}
+			}
+			// switch listSort {
+			// case defaultSort:
+			// 	sort.Sort(SortByChildOrder(ts))
+			// case nameSort:
+			// 	sort.Sort(SortByName(ts))
+			// }
+			m.taskList.List.ResetItems(ts...)
+		}
+	}
 	return tea.Batch(m.refreshFromStore(), m.sync)
 }
 
@@ -82,11 +105,11 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		h, v := listStyle.GetFrameSize()
-		// h2, v2 := tuiStyle.GetFrameSize()
 		m.height = msg.Height - 1 // statusbar
 		m.width = msg.Width
-		m.tasksModel.tasks.SetSize(msg.Width-h, msg.Height-v-1)
+		// for children to get the size they can actually have
+		m.taskList.List.Height = msg.Height - 1
+		m.taskList.List.Width = msg.Width
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+w":
@@ -99,7 +122,91 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case chooseState:
 		cmds = append(cmds, m.chooseModel.Update(msg))
 	case tasksState:
-		cmds = append(cmds, m.tasksModel.Update(msg))
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "j":
+				m.taskList.List.MoveCursor(1)
+			case "k":
+				m.taskList.List.MoveCursor(-1)
+			case "v":
+				// t := tm.main.tasksModel.tasks.SelectedItem().(task)
+				// if t.url != "" {
+				// 	cmds = append(cmds, tm.main.tasksModel.OpenUrl(t.url))
+				// }
+			case "G":
+				m.taskList.List.Bottom()
+			case "g":
+				if m.gMenu {
+					m.taskList.List.Top()
+					m.gMenu = false
+
+				} else {
+					m.gMenu = true
+				}
+				// case "u":
+				// 	if tm.gMenu {
+				// todo how to do upcoming
+				// 	}
+			case "c":
+				cmds = append(cmds, m.completeTask())
+				m.state = tasksState
+			case "delete":
+				// TODO confirmation
+				cmds = append(cmds, m.deleteTask())
+			case "f":
+				if m.gMenu {
+					cmds = append(cmds, m.OpenFilters())
+					m.gMenu = false
+				}
+			case "i":
+				if m.gMenu {
+					// TODO
+					cmds = append(cmds, m.openInbox())
+					m.gMenu = false
+				}
+			case "t":
+				if m.gMenu {
+					cmds = append(cmds, m.chooseModel.gotoFilter(filter{Name: "Today", Query: "today"}))
+					m.gMenu = false
+				}
+			case "p":
+				if m.gMenu {
+					cmds = append(cmds, m.OpenProjects(chooseProject))
+					m.gMenu = false
+				} else {
+					// TODO
+					// tm.setSort(prioritySort)
+				}
+			case "n":
+				// TODO
+				//tm.setSort(nameSort)
+			case "d":
+				// tm.setSort(dateSort)
+			case "r":
+				// tm.setSort(assigneeSort)
+			case "m":
+				cmds = append(cmds, m.OpenProjects(moveToProject))
+			case "enter":
+				// t := tm.tasks.SelectedItem().(task)
+				// tm.main.taskMenuModel.project = tm.main.client.Store.FindProject(t.item.ProjectID)
+				// tm.main.taskMenuModel.item = t.item
+				// tm.main.taskMenuModel.content.SetValue(t.item.Content)
+				// tm.main.taskMenuModel.desc.SetValue(t.item.Description)
+				// tm.main.state = taskMenuState
+			case "a":
+				// tm.GiveHeight(tm.main.newTaskModel.Height())
+				m.taskList.List.Height = m.height - m.newTaskModel.Height()
+				m.newTaskModel.content.Focus()
+				m.state = newTaskBottomState
+			case "A":
+				m.taskList.List.Height = m.height - m.newTaskModel.Height()
+				m.newTaskModel.content.Focus()
+				m.state = newTaskTopState
+			default:
+				m.gMenu = false
+			}
+		}
 	case newTaskTopState:
 		fallthrough
 	case newTaskBottomState:
@@ -117,20 +224,20 @@ func (m *mainModel) View() string {
 	case chooseState:
 		s = m.chooseModel.View()
 	case tasksState:
-		s = m.tasksModel.View()
+		s = m.taskList.View()
 	case taskMenuState:
 		s = m.taskMenuModel.View()
 	case newTaskBottomState:
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
-			m.tasksModel.View(),
+			m.taskList.View(),
 			m.newTaskModel.View(),
 		)
 	case newTaskTopState:
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.newTaskModel.View(),
-			m.tasksModel.View(),
+			m.taskList.View(),
 		)
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, m.statusBarModel.View(), s)

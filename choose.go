@@ -151,13 +151,11 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 	if err == nil {
 		switch pm.purpose {
 		case chooseProject:
-			refresh := func() {
+			pm.main.refresh = func() {
 				pm.main.setTasks(&prj)
 			}
-			pm.main.tasksModel.refresh = refresh
-			pm.main.tasksModel.tasks.FilterInput.SetValue("")
 			ProjectID = prj.ID
-			refresh()
+			pm.main.refresh()
 			pm.main.switchProject(&prj)
 		case moveToProject:
 			task := pm.main.tasksModel.tasks.SelectedItem().(task)

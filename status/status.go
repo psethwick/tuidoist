@@ -78,7 +78,7 @@ func New() Model {
 	m := Model{
 		bar: &sb,
 	}
-	sb.SetContent("Syncing", "Inbox", "", "0/0")
+	sb.SetContent("Syncing", "Inbox", "", "0")
 
 	return m
 }

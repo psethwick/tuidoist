@@ -67,6 +67,10 @@ type task struct {
 	url       string
 }
 
+func (t task) String() string {
+	return fmt.Sprintf("%s\n%s", t.title, t.summary)
+}
+
 func reformatDate(d string, from string, to string) string {
 	// slicing d because _sometimes_ there's timezone info on the date
 	// ain't nobody got time for that
@@ -175,8 +179,10 @@ func (m *mainModel) setTasks(p *project) {
 		}
 	}
 	tasks := []list.Item{}
+	tasks2 := []fmt.Stringer{}
 	for _, i := range items {
 		tasks = append(tasks, newTask(m, i))
+		tasks2 = append(tasks2, newTask(m, i))
 	}
 	switch listSort {
 	case defaultSort:
@@ -185,6 +191,7 @@ func (m *mainModel) setTasks(p *project) {
 		sort.Sort(SortByName(tasks))
 	}
 	m.statusBarModel.SetTitle(p.Name)
+	m.taskList.List.ResetItems(tasks2...)
 	m.tasksModel.tasks.SetItems(tasks)
 }
 
@@ -249,19 +256,19 @@ func (tm *tasksModel) OpenUrl(url string) func() tea.Msg {
 	}
 }
 
-func (tm *tasksModel) openInbox() tea.Cmd {
-	if len(tm.main.client.Store.Projects) == 0 {
+func (m *mainModel) openInbox() tea.Cmd {
+	if len(m.client.Store.Projects) == 0 {
 		return nil
 	}
-	prj := project(tm.main.client.Store.Projects[0])
+	prj := project(m.client.Store.Projects[0])
 	var cmd tea.Cmd
 	refresh := func() {
-		tm.main.setTasks(&prj)
+		m.setTasks(&prj)
 	}
-	tm.main.tasksModel.refresh = refresh
+	m.tasksModel.refresh = refresh
 	refresh()
-	tm.main.tasksModel.tasks.FilterInput.SetValue("")
-	tm.main.tasksModel.title = "Inbox"
+	// tm.main.tasksModel.tasks.FilterInput.SetValue("")
+	// tm.main.tasksModel.title = "Inbox"
 	return cmd
 }
 
@@ -324,7 +331,7 @@ func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
 				}
 			case "i":
 				if tm.gMenu {
-					cmds = append(cmds, tm.openInbox())
+					// cmds = append(cmds, tm.openInbox())
 					tm.gMenu = false
 				}
 			case "t":
