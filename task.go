@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -25,39 +24,39 @@ type tasksModel struct {
 
 var mdUrlRegex = regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
 
-func newTasksModel(m *mainModel) tasksModel {
-	tasks := list.New([]list.Item{}, taskDelegate{}, 40, 30)
-	tasks.SetShowTitle(false)
-	tasks.SetShowHelp(false)
-	tasks.SetShowPagination(false)
-	tasks.SetShowStatusBar(false)
-	tasks.DisableQuitKeybindings()
-	refresh := func() {
-		ts := []list.Item{}
-		if len(m.client.Store.Projects) > 0 {
-			p := m.client.Store.Projects[0]
-			for _, i := range m.client.Store.Items {
-				if i.ProjectID == p.ID {
-					ts = append(ts, newTask(m, i))
-				}
-			}
-			switch listSort {
-			case defaultSort:
-				sort.Sort(SortByChildOrder(ts))
-			case nameSort:
-				sort.Sort(SortByName(ts))
-			}
-			m.tasksModel.tasks.SetItems(ts)
-		}
-	}
-
-	return tasksModel{
-		tasks:   tasks,
-		main:    m,
-		refresh: refresh,
-		title:   "Inbox",
-	}
-}
+// func newTasksModel(m *mainModel) tasksModel {
+// 	tasks := list.New([]list.Item{}, taskDelegate{}, 40, 30)
+// 	tasks.SetShowTitle(false)
+// 	tasks.SetShowHelp(false)
+// 	tasks.SetShowPagination(false)
+// 	tasks.SetShowStatusBar(false)
+// 	tasks.DisableQuitKeybindings()
+// 	refresh := func() {
+// 		ts := []list.Item{}
+// 		if len(m.client.Store.Projects) > 0 {
+// 			p := m.client.Store.Projects[0]
+// 			for _, i := range m.client.Store.Items {
+// 				if i.ProjectID == p.ID {
+// 					ts = append(ts, newTask(m, i))
+// 				}
+// 			}
+// 			switch listSort {
+// 			case defaultSort:
+// 				m.taskList.List.LessFunc = ChildOrderLess
+// 			case nameSort:
+// 				m.taskList.List.LessFunc = NameLess
+// 			}
+// 			m.tasksModel.tasks.SetItems(ts)
+// 		}
+// 	}
+//
+// 	return tasksModel{
+// 		tasks:   tasks,
+// 		main:    m,
+// 		refresh: refresh,
+// 		title:   "Inbox",
+// 	}
+// }
 
 type task struct {
 	item      todoist.Item
@@ -134,6 +133,7 @@ func newTask(m *mainModel, item todoist.Item) task {
 	}
 	title := fmt.Sprint(indent, checkbox, content, labels)
 	summary = fmt.Sprintf("%s\n%s", fmt.Sprint(indent, "   ", summary), fmt.Sprint(indent, item.Description))
+
 	return task{
 		item:    item,
 		title:   title,
@@ -157,20 +157,6 @@ func (t task) FilterValue() string { return t.item.Content }
 
 type ItemSort []list.Item
 
-type SortByChildOrder ItemSort
-
-func (a SortByChildOrder) Len() int      { return len(a) }
-func (a SortByChildOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortByChildOrder) Less(i, j int) bool {
-	return a[i].(task).item.ChildOrder < a[j].(task).item.ChildOrder
-}
-
-type SortByName ItemSort
-
-func (a SortByName) Len() int           { return len(a) }
-func (a SortByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a SortByName) Less(i, j int) bool { return a[i].(task).item.Content < a[j].(task).item.Content }
-
 func (m *mainModel) setTasks(p *project) {
 	items := []todoist.Item{}
 	for _, i := range m.client.Store.Items {
@@ -178,25 +164,22 @@ func (m *mainModel) setTasks(p *project) {
 			items = append(items, i)
 		}
 	}
-	tasks := []list.Item{}
-	tasks2 := []fmt.Stringer{}
+	tasks := []fmt.Stringer{}
 	for _, i := range items {
 		tasks = append(tasks, newTask(m, i))
-		tasks2 = append(tasks2, newTask(m, i))
 	}
 	switch listSort {
 	case defaultSort:
-		sort.Sort(SortByChildOrder(tasks))
+		m.taskList.List.LessFunc = ChildOrderLess
 	case nameSort:
-		sort.Sort(SortByName(tasks))
+		m.taskList.List.LessFunc = NameLess
 	}
 	m.statusBarModel.SetTitle(p.Name)
-	m.taskList.List.ResetItems(tasks2...)
-	m.tasksModel.tasks.SetItems(tasks)
+	m.taskList.List.ResetItems(tasks...)
 }
 
 func (m *mainModel) setTasksFromFilter(title string, expr filt.Expression) {
-	tasks := []list.Item{}
+	tasks := []fmt.Stringer{}
 	projects := m.client.Store.Projects
 	for _, i := range m.client.Store.Items {
 		if res, _ := filt.Eval(expr, i, projects); res {
@@ -204,13 +187,16 @@ func (m *mainModel) setTasksFromFilter(title string, expr filt.Expression) {
 		}
 	}
 	m.statusBarModel.SetTitle(title)
-	m.tasksModel.tasks.SetItems(tasks)
+	m.taskList.List.ResetItems(tasks...)
 }
 
 // todo confirm
 func (m *mainModel) deleteTask() func() tea.Msg {
-	t := m.tasksModel.tasks.SelectedItem().(task)
-	m.tasksModel.tasks.RemoveItem(m.tasksModel.tasks.Index())
+	str, err := m.taskList.RemoveCurrentItem()
+	if err != nil {
+		dbg(err)
+	}
+	t := str.(task)
 	return func() tea.Msg {
 		err := m.client.DeleteItem(m.ctx, []string{t.item.ID})
 		if err != nil {
@@ -220,12 +206,28 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 	}
 }
 
+func updateTask(t task) func(fmt.Stringer) (fmt.Stringer, error) {
+	return func(fmt.Stringer) (fmt.Stringer, error) {
+		return t, nil
+	}
+}
+
 func (m *mainModel) completeTask() func() tea.Msg {
-	t := m.tasksModel.tasks.SelectedItem().(task)
-	t.completed = true
-	m.tasksModel.tasks.SetItem(m.tasksModel.tasks.Index(), t)
+	idx, err := m.taskList.List.GetCursorIndex()
+	if err != nil {
+		dbg(err)
+		return func() tea.Msg { return nil }
+	}
+	t, err := m.taskList.List.GetItem(idx)
+	tsk := t.(task)
+	if err != nil {
+		dbg(err)
+		return func() tea.Msg { return nil }
+	}
+	tsk.completed = true
+	m.taskList.List.UpdateItem(idx, updateTask(tsk))
 	return func() tea.Msg {
-		err := m.client.CloseItem(m.ctx, []string{t.item.ID})
+		err := m.client.CloseItem(m.ctx, []string{tsk.item.ID})
 		if err != nil {
 			dbg("complete task err", err)
 		}
@@ -247,7 +249,7 @@ func (tm *tasksModel) View() string {
 	return listStyle.Render(tm.tasks.View())
 }
 
-func (tm *tasksModel) OpenUrl(url string) func() tea.Msg {
+func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
 	return func() tea.Msg {
 		// todo mac: open, win: ???
 		openCmd := exec.Command("xdg-open", url)
@@ -265,7 +267,7 @@ func (m *mainModel) openInbox() tea.Cmd {
 	refresh := func() {
 		m.setTasks(&prj)
 	}
-	m.tasksModel.refresh = refresh
+	m.refresh = refresh
 	refresh()
 	// tm.main.tasksModel.tasks.FilterInput.SetValue("")
 	// tm.main.tasksModel.title = "Inbox"
@@ -301,81 +303,81 @@ func (tm *tasksModel) setSort(ps projectSort) {
 	tm.refresh()
 }
 
-func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
-	var cmds []tea.Cmd
-	if tm.tasks.FilterState() != list.Filtering {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "v":
-				t := tm.main.tasksModel.tasks.SelectedItem().(task)
-				if t.url != "" {
-					cmds = append(cmds, tm.main.tasksModel.OpenUrl(t.url))
-				}
-			case "g":
-				tm.gMenu = true
-				// case "u":
-				// 	if tm.gMenu {
-				// todo how to do upcoming
-				// 	}
-			case "c":
-				cmds = append(cmds, tm.main.completeTask())
-				tm.main.state = tasksState
-			case "delete":
-				// TODO confirmation
-				cmds = append(cmds, tm.main.deleteTask())
-			case "f":
-				if tm.gMenu {
-					cmds = append(cmds, tm.main.OpenFilters())
-					tm.gMenu = false
-				}
-			case "i":
-				if tm.gMenu {
-					// cmds = append(cmds, tm.openInbox())
-					tm.gMenu = false
-				}
-			case "t":
-				if tm.gMenu {
-					cmds = append(cmds, tm.main.chooseModel.gotoFilter(filter{Name: "Today", Query: "today"}))
-					tm.gMenu = false
-				}
-			case "p":
-				if tm.gMenu {
-					cmds = append(cmds, tm.main.OpenProjects(chooseProject))
-					tm.gMenu = false
-				} else {
-					tm.setSort(prioritySort)
-				}
-			case "n":
-				tm.setSort(nameSort)
-			case "d":
-				tm.setSort(dateSort)
-			case "r":
-				tm.setSort(assigneeSort)
-			case "m":
-				cmds = append(cmds, tm.main.OpenProjects(moveToProject))
-			case "enter":
-				t := tm.tasks.SelectedItem().(task)
-				tm.main.taskMenuModel.project = tm.main.client.Store.FindProject(t.item.ProjectID)
-				tm.main.taskMenuModel.item = t.item
-				tm.main.taskMenuModel.content.SetValue(t.item.Content)
-				tm.main.taskMenuModel.desc.SetValue(t.item.Description)
-				tm.main.state = taskMenuState
-			case "a":
-				tm.GiveHeight(tm.main.newTaskModel.Height())
-				tm.main.newTaskModel.content.Focus()
-				tm.main.state = newTaskBottomState
-			case "A":
-				tm.GiveHeight(tm.main.newTaskModel.Height())
-				tm.main.newTaskModel.content.Focus()
-				tm.main.state = newTaskTopState
-			default:
-				tm.gMenu = false
-			}
-		}
-	}
-	tasks, cmd := tm.tasks.Update(msg)
-	tm.tasks = tasks
-	cmds = append(cmds, cmd)
-	return tea.Batch(cmds...)
-}
+// func (tm *tasksModel) Update(msg tea.Msg) tea.Cmd {
+// 	var cmds []tea.Cmd
+// 	if tm.tasks.FilterState() != list.Filtering {
+// 		switch msg := msg.(type) {
+// 		case tea.KeyMsg:
+// 			switch msg.String() {
+// 			case "v":
+// 				t := tm.
+// 				if t.url != "" {
+// 					cmds = append(cmds, tm.main.tasksModel.OpenUrl(t.url))
+// 				}
+// 			case "g":
+// 				tm.gMenu = true
+// 				// case "u":
+// 				// 	if tm.gMenu {
+// 				// todo how to do upcoming
+// 				// 	}
+// 			case "c":
+// 				cmds = append(cmds, tm.main.completeTask())
+// 				tm.main.state = tasksState
+// 			case "delete":
+// 				// TODO confirmation
+// 				cmds = append(cmds, tm.main.deleteTask())
+// 			case "f":
+// 				if tm.gMenu {
+// 					cmds = append(cmds, tm.main.OpenFilters())
+// 					tm.gMenu = false
+// 				}
+// 			case "i":
+// 				if tm.gMenu {
+// 					// cmds = append(cmds, tm.openInbox())
+// 					tm.gMenu = false
+// 				}
+// 			case "t":
+// 				if tm.gMenu {
+// 					cmds = append(cmds, tm.main.chooseModel.gotoFilter(filter{Name: "Today", Query: "today"}))
+// 					tm.gMenu = false
+// 				}
+// 			case "p":
+// 				if tm.gMenu {
+// 					cmds = append(cmds, tm.main.OpenProjects(chooseProject))
+// 					tm.gMenu = false
+// 				} else {
+// 					tm.setSort(prioritySort)
+// 				}
+// 			case "n":
+// 				tm.setSort(nameSort)
+// 			case "d":
+// 				tm.setSort(dateSort)
+// 			case "r":
+// 				tm.setSort(assigneeSort)
+// 			case "m":
+// 				cmds = append(cmds, tm.main.OpenProjects(moveToProject))
+// 			case "enter":
+// 				t := tm.tasks.SelectedItem().(task)
+// 				tm.main.taskMenuModel.project = tm.main.client.Store.FindProject(t.item.ProjectID)
+// 				tm.main.taskMenuModel.item = t.item
+// 				tm.main.taskMenuModel.content.SetValue(t.item.Content)
+// 				tm.main.taskMenuModel.desc.SetValue(t.item.Description)
+// 				tm.main.state = taskMenuState
+// 			case "a":
+// 				tm.GiveHeight(tm.main.newTaskModel.Height())
+// 				tm.main.newTaskModel.content.Focus()
+// 				tm.main.state = newTaskBottomState
+// 			case "A":
+// 				tm.GiveHeight(tm.main.newTaskModel.Height())
+// 				tm.main.newTaskModel.content.Focus()
+// 				tm.main.state = newTaskTopState
+// 			default:
+// 				tm.gMenu = false
+// 			}
+// 		}
+// 	}
+// 	tasks, cmd := tm.tasks.Update(msg)
+// 	tm.tasks = tasks
+// 	cmds = append(cmds, cmd)
+// 	return tea.Batch(cmds...)
+// }

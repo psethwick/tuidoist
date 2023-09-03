@@ -158,8 +158,11 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			pm.main.refresh()
 			pm.main.switchProject(&prj)
 		case moveToProject:
-			task := pm.main.tasksModel.tasks.SelectedItem().(task)
-			pm.main.tasksModel.tasks.RemoveItem(pm.main.tasksModel.tasks.Index())
+			st, err := pm.main.taskList.RemoveCurrentItem()
+			if err != nil {
+				dbg(err)
+			}
+			task := st.(task)
 			cmd = pm.main.MoveItem(&task.item, prj.ID)
 		}
 	}
@@ -171,9 +174,8 @@ func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
 	refresh := func() {
 		pm.main.setTasksFromFilter(f.Name, expr)
 	}
-	pm.main.tasksModel.tasks.FilterInput.SetValue("")
-	pm.main.tasksModel.refresh = refresh
-	pm.main.tasksModel.title = f.Name
+	pm.main.refresh = refresh
+	pm.main.statusBarModel.SetTitle(f.Name)
 	refresh()
 	return nil
 }
@@ -223,6 +225,6 @@ func newChooseModel(m *mainModel) chooseModel {
 }
 
 func (m *mainModel) switchProject(p *project) {
-	m.tasksModel.title = p.Name
+	m.statusBarModel.SetTitle(p.Name)
 	m.state = chooseState
 }

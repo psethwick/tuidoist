@@ -32,7 +32,6 @@ type mainModel struct {
 	state          viewState
 	ctx            context.Context
 	chooseModel    chooseModel
-	tasksModel     tasksModel
 	taskList       tasklist.TaskList
 	newTaskModel   newTaskModel
 	taskMenuModel  taskMenuModel
@@ -45,13 +44,20 @@ func initialModel() *mainModel {
 	m := mainModel{}
 	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
-	m.tasksModel = newTasksModel(&m)
-	m.taskList = tasklist.New(dbg)
+	m.taskList = tasklist.New(ChildOrderLess, dbg)
 	m.chooseModel = newChooseModel(&m)
 	m.newTaskModel = newNewTaskModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
 	return &m
+}
+
+func ChildOrderLess(a fmt.Stringer, b fmt.Stringer) bool {
+	return a.(task).item.ChildOrder < b.(task).item.ChildOrder
+}
+
+func NameLess(a fmt.Stringer, b fmt.Stringer) bool {
+	return a.(task).item.Content < b.(task).item.Content
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
@@ -89,12 +95,12 @@ func (m *mainModel) Init() tea.Cmd {
 					ts = append(ts, newTask(m, i))
 				}
 			}
-			// switch listSort {
-			// case defaultSort:
-			// 	sort.Sort(SortByChildOrder(ts))
-			// case nameSort:
-			// 	sort.Sort(SortByName(ts))
-			// }
+			switch listSort {
+			case defaultSort:
+				m.taskList.List.LessFunc = ChildOrderLess
+			case nameSort:
+				m.taskList.List.LessFunc = NameLess
+			}
 			m.taskList.List.ResetItems(ts...)
 		}
 	}
@@ -197,10 +203,12 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "a":
 				// tm.GiveHeight(tm.main.newTaskModel.Height())
 				m.taskList.List.Height = m.height - m.newTaskModel.Height()
+				m.taskList.List.Bottom()
 				m.newTaskModel.content.Focus()
 				m.state = newTaskBottomState
 			case "A":
 				m.taskList.List.Height = m.height - m.newTaskModel.Height()
+				m.taskList.List.Top()
 				m.newTaskModel.content.Focus()
 				m.state = newTaskTopState
 			default:
@@ -222,18 +230,23 @@ func (m *mainModel) View() string {
 	var s string
 	switch m.state {
 	case chooseState:
+		dbg("choose")
 		s = m.chooseModel.View()
 	case tasksState:
+		dbg("tassks")
 		s = m.taskList.View()
 	case taskMenuState:
+		dbg("tasksmenu")
 		s = m.taskMenuModel.View()
 	case newTaskBottomState:
+		dbg("tas bot")
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.taskList.View(),
 			m.newTaskModel.View(),
 		)
 	case newTaskTopState:
+		dbg("tas top")
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.newTaskModel.View(),

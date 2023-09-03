@@ -39,20 +39,25 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	if ProjectID != "" {
 		t.ProjectID = ProjectID
 	}
-	var idx int
 	if ntm.main.state == newTaskBottomState {
-		idx = len(ntm.main.tasksModel.tasks.Items()) + 1
+		maxOrder := 0
+		for _, t := range ntm.main.taskList.List.GetAllItems() {
+			task := t.(task)
+			maxOrder = max(maxOrder, task.item.ChildOrder)
+		}
+		t.ChildOrder = maxOrder + 1
+		ntm.main.taskList.List.Bottom()
 	} else {
 		minOrder := 0
-		for _, t := range ntm.main.tasksModel.tasks.Items() {
+		for _, t := range ntm.main.taskList.List.GetAllItems() {
 			task := t.(task)
 			minOrder = min(minOrder, task.item.ChildOrder)
 		}
 		t.ChildOrder = minOrder - 1
-		idx = 0
+		ntm.main.taskList.List.Top()
 	}
-	ntm.main.tasksModel.tasks.InsertItem(idx, newTask(ntm.main, t))
-	ntm.main.tasksModel.tasks.Select(idx)
+	ntm.main.taskList.List.AddItems(newTask(ntm.main, t))
+	ntm.main.taskList.List.Sort()
 	return func() tea.Msg {
 		// todo separate quick add?
 		ntm.main.client.AddItem(ntm.main.ctx, t)
@@ -74,6 +79,7 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 			ntm.content.SetValue("")
 			ntm.main.taskList.List.Height = ntm.main.height
 			ntm.content.Blur()
+			ntm.main.state = tasksState
 		}
 	}
 	input, cmd := ntm.content.Update(msg)
