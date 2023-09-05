@@ -9,22 +9,23 @@ import (
 
 type TaskList struct {
 	List   bubblelister.Model
-	gMenu  bool
 	logger func(...any)
 }
 
 func (tl *TaskList) RemoveCurrentItem() (fmt.Stringer, error) {
 	idx, err := tl.List.GetCursorIndex()
+
+	tl.logger("idx", idx)
 	if err != nil {
 		return nil, err
 	}
+	tl.logger("cound", len(tl.List.GetAllItems()))
 	str, err := tl.List.RemoveIndex(idx)
 	if err != nil {
 		return nil, err
 	}
 	return str, nil
 }
-
 
 func New(lessFunc func(fmt.Stringer, fmt.Stringer) bool, logger func(...any)) TaskList {
 
@@ -36,7 +37,8 @@ func New(lessFunc func(fmt.Stringer, fmt.Stringer) bool, logger func(...any)) Ta
 	bl.CurrentStyle = termenv.Style{}.Foreground(p.Color("#F793FF"))
 
 	return TaskList{
-		List: bl,
+		List:   bl,
+		logger: logger,
 	}
 }
 

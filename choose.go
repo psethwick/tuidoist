@@ -146,13 +146,20 @@ func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
 
 func (pm *chooseModel) handleChooseProject() tea.Cmd {
 	p, err := pm.chooser.Value()
-	prj := p.(project)
-	var cmd tea.Cmd
+	prj, ok := p.(project)
+	if !ok {
+		return nil
+	}
+	var cmds []tea.Cmd
 	if err == nil {
 		switch pm.purpose {
 		case chooseProject:
 			pm.main.refresh = func() {
+				idx, err := pm.main.taskList.List.GetCursorIndex()
 				pm.main.setTasks(&prj)
+				if err == nil {
+					pm.main.taskList.List.SetCursor(idx)
+				}
 			}
 			ProjectID = prj.ID
 			pm.main.refresh()
@@ -162,17 +169,25 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			if err != nil {
 				dbg(err)
 			}
-			task := st.(task)
-			cmd = pm.main.MoveItem(&task.item, prj.ID)
+			task, ok := st.(task)
+			if ok {
+				cmds = append(cmds, pm.main.MoveItem(&task.item, prj.ID))
+			}
 		}
 	}
-	return cmd
+	pm.main.state = tasksState
+	cmds = append(cmds, pm.chooser.Init())
+	return tea.Batch(cmds...)
 }
 
 func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
 	expr := filt.Filter(f.Query)
 	refresh := func() {
+		idx, err := pm.main.taskList.List.GetCursorIndex()
 		pm.main.setTasksFromFilter(f.Name, expr)
+		if err == nil {
+			pm.main.taskList.List.SetCursor(idx)
+		}
 	}
 	pm.main.refresh = refresh
 	pm.main.statusBarModel.SetTitle(f.Name)
@@ -188,7 +203,9 @@ func (pm *chooseModel) handleChooseFilter() tea.Cmd {
 	}
 	flt := f.(filter)
 	ProjectID = ""
-	return pm.gotoFilter(flt)
+	cmd := pm.chooser.Init()
+	pm.main.state = tasksState
+	return tea.Batch(pm.gotoFilter(flt), cmd)
 }
 
 func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
@@ -205,8 +222,6 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 			case chooseFilter:
 				cmds = append(cmds, pm.handleChooseFilter())
 			}
-			pm.main.state = tasksState
-			cmds = append(cmds, pm.chooser.Init())
 			return tea.Batch(cmds...)
 		case "esc":
 			pm.main.state = tasksState

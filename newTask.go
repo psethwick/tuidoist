@@ -39,6 +39,7 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	if ProjectID != "" {
 		t.ProjectID = ProjectID
 	}
+	var gotoNew func() error
 	if ntm.main.state == newTaskBottomState {
 		maxOrder := 0
 		for _, t := range ntm.main.taskList.List.GetAllItems() {
@@ -46,7 +47,7 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 			maxOrder = max(maxOrder, task.item.ChildOrder)
 		}
 		t.ChildOrder = maxOrder + 1
-		ntm.main.taskList.List.Bottom()
+		gotoNew = ntm.main.taskList.List.Bottom
 	} else {
 		minOrder := 0
 		for _, t := range ntm.main.taskList.List.GetAllItems() {
@@ -54,10 +55,11 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 			minOrder = min(minOrder, task.item.ChildOrder)
 		}
 		t.ChildOrder = minOrder - 1
-		ntm.main.taskList.List.Top()
+		gotoNew = ntm.main.taskList.List.Top
 	}
 	ntm.main.taskList.List.AddItems(newTask(ntm.main, t))
 	ntm.main.taskList.List.Sort()
+	gotoNew()
 	return func() tea.Msg {
 		// todo separate quick add?
 		ntm.main.client.AddItem(ntm.main.ctx, t)

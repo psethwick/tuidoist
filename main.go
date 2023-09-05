@@ -104,7 +104,8 @@ func (m *mainModel) Init() tea.Cmd {
 			m.taskList.List.ResetItems(ts...)
 		}
 	}
-	return tea.Batch(m.refreshFromStore(), m.sync)
+	m.refreshFromStore()
+	return m.sync
 }
 
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -133,18 +134,35 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "j":
 				m.taskList.List.MoveCursor(1)
+				idx, _ := m.taskList.List.GetCursorIndex()
+				dbg("crs index", idx)
 			case "k":
 				m.taskList.List.MoveCursor(-1)
+				idx, _ := m.taskList.List.GetCursorIndex()
+				dbg("crs index", idx)
+				cnt := len(m.taskList.List.GetAllItems())
+				dbg("count", cnt)
 			case "v":
-				// t := tm.main.tasksModel.tasks.SelectedItem().(task)
-				// if t.url != "" {
-				// 	cmds = append(cmds, tm.main.tasksModel.OpenUrl(t.url))
-				// }
+				str, err := m.taskList.List.GetCursorItem()
+				if err != nil {
+					dbg(err)
+				}
+				t, ok := str.(task)
+				if ok {
+					if t.url != "" {
+						cmds = append(cmds, m.OpenUrl(t.url))
+					}
+
+				}
 			case "G":
 				m.taskList.List.Bottom()
+				idx, _ := m.taskList.List.GetCursorIndex()
+				dbg("crs index", idx)
 			case "g":
 				if m.gMenu {
 					m.taskList.List.Top()
+					idx, _ := m.taskList.List.GetCursorIndex()
+					dbg("crs index", idx)
 					m.gMenu = false
 
 				} else {
@@ -173,7 +191,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case "t":
 				if m.gMenu {
-					cmds = append(cmds, m.chooseModel.gotoFilter(filter{Name: "Today", Query: "today"}))
+					cmds = append(cmds, m.chooseModel.gotoFilter(filter{Name: "Today", Query: "today | overdue"}))
 					m.gMenu = false
 				}
 			case "p":
@@ -230,23 +248,18 @@ func (m *mainModel) View() string {
 	var s string
 	switch m.state {
 	case chooseState:
-		dbg("choose")
 		s = m.chooseModel.View()
 	case tasksState:
-		dbg("tassks")
 		s = m.taskList.View()
 	case taskMenuState:
-		dbg("tasksmenu")
 		s = m.taskMenuModel.View()
 	case newTaskBottomState:
-		dbg("tas bot")
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.taskList.View(),
 			m.newTaskModel.View(),
 		)
 	case newTaskTopState:
-		dbg("tas top")
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.newTaskModel.View(),
