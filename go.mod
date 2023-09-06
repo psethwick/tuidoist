@@ -11,10 +11,10 @@ require (
 	github.com/mistakenelf/teacup v0.4.1
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.15.2
+	github.com/psethwick/bubblelister v0.3.2
 	github.com/rkoesters/xdg v0.0.1
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.1
-	github.com/treilik/bubblelister v0.2.0
 )
 
 require (
@@ -49,5 +49,3 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/treilik/bubblelister => github.com/psethwick/bubblelister v0.0.0-20230905211053-da127084875d

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/muesli/termenv"
-	"github.com/treilik/bubblelister"
+	"github.com/psethwick/bubblelister"
 )
 
 type TaskList struct {
@@ -31,6 +31,11 @@ func New(lessFunc func(fmt.Stringer, fmt.Stringer) bool, logger func(...any)) Ta
 
 	bl := bubblelister.NewModel()
 	bl.LessFunc = lessFunc
+	pfxr := bubblelister.NewPrefixer()
+	pfxr.Number = false
+	pfxr.NumberRelative = false
+	bl.PrefixGen = pfxr
+
 	p := termenv.ColorProfile()
 	// todo maybe fork bubblelister to use lipgloss?
 	// adaptive color would probably be the motivation
