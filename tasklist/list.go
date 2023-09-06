@@ -12,6 +12,12 @@ type TaskList struct {
 	logger func(...any)
 }
 
+func (tl *TaskList) ResetItems(s ...fmt.Stringer) {
+	i, _ := tl.List.GetCursorIndex()
+	tl.List.ResetItems(s...)
+	tl.List.SetCursor(i)
+}
+
 func (tl *TaskList) RemoveCurrentItem() (fmt.Stringer, error) {
 	idx, err := tl.List.GetCursorIndex()
 

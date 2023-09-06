@@ -1,6 +1,8 @@
 package status
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mistakenelf/teacup/statusbar"
@@ -44,6 +46,10 @@ func (sb *Model) SetSyncStatus(ss SyncStatus) {
 
 func (sb *Model) SetTitle(t string) {
 	sb.bar.SecondColumn = t
+}
+
+func (sb *Model) SetNumber(n int) {
+	sb.bar.FourthColumn = fmt.Sprint(n)
 }
 
 func New() Model {

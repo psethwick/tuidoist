@@ -101,7 +101,8 @@ func (m *mainModel) Init() tea.Cmd {
 			case nameSort:
 				m.taskList.List.LessFunc = NameLess
 			}
-			m.taskList.List.ResetItems(ts...)
+			m.taskList.ResetItems(ts...)
+			m.statusBarModel.SetNumber(len(ts))
 		}
 	}
 	m.refreshFromStore()

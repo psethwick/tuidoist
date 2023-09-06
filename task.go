@@ -119,7 +119,7 @@ func (t task) FilterValue() string { return t.item.Content }
 
 type ItemSort []list.Item
 
-func (m *mainModel) setTasks(p *project) {
+func (m *mainModel) setTasksFromProject(p *project) {
 	items := []todoist.Item{}
 	for _, i := range m.client.Store.Items {
 		if i.ProjectID == p.ID {
@@ -137,7 +137,8 @@ func (m *mainModel) setTasks(p *project) {
 		m.taskList.List.LessFunc = NameLess
 	}
 	m.statusBarModel.SetTitle(p.Name)
-	m.taskList.List.ResetItems(tasks...)
+	m.statusBarModel.SetNumber(len(tasks))
+	m.taskList.ResetItems(tasks...)
 }
 
 func (m *mainModel) setTasksFromFilter(title string, expr filt.Expression) {
@@ -149,7 +150,8 @@ func (m *mainModel) setTasksFromFilter(title string, expr filt.Expression) {
 		}
 	}
 	m.statusBarModel.SetTitle(title)
-	m.taskList.List.ResetItems(tasks...)
+	m.statusBarModel.SetNumber(len(tasks))
+	m.taskList.ResetItems(tasks...)
 }
 
 // todo confirm
@@ -214,11 +216,10 @@ func (m *mainModel) openInbox() tea.Cmd {
 	}
 	prj := project(m.client.Store.Projects[0])
 	var cmd tea.Cmd
-	refresh := func() {
-		m.setTasks(&prj)
+	m.refresh = func() {
+		m.setTasksFromProject(&prj)
 	}
-	m.refresh = refresh
-	refresh()
+	m.refresh()
 	return cmd
 }
 

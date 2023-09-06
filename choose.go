@@ -156,7 +156,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 		case chooseProject:
 			pm.main.refresh = func() {
 				idx, err := pm.main.taskList.List.GetCursorIndex()
-				pm.main.setTasks(&prj)
+				pm.main.setTasksFromProject(&prj)
 				if err == nil {
 					pm.main.taskList.List.SetCursor(idx)
 				}
