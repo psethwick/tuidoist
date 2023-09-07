@@ -155,11 +155,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 		switch pm.purpose {
 		case chooseProject:
 			pm.main.refresh = func() {
-				idx, err := pm.main.taskList.List.GetCursorIndex()
 				pm.main.setTasksFromProject(&prj)
-				if err == nil {
-					pm.main.taskList.List.SetCursor(idx)
-				}
 			}
 			ProjectID = prj.ID
 			pm.main.refresh()
@@ -169,9 +165,9 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			if err != nil {
 				dbg(err)
 			}
-			task, ok := st.(task)
+			task, ok := st.(Task)
 			if ok {
-				cmds = append(cmds, pm.main.MoveItem(&task.item, prj.ID))
+				cmds = append(cmds, pm.main.MoveItem(&task.Item, prj.ID))
 			}
 		}
 	}
@@ -183,11 +179,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
 	expr := filt.Filter(f.Query)
 	refresh := func() {
-		idx, err := pm.main.taskList.List.GetCursorIndex()
 		pm.main.setTasksFromFilter(f.Name, expr)
-		if err == nil {
-			pm.main.taskList.List.SetCursor(idx)
-		}
 	}
 	pm.main.refresh = refresh
 	pm.main.statusBarModel.SetTitle(f.Name)

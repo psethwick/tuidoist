@@ -53,11 +53,11 @@ func initialModel() *mainModel {
 }
 
 func ChildOrderLess(a fmt.Stringer, b fmt.Stringer) bool {
-	return a.(task).item.ChildOrder < b.(task).item.ChildOrder
+	return a.(Task).Item.ChildOrder < b.(Task).Item.ChildOrder
 }
 
 func NameLess(a fmt.Stringer, b fmt.Stringer) bool {
-	return a.(task).item.Content < b.(task).item.Content
+	return a.(Task).Item.Content < b.(Task).Item.Content
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
@@ -97,9 +97,9 @@ func (m *mainModel) Init() tea.Cmd {
 			}
 			switch listSort {
 			case defaultSort:
-				m.taskList.List.LessFunc = ChildOrderLess
+				m.taskList.SetLessFunc(ChildOrderLess)
 			case nameSort:
-				m.taskList.List.LessFunc = NameLess
+				m.taskList.SetLessFunc(NameLess)
 			}
 			m.taskList.ResetItems(ts...)
 			m.statusBarModel.SetNumber(len(ts))
@@ -116,8 +116,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height - 1 // statusbar
 		m.width = msg.Width
 		// for children to get the size they can actually have
-		m.taskList.List.Height = msg.Height - 1
-		m.taskList.List.Width = msg.Width
+		m.taskList.SetHeight(msg.Height - 1)
+		m.taskList.SetWidth(msg.Width)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+w":
@@ -134,36 +134,26 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "j":
-				m.taskList.List.MoveCursor(1)
-				idx, _ := m.taskList.List.GetCursorIndex()
-				dbg("crs index", idx)
+				m.taskList.MoveCursor(1)
 			case "k":
-				m.taskList.List.MoveCursor(-1)
-				idx, _ := m.taskList.List.GetCursorIndex()
-				dbg("crs index", idx)
-				cnt := len(m.taskList.List.GetAllItems())
-				dbg("count", cnt)
+				m.taskList.MoveCursor(-1)
 			case "v":
-				str, err := m.taskList.List.GetCursorItem()
+				str, err := m.taskList.GetCursorItem()
 				if err != nil {
 					dbg(err)
 				}
-				t, ok := str.(task)
+				t, ok := str.(Task)
 				if ok {
-					if t.url != "" {
-						cmds = append(cmds, m.OpenUrl(t.url))
+					if t.Url != "" {
+						cmds = append(cmds, m.OpenUrl(t.Url))
 					}
 
 				}
 			case "G":
-				m.taskList.List.Bottom()
-				idx, _ := m.taskList.List.GetCursorIndex()
-				dbg("crs index", idx)
+				m.taskList.Bottom()
 			case "g":
 				if m.gMenu {
-					m.taskList.List.Top()
-					idx, _ := m.taskList.List.GetCursorIndex()
-					dbg("crs index", idx)
+					m.taskList.Top()
 					m.gMenu = false
 
 				} else {
@@ -221,13 +211,13 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// tm.main.state = taskMenuState
 			case "a":
 				// tm.GiveHeight(tm.main.newTaskModel.Height())
-				m.taskList.List.Height = m.height - m.newTaskModel.Height()
-				m.taskList.List.Bottom()
+				m.taskList.SetHeight(m.height - m.newTaskModel.Height())
+				m.taskList.Bottom()
 				m.newTaskModel.content.Focus()
 				m.state = newTaskBottomState
 			case "A":
-				m.taskList.List.Height = m.height - m.newTaskModel.Height()
-				m.taskList.List.Top()
+				m.taskList.SetHeight(m.height - m.newTaskModel.Height())
+				m.taskList.Top()
 				m.newTaskModel.content.Focus()
 				m.state = newTaskTopState
 			default:

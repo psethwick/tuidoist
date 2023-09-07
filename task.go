@@ -7,26 +7,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 
 	filt "github.com/psethwick/tuidoist/filter"
 	"github.com/psethwick/tuidoist/todoist"
 )
 
-var mdUrlRegex = regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
-
-type task struct {
-	item      todoist.Item
-	title     string
-	summary   string
-	completed bool
-	url       string
+type Task struct {
+	Item      todoist.Item
+	Title     string
+	Summary   string
+	Completed bool
+	Url       string
 }
 
-func (t task) String() string {
-	s := fmt.Sprintf("%s\n%s", t.title, t.summary)
-	if t.completed {
+var mdUrlRegex = regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
+
+func (t Task) String() string {
+	s := fmt.Sprintf("%s\n%s", t.Title, t.Summary)
+	if t.Completed {
 		return strikeThroughStyle.Render(s)
 	}
 	return s
@@ -47,7 +46,7 @@ func reformatDate(d string, from string, to string) string {
 // ⏰ ??
 // todo overdue should be red somewhere
 // today, maybe also highlighted?
-func newTask(m *mainModel, item todoist.Item) task {
+func newTask(m *mainModel, item todoist.Item) Task {
 	indent := strings.Repeat(" ", len(todoist.SearchItemParents(m.client.Store, &item)))
 	var checkbox string
 	switch item.Priority {
@@ -96,28 +95,13 @@ func newTask(m *mainModel, item todoist.Item) task {
 	title := fmt.Sprint(indent, checkbox, content, labels)
 	summary = fmt.Sprintf("%s\n%s", fmt.Sprint(indent, "   ", summary), fmt.Sprint(indent, item.Description))
 
-	return task{
-		item:    item,
-		title:   title,
-		summary: summary,
-		url:     url,
+	return Task{
+		Item:    item,
+		Title:   title,
+		Summary: summary,
+		Url:     url,
 	}
 }
-
-func (t task) Title() string {
-	if t.completed {
-		return strikeThroughStyle.Render(t.title)
-	}
-	return t.title
-}
-
-func (t task) Description() string {
-	return t.summary
-}
-
-func (t task) FilterValue() string { return t.item.Content }
-
-type ItemSort []list.Item
 
 func (m *mainModel) setTasksFromProject(p *project) {
 	items := []todoist.Item{}
@@ -132,9 +116,9 @@ func (m *mainModel) setTasksFromProject(p *project) {
 	}
 	switch listSort {
 	case defaultSort:
-		m.taskList.List.LessFunc = ChildOrderLess
+		m.taskList.SetLessFunc(ChildOrderLess)
 	case nameSort:
-		m.taskList.List.LessFunc = NameLess
+		m.taskList.SetLessFunc(NameLess)
 	}
 	m.statusBarModel.SetTitle(p.Name)
 	m.statusBarModel.SetNumber(len(tasks))
@@ -162,9 +146,9 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 		dbg(err)
 		return nil
 	}
-	t := str.(task)
+	t := str.(Task)
 	return func() tea.Msg {
-		err := m.client.DeleteItem(m.ctx, []string{t.item.ID})
+		err := m.client.DeleteItem(m.ctx, []string{t.Item.ID})
 		if err != nil {
 			dbg("del err", err)
 		}
@@ -172,28 +156,28 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 	}
 }
 
-func updateTask(t task) func(fmt.Stringer) (fmt.Stringer, error) {
+func updateTask(t Task) func(fmt.Stringer) (fmt.Stringer, error) {
 	return func(fmt.Stringer) (fmt.Stringer, error) {
 		return t, nil
 	}
 }
 
 func (m *mainModel) completeTask() func() tea.Msg {
-	idx, err := m.taskList.List.GetCursorIndex()
+	idx, err := m.taskList.GetCursorIndex()
 	if err != nil {
 		dbg(err)
 		return func() tea.Msg { return nil }
 	}
-	t, err := m.taskList.List.GetItem(idx)
-	tsk := t.(task)
+	t, err := m.taskList.GetItem(idx)
+	tsk := t.(Task)
 	if err != nil {
 		dbg(err)
 		return func() tea.Msg { return nil }
 	}
-	tsk.completed = true
-	m.taskList.List.UpdateItem(idx, updateTask(tsk))
+	tsk.Completed = true
+	m.taskList.UpdateItem(idx, updateTask(tsk))
 	return func() tea.Msg {
-		err := m.client.CloseItem(m.ctx, []string{tsk.item.ID})
+		err := m.client.CloseItem(m.ctx, []string{tsk.Item.ID})
 		if err != nil {
 			dbg("complete task err", err)
 		}

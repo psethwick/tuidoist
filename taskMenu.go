@@ -62,13 +62,13 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "v":
-			str, err := tm.main.taskList.List.GetCursorItem()
+			str, err := tm.main.taskList.GetCursorItem()
 			if err != nil {
 				dbg(err)
 			}
-			t := str.(task)
-			if t.url != "" {
-				cmds = append(cmds, tm.main.OpenUrl(t.url))
+			t := str.(Task)
+			if t.Url != "" {
+				cmds = append(cmds, tm.main.OpenUrl(t.Url))
 			}
 		case "m":
 			cmds = append(cmds, tm.main.OpenProjects(moveToProject))

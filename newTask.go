@@ -39,26 +39,27 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	if ProjectID != "" {
 		t.ProjectID = ProjectID
 	}
-	var gotoNew func() error
+	var gotoNew func()
 	if ntm.main.state == newTaskBottomState {
+		// todo add to top/ bottome would be the real intention here
 		maxOrder := 0
-		for _, t := range ntm.main.taskList.List.GetAllItems() {
-			task := t.(task)
-			maxOrder = max(maxOrder, task.item.ChildOrder)
+		for _, t := range ntm.main.taskList.GetAllItems() {
+			task := t.(Task)
+			maxOrder = max(maxOrder, task.Item.ChildOrder)
 		}
 		t.ChildOrder = maxOrder + 1
-		gotoNew = ntm.main.taskList.List.Bottom
+		gotoNew = ntm.main.taskList.Bottom
 	} else {
 		minOrder := 0
-		for _, t := range ntm.main.taskList.List.GetAllItems() {
-			task := t.(task)
-			minOrder = min(minOrder, task.item.ChildOrder)
+		for _, t := range ntm.main.taskList.GetAllItems() {
+			task := t.(Task)
+			minOrder = min(minOrder, task.Item.ChildOrder)
 		}
 		t.ChildOrder = minOrder - 1
-		gotoNew = ntm.main.taskList.List.Top
+		gotoNew = ntm.main.taskList.Top
 	}
-	ntm.main.taskList.List.AddItems(newTask(ntm.main, t))
-	ntm.main.taskList.List.Sort()
+	ntm.main.taskList.AddItems(newTask(ntm.main, t))
+	ntm.main.taskList.Sort()
 	gotoNew()
 	return func() tea.Msg {
 		// todo separate quick add?
@@ -79,7 +80,7 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, ntm.addTask())
 		case "esc":
 			ntm.content.SetValue("")
-			ntm.main.taskList.List.Height = ntm.main.height
+			ntm.main.taskList.SetHeight(ntm.main.height)
 			ntm.content.Blur()
 			ntm.main.state = tasksState
 		}
