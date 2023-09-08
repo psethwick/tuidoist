@@ -104,15 +104,19 @@ func newTask(m *mainModel, item todoist.Item) Task {
 }
 
 func (m *mainModel) setTasksFromProject(p *project) {
-	items := []todoist.Item{}
-	for _, i := range m.client.Store.Items {
-		if i.ProjectID == p.ID {
-			items = append(items, i)
-		}
-	}
 	tasks := []fmt.Stringer{}
-	for _, i := range items {
-		tasks = append(tasks, newTask(m, i))
+	if p.section.ID == "" {
+		for _, i := range m.client.Store.Items {
+			if i.ProjectID == p.project.ID {
+				tasks = append(tasks, newTask(m, i))
+			}
+		}
+	} else { // project / section
+		for _, i := range m.client.Store.Items {
+			if i.ProjectID == p.project.ID && i.SectionID == p.section.ID {
+				tasks = append(tasks, newTask(m, i))
+			}
+		}
 	}
 	switch listSort {
 	case defaultSort:
@@ -120,7 +124,7 @@ func (m *mainModel) setTasksFromProject(p *project) {
 	case nameSort:
 		m.taskList.SetLessFunc(NameLess)
 	}
-	m.statusBarModel.SetTitle(p.Name)
+	m.statusBarModel.SetTitle(p.Display())
 	m.statusBarModel.SetNumber(len(tasks))
 	m.taskList.ResetItems(tasks...)
 }
@@ -132,6 +136,12 @@ func (m *mainModel) setTasksFromFilter(title string, expr filt.Expression) {
 		if res, _ := filt.Eval(expr, i, projects); res {
 			tasks = append(tasks, newTask(m, i))
 		}
+	}
+	switch listSort {
+	case defaultSort:
+		m.taskList.SetLessFunc(ChildOrderLess)
+	case nameSort:
+		m.taskList.SetLessFunc(NameLess)
 	}
 	m.statusBarModel.SetTitle(title)
 	m.statusBarModel.SetNumber(len(tasks))
@@ -198,7 +208,7 @@ func (m *mainModel) openInbox() tea.Cmd {
 	if len(m.client.Store.Projects) == 0 {
 		return nil
 	}
-	prj := project(m.client.Store.Projects[0])
+	prj := project{m.client.Store.Projects[0], todoist.Section{}}
 	var cmd tea.Cmd
 	m.refresh = func() {
 		m.setTasksFromProject(&prj)

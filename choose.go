@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,10 +18,16 @@ const (
 	chooseFilter
 )
 
-type project todoist.Project
+type project struct {
+	project todoist.Project
+	section todoist.Section
+}
 
 func (p project) Display() string {
-	return p.Name
+	if p.section.ID == "" {
+		return p.project.Name
+	}
+	return fmt.Sprintf("%s/%s", p.project.Name, p.section.Name)
 }
 
 type chooseModel struct {
@@ -103,9 +110,16 @@ func (pm *chooseModel) View() string {
 	return pm.chooser.View()
 }
 
-func (m *mainModel) MoveItem(item *todoist.Item, projectId string) func() tea.Msg {
+func (m *mainModel) MoveItem(item *todoist.Item, p project) func() tea.Msg {
 	return func() tea.Msg {
-		err := m.client.MoveItem(m.ctx, item, projectId)
+		if item.SectionID != p.section.ID {
+			item.SectionID = p.section.ID
+			err := m.client.UpdateItem(m.ctx, *item)
+			if err != nil {
+				dbg(err)
+			}
+		}
+		err := m.client.MoveItem(m.ctx, item, p.project.ID)
 		if err != nil {
 			dbg(err)
 		}
@@ -129,9 +143,20 @@ func (m *mainModel) OpenFilters() tea.Cmd {
 
 func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
 	p := m.client.Store.Projects
-	projs := make([]selectable, len(p))
-	for i, prj := range p {
-		projs[i] = project(prj)
+	sections := m.client.Store.Sections
+	var projs []selectable
+	for _, prj := range p {
+		var projectSections []todoist.Section
+		for _, s := range sections {
+			if s.ProjectID == prj.ID {
+				projectSections = append(projectSections, s)
+			}
+		}
+		// always add the 'whole' project even if there's sections
+		projs = append(projs, project{prj, todoist.Section{}})
+		for _, s := range projectSections {
+			projs = append(projs, project{prj, s})
+		}
 	}
 	var prompt string
 	if purpose == chooseProject {
@@ -157,7 +182,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			pm.main.refresh = func() {
 				pm.main.setTasksFromProject(&prj)
 			}
-			ProjectID = prj.ID
+			ProjectID = prj.project.ID
 			pm.main.refresh()
 			pm.main.switchProject(&prj)
 		case moveToProject:
@@ -167,7 +192,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			}
 			task, ok := st.(Task)
 			if ok {
-				cmds = append(cmds, pm.main.MoveItem(&task.Item, prj.ID))
+				cmds = append(cmds, pm.main.MoveItem(&task.Item, prj))
 			}
 		}
 	}
@@ -232,6 +257,6 @@ func newChooseModel(m *mainModel) chooseModel {
 }
 
 func (m *mainModel) switchProject(p *project) {
-	m.statusBarModel.SetTitle(p.Name)
+	m.statusBarModel.SetTitle(p.Display())
 	m.state = chooseState
 }

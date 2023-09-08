@@ -87,22 +87,9 @@ func (m *mainModel) sync() tea.Msg {
 
 func (m *mainModel) Init() tea.Cmd {
 	m.refresh = func() {
-		ts := []fmt.Stringer{}
 		if len(m.client.Store.Projects) > 0 {
-			p := m.client.Store.Projects[0]
-			for _, i := range m.client.Store.Items {
-				if i.ProjectID == p.ID {
-					ts = append(ts, newTask(m, i))
-				}
-			}
-			switch listSort {
-			case defaultSort:
-				m.taskList.SetLessFunc(ChildOrderLess)
-			case nameSort:
-				m.taskList.SetLessFunc(NameLess)
-			}
-			m.taskList.ResetItems(ts...)
-			m.statusBarModel.SetNumber(len(ts))
+			p := project{m.client.Store.Projects[0], todoist.Section{}}
+			m.setTasksFromProject(&p)
 		}
 	}
 	m.refreshFromStore()
@@ -210,7 +197,6 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// tm.main.taskMenuModel.desc.SetValue(t.item.Description)
 				// tm.main.state = taskMenuState
 			case "a":
-				// tm.GiveHeight(tm.main.newTaskModel.Height())
 				m.taskList.SetHeight(m.height - m.newTaskModel.Height())
 				m.taskList.Bottom()
 				m.newTaskModel.content.Focus()
