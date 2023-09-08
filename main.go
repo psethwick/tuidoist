@@ -69,9 +69,9 @@ func (m *mainModel) refreshFromStore() tea.Cmd {
 
 func (m *mainModel) sync() tea.Msg {
 	m.statusBarModel.SetSyncStatus(status.Syncing)
+	m.sub <- struct{}{}
 	err := m.client.Sync(m.ctx)
 	if err != nil {
-		dbg("Synced", err)
 		m.statusBarModel.SetSyncStatus(status.Error)
 		m.sub <- struct{}{}
 		return nil
@@ -178,15 +178,14 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					cmds = append(cmds, m.OpenProjects(chooseProject))
 					m.gMenu = false
 				} else {
-					// TODO
 					m.statusBarModel.SetSort(m.taskList.Sort(tasklist.PrioritySort))
 				}
 			case "n":
 				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.NameSort))
 			case "d":
-				// tm.setSort(dateSort)
+				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.DateSort))
 			case "r":
-				// tm.setSort(assigneeSort)
+				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.AssigneeSort))
 			case "m":
 				cmds = append(cmds, m.OpenProjects(moveToProject))
 			case "enter":

@@ -41,10 +41,10 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	if ProjectID != "" {
 		t.ProjectID = ProjectID
 	}
-	if ntm.main.state == newTaskBottomState {
-		ntm.main.taskList.AddItemBottom(task.New(ntm.main.client.Store, t))
-	} else {
+	if ntm.main.state == newTaskTopState {
 		ntm.main.taskList.AddItemTop(task.New(ntm.main.client.Store, t))
+	} else {
+		ntm.main.taskList.AddItemBottom(task.New(ntm.main.client.Store, t))
 	}
 	return func() tea.Msg {
 		// todo separate quick add?

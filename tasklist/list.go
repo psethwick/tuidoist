@@ -149,10 +149,6 @@ func (tl *TaskList) MoveCursor(i int) {
 	tl.list.MoveCursor(i)
 }
 
-func (tl *TaskList) SetLessFunc(lf func(fmt.Stringer, fmt.Stringer) bool) {
-	tl.list.LessFunc = lf
-}
-
 func (tl *TaskList) GetCursorItem() (task.Task, error) {
 	str, err := tl.list.GetCursorItem()
 	return str.(task.Task), err
