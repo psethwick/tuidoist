@@ -25,13 +25,6 @@ func (m *mainModel) setTasksFromProject(p *project) {
 			}
 		}
 	}
-	// TODO
-	// switch listSort {
-	// case defaultSort:
-	// 	m.taskList.SetLessFunc(ChildOrderLess)
-	// case nameSort:
-	// 	m.taskList.SetLessFunc(NameLess)
-	// }
 	m.statusBarModel.SetTitle(p.Display())
 	m.statusBarModel.SetNumber(len(tasks))
 	m.taskList.ResetItems(tasks)
@@ -45,13 +38,6 @@ func (m *mainModel) setTasksFromFilter(title string, expr fltr.Expression) {
 			tasks = append(tasks, task.New(m.client.Store, i))
 		}
 	}
-	// TODO
-	// switch listSort {
-	// case defaultSort:
-	// 	m.taskList.SetLessFunc(ChildOrderLess)
-	// case nameSort:
-	// 	m.taskList.SetLessFunc(NameLess)
-	// }
 	m.statusBarModel.SetTitle(title)
 	m.statusBarModel.SetNumber(len(tasks))
 	m.taskList.ResetItems(tasks)

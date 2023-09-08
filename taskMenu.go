@@ -74,10 +74,8 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, tm.main.OpenProjects(moveToProject))
 		case "c":
 			cmds = append(cmds, tm.main.completeTask())
-			// todo tick, wait then exit
 			tm.main.state = tasksState
 		case "delete":
-			// TODO confirmation
 			cmds = append(cmds, tm.main.deleteTask())
 		case "enter":
 			tm.item.Content = tm.content.Value()

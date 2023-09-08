@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/mistakenelf/teacup/statusbar"
+	"github.com/psethwick/tuidoist/style"
 )
 
 type SyncStatus uint
@@ -17,9 +17,6 @@ const (
 )
 
 type Model struct {
-	// SyncStatus SyncStatus
-	// Title      string
-	// MetaData   string
 	bar *statusbar.Model
 }
 
@@ -62,32 +59,22 @@ func (sb *Model) SetNumber(n int) {
 
 func New() Model {
 	sb := statusbar.New(
-		// todo move to style.go
 		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Dark: "#ffffff", Light: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#F25D94", Dark: "#F25D94"},
+			Foreground: style.White,
+			Background: style.Pink,
 		},
 		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
+			Foreground: style.White,
+			Background: style.Gray,
 		},
 		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
+			Foreground: style.White,
+			Background: style.Gray,
 		},
-
-		// statusbar.ColorConfig{
-		// 	Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-		// 	Background: lipgloss.AdaptiveColor{Light: "#A550DF", Dark: "#A550DF"},
-		// },
 		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#A550DF", Dark: "#A550DF"},
+			Foreground: style.White,
+			Background: style.Pink,
 		},
-		// statusbar.ColorConfig{
-		// 	Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-		// 	Background: lipgloss.AdaptiveColor{Light: "#6124DF", Dark: "#6124DF"},
-		// },
 	)
 	m := Model{
 		bar: &sb,

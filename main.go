@@ -72,6 +72,7 @@ func (m *mainModel) sync() tea.Msg {
 	m.sub <- struct{}{}
 	err := m.client.Sync(m.ctx)
 	if err != nil {
+		dbg(err)
 		m.statusBarModel.SetSyncStatus(status.Error)
 		m.sub <- struct{}{}
 		return nil
@@ -156,7 +157,6 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, m.completeTask())
 				m.state = tasksState
 			case "delete":
-				// TODO confirmation
 				cmds = append(cmds, m.deleteTask())
 			case "f":
 				if m.gMenu {
@@ -189,12 +189,16 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "m":
 				cmds = append(cmds, m.OpenProjects(moveToProject))
 			case "enter":
-				// t := tm.tasks.SelectedItem().(task)
-				// tm.main.taskMenuModel.project = tm.main.client.Store.FindProject(t.item.ProjectID)
-				// tm.main.taskMenuModel.item = t.item
-				// tm.main.taskMenuModel.content.SetValue(t.item.Content)
-				// tm.main.taskMenuModel.desc.SetValue(t.item.Description)
-				// tm.main.state = taskMenuState
+				t, err := m.taskList.GetCursorItem()
+				if err != nil {
+					dbg(err)
+				} else {
+					m.taskMenuModel.project = m.client.Store.FindProject(t.Item.ProjectID)
+					m.taskMenuModel.item = t.Item
+					m.taskMenuModel.content.SetValue(t.Item.Content)
+					m.taskMenuModel.desc.SetValue(t.Item.Description)
+					m.state = taskMenuState
+				}
 			case "a":
 				m.taskList.SetHeight(m.height - m.newTaskModel.Height())
 				m.taskList.Bottom()

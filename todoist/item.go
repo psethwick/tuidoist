@@ -218,7 +218,6 @@ func (item Item) UpdateParam() interface{} {
 	if item.DateString != "" {
 		param["date_string"] = item.DateString
 	}
-	// TODO: more cool
 	if item.DateString == "null" {
 		param["date_string"] = ""
 	}

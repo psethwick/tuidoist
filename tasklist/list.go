@@ -5,6 +5,7 @@ import (
 
 	"github.com/muesli/termenv"
 	"github.com/psethwick/bubblelister"
+	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/task"
 )
 
@@ -183,7 +184,7 @@ func New(logger func(...any)) TaskList {
 	p := termenv.ColorProfile()
 	// todo maybe fork bubblelister to use lipgloss?
 	// adaptive color would probably be the motivation
-	bl.CurrentStyle = termenv.Style{}.Foreground(p.Color("#F793FF"))
+	bl.CurrentStyle = termenv.Style{}.Foreground(p.Color(style.Pink.Light))
 
 	return TaskList{
 		list:   bl,
