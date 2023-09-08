@@ -4,6 +4,8 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/psethwick/tuidoist/style"
+	"github.com/psethwick/tuidoist/task"
 	"github.com/psethwick/tuidoist/todoist"
 )
 
@@ -44,22 +46,19 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 		// todo add to top/ bottome would be the real intention here
 		maxOrder := 0
 		for _, t := range ntm.main.taskList.GetAllItems() {
-			task := t.(Task)
-			maxOrder = max(maxOrder, task.Item.ChildOrder)
+			maxOrder = max(maxOrder, t.Item.ChildOrder)
 		}
 		t.ChildOrder = maxOrder + 1
 		gotoNew = ntm.main.taskList.Bottom
 	} else {
 		minOrder := 0
 		for _, t := range ntm.main.taskList.GetAllItems() {
-			task := t.(Task)
-			minOrder = min(minOrder, task.Item.ChildOrder)
+			minOrder = min(minOrder, t.Item.ChildOrder)
 		}
 		t.ChildOrder = minOrder - 1
 		gotoNew = ntm.main.taskList.Top
 	}
-	ntm.main.taskList.AddItems(newTask(ntm.main, t))
-	ntm.main.taskList.Sort()
+	ntm.main.taskList.AddItems(task.New(ntm.main.client.Store, t))
 	gotoNew()
 	return func() tea.Msg {
 		// todo separate quick add?
@@ -95,8 +94,9 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 func (ntm *newTaskModel) View() string {
 	dialog := lipgloss.Place(ntm.main.width, 3,
 		lipgloss.Left, lipgloss.Left,
-		dialogBoxStyle.Render(ntm.content.View()),
+		style.DialogBox.Render(ntm.content.View()),
 	)
 
 	return dialog
 }
+

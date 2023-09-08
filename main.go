@@ -38,26 +38,28 @@ type mainModel struct {
 	statusBarModel status.Model
 	refresh        func()
 	gMenu          bool
+	sub            chan struct{}
+}
+
+type syncedMsg struct{}
+
+func waitForSync(sub chan struct{}) tea.Cmd {
+	return func() tea.Msg {
+		return syncedMsg(<-sub)
+	}
 }
 
 func initialModel() *mainModel {
 	m := mainModel{}
 	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
-	m.taskList = tasklist.New(ChildOrderLess, dbg)
+	m.taskList = tasklist.New(dbg)
 	m.chooseModel = newChooseModel(&m)
 	m.newTaskModel = newNewTaskModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
+	m.sub = make(chan struct{})
 	return &m
-}
-
-func ChildOrderLess(a fmt.Stringer, b fmt.Stringer) bool {
-	return a.(Task).Item.ChildOrder < b.(Task).Item.ChildOrder
-}
-
-func NameLess(a fmt.Stringer, b fmt.Stringer) bool {
-	return a.(Task).Item.Content < b.(Task).Item.Content
 }
 
 func (m *mainModel) refreshFromStore() tea.Cmd {
@@ -71,17 +73,19 @@ func (m *mainModel) sync() tea.Msg {
 	if err != nil {
 		dbg("Synced", err)
 		m.statusBarModel.SetSyncStatus(status.Error)
+		m.sub <- struct{}{}
 		return nil
 	}
 	err = client.WriteCache(m.client.Store)
 	if err != nil {
 		dbg(err)
 		m.statusBarModel.SetSyncStatus(status.Error)
+		m.sub <- struct{}{}
 		return nil
 	}
 	m.refreshFromStore()
 	m.statusBarModel.SetSyncStatus(status.Synced)
-
+	m.sub <- struct{}{}
 	return nil
 }
 
@@ -91,22 +95,25 @@ func (m *mainModel) Init() tea.Cmd {
 			if tp.Name == "Inbox" {
 				p := project{tp, todoist.Section{}}
 				m.setTasksFromProject(&p)
+				break
 			}
 		}
 	}
 	m.refreshFromStore()
-	return m.sync
+	return tea.Batch(m.sync, waitForSync(m.sub))
 }
 
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.height = msg.Height - 1 // statusbar
+		m.height = msg.Height
 		m.width = msg.Width
 		// for children to get the size they can actually have
 		m.taskList.SetHeight(msg.Height - 1)
 		m.taskList.SetWidth(msg.Width)
+	case syncedMsg:
+		return m, waitForSync(m.sub)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+w":
@@ -127,16 +134,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "k":
 				m.taskList.MoveCursor(-1)
 			case "v":
-				str, err := m.taskList.GetCursorItem()
-				if err != nil {
-					dbg(err)
-				}
-				t, ok := str.(Task)
-				if ok {
-					if t.Url != "" {
-						cmds = append(cmds, m.OpenUrl(t.Url))
-					}
-
+				t, _ := m.taskList.GetCursorItem()
+				if t.Url != "" {
+					cmds = append(cmds, m.OpenUrl(t.Url))
 				}
 			case "G":
 				m.taskList.Bottom()
@@ -183,8 +183,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// tm.setSort(prioritySort)
 				}
 			case "n":
-				// TODO
-				//tm.setSort(nameSort)
+				// todo get the nice toggle
+				// and display sort info in taskbar
+				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.NameSort))
 			case "d":
 				// tm.setSort(dateSort)
 			case "r":
@@ -245,7 +246,10 @@ func (m *mainModel) View() string {
 			m.taskList.View(),
 		)
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, m.statusBarModel.View(), s)
+	return lipgloss.Place(
+		m.width, m.height, lipgloss.Left, lipgloss.Top,
+		lipgloss.JoinVertical(lipgloss.Left, m.statusBarModel.View(), s),
+	)
 }
 
 func dbg(a ...any) {

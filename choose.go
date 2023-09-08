@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/erikgeiser/promptkit/selection"
 	filt "github.com/psethwick/tuidoist/filter"
+	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/todoist"
 )
 
@@ -97,10 +98,10 @@ func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
 		return strings.Contains(strings.ToLower(choice.Value.Display()), strings.ToLower(filter))
 	}
 	sm.SelectedChoiceStyle = func(c *selection.Choice[selectable]) string {
-		return selectedTitle.Render(c.Value.Display())
+		return style.SelectedTitle.Render(c.Value.Display())
 	}
 	sm.UnselectedChoiceStyle = func(c *selection.Choice[selectable]) string {
-		return normalTitle.Render(c.Value.Display())
+		return style.NormalTitle.Render(c.Value.Display())
 	}
 	pm.chooser = sm
 	return sm.Init()
@@ -186,11 +187,10 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			pm.main.refresh()
 			pm.main.switchProject(&prj)
 		case moveToProject:
-			st, err := pm.main.taskList.RemoveCurrentItem()
+			task, err := pm.main.taskList.RemoveCurrentItem()
 			if err != nil {
 				dbg(err)
 			}
-			task, ok := st.(Task)
 			if ok {
 				cmds = append(cmds, pm.main.MoveItem(&task.Item, prj))
 			}

@@ -5,17 +5,74 @@ import (
 
 	"github.com/muesli/termenv"
 	"github.com/psethwick/bubblelister"
+	"github.com/psethwick/tuidoist/task"
 )
 
 type TaskList struct {
 	list   bubblelister.Model
 	logger func(...any)
+	sort   TaskSort
 }
 
-// TODO make the interface to this package _my_ types
-func (tl *TaskList) ResetItems(s ...fmt.Stringer) {
+type TaskSort uint
+
+const (
+	DefaultSort TaskSort = iota
+	NameSort
+	// PrioritySort
+	// DateSort
+	// AssigneeSort
+)
+
+type lessFunc = func(fmt.Stringer, fmt.Stringer) bool
+
+var sortLessFunc = map[TaskSort]lessFunc{
+	DefaultSort: childOrderLess,
+	NameSort:    nameLess,
+
+	// todo
+	// PrioritySort: childOrderLess,
+	// DateSort:     childOrderLess,
+	// AssigneeSort: childOrderLess,
+}
+
+var sortDesc = map[TaskSort]string{
+	DefaultSort: "",
+	NameSort:    "Name",
+
+	// todo
+	// PrioritySort: childOrderLess,
+	// DateSort:     childOrderLess,
+	// AssigneeSort: childOrderLess,
+}
+
+func childOrderLess(a fmt.Stringer, b fmt.Stringer) bool {
+	return a.(task.Task).Item.ChildOrder < b.(task.Task).Item.ChildOrder
+}
+
+func nameLess(a fmt.Stringer, b fmt.Stringer) bool {
+	return a.(task.Task).Item.Content < b.(task.Task).Item.Content
+}
+
+func convertIn(tasks []task.Task) []fmt.Stringer {
+	strs := make([]fmt.Stringer, len(tasks))
+	for i, t := range tasks {
+		strs[i] = t
+	}
+	return strs
+}
+
+func convertOut(strs []fmt.Stringer) []task.Task {
+	tasks := make([]task.Task, len(strs))
+	for i, t := range tasks {
+		tasks[i] = t
+	}
+	return tasks
+}
+
+func (tl *TaskList) ResetItems(tasks []task.Task) {
 	i, _ := tl.list.GetCursorIndex()
-	tl.list.ResetItems(s...)
+	tl.list.ResetItems(convertIn(tasks)...)
 	tl.list.SetCursor(i)
 }
 
@@ -23,37 +80,40 @@ func (tl *TaskList) Top() {
 	tl.list.Top()
 }
 
+func updateTask(t task.Task) func(fmt.Stringer) (fmt.Stringer, error) {
+	return func(fmt.Stringer) (fmt.Stringer, error) {
+		return t, nil
+	}
+}
+
+func (tl *TaskList) UpdateCurrentTask(t task.Task) {
+	idx, _ := tl.list.GetCursorIndex()
+	tl.list.UpdateItem(idx, updateTask(t))
+}
+
 func (tl *TaskList) Bottom() {
 	tl.list.Bottom()
 }
 
-// todo needed?
-func (tl *TaskList) Sort() {
+func (tl *TaskList) Sort(ts TaskSort) string {
+	if ts == tl.sort {
+		tl.sort = DefaultSort
+	} else {
+		tl.sort = ts
+	}
+	tl.list.LessFunc = sortLessFunc[tl.sort]
 	tl.list.Sort()
+	return sortDesc[tl.sort]
 }
 
 // todo needed?
-func (tl *TaskList) GetAllItems() []fmt.Stringer {
-	return tl.list.GetAllItems()
-}
-
-// todo needed?
-func (tl *TaskList) GetCursorIndex() (int, error) {
-	return tl.list.GetCursorIndex()
-}
-
-// todo needed?
-func (tl *TaskList) UpdateItem(idx int, updater func(fmt.Stringer) (fmt.Stringer, error)) {
-	tl.list.UpdateItem(idx, updater)
-}
-
-// todo needed?
-func (tl *TaskList) GetItem(i int) (fmt.Stringer, error) {
-	return tl.list.GetItem(i)
+func (tl *TaskList) GetAllItems() []task.Task {
+	return convertOut(tl.list.GetAllItems())
 }
 
 func (tl *TaskList) AddItems(items ...fmt.Stringer) {
 	tl.list.AddItems(items...)
+	tl.Sort(tl.sort)
 }
 
 func (tl *TaskList) SetHeight(h int) {
@@ -72,29 +132,34 @@ func (tl *TaskList) SetLessFunc(lf func(fmt.Stringer, fmt.Stringer) bool) {
 	tl.list.LessFunc = lf
 }
 
-func (tl *TaskList) GetCursorItem() (fmt.Stringer, error) {
-	return tl.list.GetCursorItem()
+func (tl *TaskList) GetCursorItem() (task.Task, error) {
+	str, err := tl.list.GetCursorItem()
+	return str.(task.Task), err
 }
 
-func (tl *TaskList) RemoveCurrentItem() (fmt.Stringer, error) {
+func (tl *TaskList) RemoveCurrentItem() (task.Task, error) {
 	idx, err := tl.list.GetCursorIndex()
-
-	tl.logger("idx", idx)
 	if err != nil {
-		return nil, err
+		return task.Task{}, err
 	}
-	tl.logger("cound", len(tl.list.GetAllItems()))
 	str, err := tl.list.RemoveIndex(idx)
 	if err != nil {
-		return nil, err
+		return task.Task{}, err
 	}
-	return str, nil
+	return str.(task.Task), nil
 }
 
-func New(lessFunc func(fmt.Stringer, fmt.Stringer) bool, logger func(...any)) TaskList {
+func equals(a fmt.Stringer, b fmt.Stringer) bool {
+	// todo this might explode in a few ways
+	// guess we'll find out
+	return a.(task.Task).Item.ID == b.(task.Task).Item.ID
+}
+
+func New(logger func(...any)) TaskList {
 
 	bl := bubblelister.NewModel()
-	bl.LessFunc = lessFunc
+	bl.LessFunc = childOrderLess
+	bl.EqualsFunc = equals
 	pfxr := bubblelister.NewPrefixer()
 	pfxr.Number = false
 	pfxr.NumberRelative = false
@@ -108,6 +173,7 @@ func New(lessFunc func(fmt.Stringer, fmt.Stringer) bool, logger func(...any)) Ta
 	return TaskList{
 		list:   bl,
 		logger: logger,
+		sort:   DefaultSort,
 	}
 }
 

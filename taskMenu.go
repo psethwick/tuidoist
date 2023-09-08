@@ -4,6 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/todoist"
 )
 
@@ -62,11 +63,10 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "v":
-			str, err := tm.main.taskList.GetCursorItem()
+			t, err := tm.main.taskList.GetCursorItem()
 			if err != nil {
 				dbg(err)
 			}
-			t := str.(Task)
 			if t.Url != "" {
 				cmds = append(cmds, tm.main.OpenUrl(t.Url))
 			}
@@ -105,13 +105,13 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (tm *taskMenuModel) View() string {
-	title := dialogTitle.Render("Task")
-	help := helpStyle.Render("(e)dit (c)complete (m)ove (d)elete")
+	title := style.DialogTitle.Render("Task")
+	help := style.Help.Render("(e)dit (c)complete (m)ove (d)elete")
 	ui := lipgloss.JoinVertical(lipgloss.Left, title, tm.content.View(), tm.desc.View(), tm.project.Name, help)
 
 	dialog := lipgloss.Place(tm.main.width, tm.main.height,
 		lipgloss.Left, lipgloss.Center,
-		dialogBoxStyle.Render(ui),
+		style.DialogBox.Render(ui),
 	)
 
 	return dialog

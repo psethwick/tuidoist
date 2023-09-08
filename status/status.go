@@ -44,6 +44,14 @@ func (sb *Model) SetSyncStatus(ss SyncStatus) {
 	}
 }
 
+func (sb *Model) SetSort(s string) {
+	if s == "" {
+		sb.bar.ThirdColumn = ""
+	} else {
+		sb.bar.ThirdColumn = fmt.Sprint("sort: ", s)
+	}
+}
+
 func (sb *Model) SetTitle(t string) {
 	sb.bar.SecondColumn = t
 }

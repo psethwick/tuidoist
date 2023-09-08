@@ -1,4 +1,4 @@
-package main
+package style
 
 import (
 	"github.com/charmbracelet/lipgloss"
@@ -15,13 +15,13 @@ var (
 	// 		BorderBottom(true)
 
 	// dialog
-	subtle    = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
-	helpStyle = lipgloss.NewStyle().
-			Align(lipgloss.Center).
-			Width(50).
-			Foreground(subtle)
-	dialogTitle    = lipgloss.NewStyle().Width(50).Align(lipgloss.Center)
-	dialogBoxStyle = lipgloss.NewStyle().
+	subtle = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
+	Help   = lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(50).
+		Foreground(subtle)
+	DialogTitle = lipgloss.NewStyle().Width(50).Align(lipgloss.Center)
+	DialogBox   = lipgloss.NewStyle().
 			Padding(1, 0).
 			BorderTop(true).
 			BorderLeft(true).
@@ -49,18 +49,18 @@ var (
 			Padding(0, 1)
 
 		// from default delegate, keep here for now?
-	normalTitle = lipgloss.NewStyle().
+	NormalTitle = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#dddddd"}).
 			Padding(0, 0, 0, 2)
-	normalDesc = normalTitle.Copy().
+	normalDesc = NormalTitle.Copy().
 			Foreground(lipgloss.AdaptiveColor{Light: "#A49FA5", Dark: "#777777"})
-	selectedTitle = lipgloss.NewStyle().
+	SelectedTitle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, false, true).
 			BorderForeground(lipgloss.AdaptiveColor{Light: "#F793FF", Dark: "#AD58B4"}).
 			Foreground(lipgloss.AdaptiveColor{Light: "#EE6FF8", Dark: "#EE6FF8"}).
 			Padding(0, 0, 0, 1)
 
-	underlineStyle     = lipgloss.NewStyle().Underline(false)
-	listTitleBarStyle  = lipgloss.NewStyle().Padding(0, 0, 1, 2)
-	strikeThroughStyle = lipgloss.NewStyle().Strikethrough(true)
+	Underline         = lipgloss.NewStyle().Underline(false)
+	listTitleBarStyle = lipgloss.NewStyle().Padding(0, 0, 1, 2)
+	StrikeThrough     = lipgloss.NewStyle().Strikethrough(true)
 )
