@@ -65,7 +65,7 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, ntm.addTask())
 		case "esc":
 			ntm.content.SetValue("")
-			ntm.main.taskList.SetHeight(ntm.main.height)
+			ntm.main.taskList.SetHeight(ntm.main.height - 1)
 			ntm.content.Blur()
 			ntm.main.state = tasksState
 		}

@@ -200,12 +200,12 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.state = taskMenuState
 				}
 			case "a":
-				m.taskList.SetHeight(m.height - m.newTaskModel.Height())
+				m.taskList.SetHeight(m.height - m.newTaskModel.Height() - 1)
 				m.taskList.Bottom()
 				m.newTaskModel.content.Focus()
 				m.state = newTaskBottomState
 			case "A":
-				m.taskList.SetHeight(m.height - m.newTaskModel.Height())
+				m.taskList.SetHeight(m.height - m.newTaskModel.Height() - 1)
 				m.taskList.Top()
 				m.newTaskModel.content.Focus()
 				m.state = newTaskTopState
