@@ -87,9 +87,11 @@ func (m *mainModel) sync() tea.Msg {
 
 func (m *mainModel) Init() tea.Cmd {
 	m.refresh = func() {
-		if len(m.client.Store.Projects) > 0 {
-			p := project{m.client.Store.Projects[0], todoist.Section{}}
-			m.setTasksFromProject(&p)
+		for _, tp := range m.client.Store.Projects {
+			if tp.Name == "Inbox" {
+				p := project{tp, todoist.Section{}}
+				m.setTasksFromProject(&p)
+			}
 		}
 	}
 	m.refreshFromStore()
