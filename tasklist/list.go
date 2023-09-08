@@ -19,39 +19,44 @@ type TaskSort uint
 const (
 	DefaultSort TaskSort = iota
 	NameSort
-	// PrioritySort
-	// DateSort
-	// AssigneeSort
+	PrioritySort
+	DateSort
+	AssigneeSort
 )
 
 type lessFunc = func(fmt.Stringer, fmt.Stringer) bool
 
 var sortLessFunc = map[TaskSort]lessFunc{
-	DefaultSort: childOrderLess,
-	NameSort:    nameLess,
-
-	// todo
-	// PrioritySort: childOrderLess,
-	// DateSort:     childOrderLess,
-	// AssigneeSort: childOrderLess,
+	DefaultSort: func(a fmt.Stringer, b fmt.Stringer) bool {
+		return a.(task.Task).Item.ChildOrder < b.(task.Task).Item.ChildOrder
+	},
+	NameSort: func(a fmt.Stringer, b fmt.Stringer) bool {
+		return a.(task.Task).Item.Content < b.(task.Task).Item.Content
+	},
+	PrioritySort: func(a fmt.Stringer, b fmt.Stringer) bool {
+		return a.(task.Task).Item.Priority > b.(task.Task).Item.Priority
+	},
+	DateSort: func(a fmt.Stringer, b fmt.Stringer) bool {
+		adue := a.(task.Task).Item.Due
+		bdue := b.(task.Task).Item.Due
+		if adue != nil && bdue != nil {
+			return adue.Date < bdue.Date
+		} else if adue != nil {
+			return true
+		}
+		return false
+	},
+	AssigneeSort: func(a fmt.Stringer, b fmt.Stringer) bool {
+		return true // lol
+	},
 }
 
 var sortDesc = map[TaskSort]string{
-	DefaultSort: "",
-	NameSort:    "Name",
-
-	// todo
-	// PrioritySort: childOrderLess,
-	// DateSort:     childOrderLess,
-	// AssigneeSort: childOrderLess,
-}
-
-func childOrderLess(a fmt.Stringer, b fmt.Stringer) bool {
-	return a.(task.Task).Item.ChildOrder < b.(task.Task).Item.ChildOrder
-}
-
-func nameLess(a fmt.Stringer, b fmt.Stringer) bool {
-	return a.(task.Task).Item.Content < b.(task.Task).Item.Content
+	DefaultSort:  "",
+	NameSort:     "name",
+	PrioritySort: "priority",
+	DateSort:     "date",
+	AssigneeSort: "assignee",
 }
 
 func convertIn(tasks []task.Task) []fmt.Stringer {
@@ -106,14 +111,30 @@ func (tl *TaskList) Sort(ts TaskSort) string {
 	return sortDesc[tl.sort]
 }
 
-// todo needed?
-func (tl *TaskList) GetAllItems() []task.Task {
+func (tl *TaskList) getAllItems() []task.Task {
 	return convertOut(tl.list.GetAllItems())
 }
 
-func (tl *TaskList) AddItems(items ...fmt.Stringer) {
-	tl.list.AddItems(items...)
+func (tl *TaskList) AddItemTop(t task.Task) {
+	minOrder := 0
+	for _, t := range tl.getAllItems() {
+		minOrder = min(minOrder, t.Item.ChildOrder)
+	}
+	t.Item.ChildOrder = minOrder - 1
+	tl.list.AddItems(t)
 	tl.Sort(tl.sort)
+	tl.list.Top()
+}
+
+func (tl *TaskList) AddItemBottom(t task.Task) {
+	maxOrder := 0
+	for _, lt := range tl.list.GetAllItems() {
+		maxOrder = max(maxOrder, lt.(task.Task).Item.ChildOrder)
+	}
+	t.Item.ChildOrder = maxOrder + 1
+	tl.list.AddItems(t)
+	tl.Sort(tl.sort)
+	tl.list.Bottom()
 }
 
 func (tl *TaskList) SetHeight(h int) {
@@ -150,15 +171,13 @@ func (tl *TaskList) RemoveCurrentItem() (task.Task, error) {
 }
 
 func equals(a fmt.Stringer, b fmt.Stringer) bool {
-	// todo this might explode in a few ways
-	// guess we'll find out
 	return a.(task.Task).Item.ID == b.(task.Task).Item.ID
 }
 
 func New(logger func(...any)) TaskList {
 
 	bl := bubblelister.NewModel()
-	bl.LessFunc = childOrderLess
+	bl.LessFunc = sortLessFunc[DefaultSort]
 	bl.EqualsFunc = equals
 	pfxr := bubblelister.NewPrefixer()
 	pfxr.Number = false

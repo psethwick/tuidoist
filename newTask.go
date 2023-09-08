@@ -41,25 +41,11 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	if ProjectID != "" {
 		t.ProjectID = ProjectID
 	}
-	var gotoNew func()
 	if ntm.main.state == newTaskBottomState {
-		// todo add to top/ bottome would be the real intention here
-		maxOrder := 0
-		for _, t := range ntm.main.taskList.GetAllItems() {
-			maxOrder = max(maxOrder, t.Item.ChildOrder)
-		}
-		t.ChildOrder = maxOrder + 1
-		gotoNew = ntm.main.taskList.Bottom
+		ntm.main.taskList.AddItemBottom(task.New(ntm.main.client.Store, t))
 	} else {
-		minOrder := 0
-		for _, t := range ntm.main.taskList.GetAllItems() {
-			minOrder = min(minOrder, t.Item.ChildOrder)
-		}
-		t.ChildOrder = minOrder - 1
-		gotoNew = ntm.main.taskList.Top
+		ntm.main.taskList.AddItemTop(task.New(ntm.main.client.Store, t))
 	}
-	ntm.main.taskList.AddItems(task.New(ntm.main.client.Store, t))
-	gotoNew()
 	return func() tea.Msg {
 		// todo separate quick add?
 		ntm.main.client.AddItem(ntm.main.ctx, t)
@@ -99,4 +85,3 @@ func (ntm *newTaskModel) View() string {
 
 	return dialog
 }
-

@@ -165,7 +165,6 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case "i":
 				if m.gMenu {
-					// TODO
 					cmds = append(cmds, m.openInbox())
 					m.gMenu = false
 				}
@@ -180,11 +179,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.gMenu = false
 				} else {
 					// TODO
-					// tm.setSort(prioritySort)
+					m.statusBarModel.SetSort(m.taskList.Sort(tasklist.PrioritySort))
 				}
 			case "n":
-				// todo get the nice toggle
-				// and display sort info in taskbar
 				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.NameSort))
 			case "d":
 				// tm.setSort(dateSort)
