@@ -53,6 +53,10 @@ func (sb *Model) SetTitle(t string) {
 	sb.bar.SecondColumn = t
 }
 
+func (sb *Model) GetTitle() string {
+	return sb.bar.SecondColumn
+}
+
 func (sb *Model) SetNumber(n int) {
 	sb.bar.FourthColumn = fmt.Sprint(n)
 }

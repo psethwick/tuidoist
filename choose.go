@@ -32,10 +32,11 @@ func (p project) Display() string {
 }
 
 type chooseModel struct {
-	chooser *selection.Model[selectable]
-	main    *mainModel
-	purpose choosePurpose
-	title   string
+	chooser  *selection.Model[selectable]
+	main     *mainModel
+	purpose  choosePurpose
+	title    string
+	oldTitle string
 }
 
 type filter struct {
@@ -83,10 +84,11 @@ type selectable interface {
 func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
 	sel := selection.New("", p)
 	sm := selection.NewModel(sel)
+	pm.oldTitle = pm.main.statusBarModel.GetTitle()
+	pm.main.statusBarModel.SetTitle(prompt)
 	sm.Template = customTemplate
 	// we're double spacing + some room for the prompt
 	sm.PageSize = pm.main.height/2 - 3
-	sm.FilterPlaceholder = prompt
 	// todo
 	// sm.FilterInputTextStyle        lipgloss.Style
 	// sm.FilterInputPlaceholderStyle lipgloss.Style
@@ -161,7 +163,7 @@ func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
 	}
 	var prompt string
 	if purpose == chooseProject {
-		prompt = "Switch Project"
+		prompt = "Choose Project"
 	} else {
 		prompt = "Move to Project"
 	}
@@ -193,6 +195,7 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			}
 			if ok {
 				cmds = append(cmds, pm.main.MoveItem(&task.Item, prj))
+				pm.main.statusBarModel.SetTitle(pm.oldTitle)
 			}
 		}
 	}
@@ -242,6 +245,7 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 			return tea.Batch(cmds...)
 		case "esc":
 			pm.main.state = tasksState
+			pm.main.statusBarModel.SetTitle(pm.oldTitle)
 			return nil
 		}
 	}
