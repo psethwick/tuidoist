@@ -50,6 +50,7 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 		dbg(err)
 		return nil
 	}
+	m.statusBarModel.SetMessage("deleted", t.Title)
 	return func() tea.Msg {
 		err := m.client.DeleteItem(m.ctx, []string{t.Item.ID})
 		if err != nil {
@@ -66,6 +67,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 		return func() tea.Msg { return nil }
 	}
 	t.Completed = true
+	m.statusBarModel.SetMessage("completed", t.Title)
 	m.taskList.UpdateCurrentTask(t)
 	return func() tea.Msg {
 		err := m.client.CloseItem(m.ctx, []string{t.Item.ID})

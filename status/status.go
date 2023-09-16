@@ -17,7 +17,9 @@ const (
 )
 
 type Model struct {
-	bar *statusbar.Model
+	bar   *statusbar.Model
+	sort  string
+	count int
 }
 
 func (sb *Model) Update(msg tea.Msg) tea.Cmd {
@@ -30,23 +32,37 @@ func (sb *Model) View() string {
 	return sb.bar.View()
 }
 
+// todo eject teacup/statusbar, it is quite simple
 func (sb *Model) SetSyncStatus(ss SyncStatus) {
 	switch ss {
 	case Synced:
-		sb.bar.FirstColumn = "Up to date"
+		sb.bar.FirstColumn = "✅"
+		sb.bar.FirstColumnColors = statusbar.ColorConfig{
+			Foreground: style.White,
+			Background: style.Pink,
+		}
 	case Syncing:
-		sb.bar.FirstColumn = "Syncing"
+		sb.bar.FirstColumn = "🔁"
+		sb.bar.FirstColumnColors = statusbar.ColorConfig{
+			Foreground: style.White,
+			Background: style.Yellow,
+		}
 	case Error:
-		sb.bar.FirstColumn = "Error"
+		sb.bar.FirstColumn = "❌"
+		sb.bar.FirstColumnColors = statusbar.ColorConfig{
+			Foreground: style.White,
+			Background: style.Red,
+		}
 	}
 }
 
 func (sb *Model) SetSort(s string) {
 	if s == "" {
-		sb.bar.ThirdColumn = ""
+		sb.sort = ""
 	} else {
-		sb.bar.ThirdColumn = fmt.Sprint("sort: ", s)
+		sb.sort = fmt.Sprint("by ", s)
 	}
+	sb.bar.FourthColumn = fmt.Sprint(sb.count, sb.sort)
 }
 
 func (sb *Model) SetTitle(t string) {
@@ -57,8 +73,25 @@ func (sb *Model) GetTitle() string {
 	return sb.bar.SecondColumn
 }
 
+func ellipsis(s string) string {
+	maxLen := 30
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+	if maxLen < 3 {
+		maxLen = 3
+	}
+	return string(runes[0:maxLen-1]) + "…"
+}
+
+func (sb *Model) SetMessage(m ...any) {
+	sb.bar.ThirdColumn = ellipsis(fmt.Sprint(m...))
+}
+
 func (sb *Model) SetNumber(n int) {
-	sb.bar.FourthColumn = fmt.Sprint(n)
+	sb.count = n
+	sb.bar.FourthColumn = fmt.Sprint(sb.count, sb.sort)
 }
 
 func New() Model {

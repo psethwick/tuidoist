@@ -35,20 +35,23 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	if content == "" {
 		return func() tea.Msg { return nil }
 	}
-	t := todoist.Item{}
-	t.Content = content
-	t.Priority = 1
+	i := todoist.Item{}
+	i.Content = content
+	i.Priority = 1
 	if ProjectID != "" {
-		t.ProjectID = ProjectID
+		i.ProjectID = ProjectID
 	}
+
+	t := task.New(ntm.main.client.Store, i)
+	ntm.main.statusBarModel.SetMessage("added", t.Title)
 	if ntm.main.state == newTaskTopState {
-		ntm.main.taskList.AddItemTop(task.New(ntm.main.client.Store, t))
+		ntm.main.taskList.AddItemTop(t)
 	} else {
-		ntm.main.taskList.AddItemBottom(task.New(ntm.main.client.Store, t))
+		ntm.main.taskList.AddItemBottom(t)
 	}
 	return func() tea.Msg {
 		// todo separate quick add?
-		ntm.main.client.AddItem(ntm.main.ctx, t)
+		ntm.main.client.AddItem(ntm.main.ctx, i)
 		return ntm.main.sync()
 	}
 }
