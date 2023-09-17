@@ -173,11 +173,16 @@ func HasURL(item interface{}) bool {
 	}
 }
 
-func (item Item) AddParam() interface{} {
+func (item Item) IdParam() interface{} {
 	param := map[string]interface{}{}
 	if item.ID != "" {
 		param["id"] = item.ID
 	}
+	return param
+}
+
+func (item Item) AddParam() interface{} {
+	param := map[string]interface{}{}
 	if item.Content != "" {
 		param["content"] = item.Content
 	}
@@ -262,7 +267,7 @@ func (item Item) LabelsString(store *Store) string {
 
 func (c *Client) UncompleteItem(ctx context.Context, item Item) error {
 	commands := Commands{
-		NewCommand("item_uncomplete", item.AddParam()),
+		NewCommand("item_uncomplete", item.IdParam()),
 	}
 	return c.ExecCommands(ctx, commands)
 }

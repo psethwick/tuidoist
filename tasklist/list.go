@@ -86,6 +86,20 @@ func (tl *TaskList) Top() {
 	tl.list.Top()
 }
 
+func (tl *TaskList) HalfPageUp() {
+	tl.list.MoveCursor(-5)
+}
+func (tl *TaskList) HalfPageDown() {
+	tl.list.MoveCursor(5)
+}
+
+func (tl *TaskList) WholePageUp() {
+	tl.list.MoveCursor(-10)
+}
+func (tl *TaskList) WholePageDown() {
+	tl.list.MoveCursor(10)
+}
+
 func updateTask(t task.Task) func(fmt.Stringer) (fmt.Stringer, error) {
 	return func(fmt.Stringer) (fmt.Stringer, error) {
 		return t, nil
@@ -116,15 +130,16 @@ func (tl *TaskList) getAllItems() []task.Task {
 	return convertOut(tl.list.GetAllItems())
 }
 
-func (tl *TaskList) AddItemTop(t task.Task) {
+func (tl *TaskList) AddItemTop(t task.Task) task.Task {
 	minOrder := 0
 	for _, t := range tl.getAllItems() {
 		minOrder = min(minOrder, t.Item.ChildOrder)
 	}
 	t.Item.ChildOrder = minOrder - 1
 	tl.list.AddItems(t)
-	tl.Sort(tl.sort)
+	tl.list.Sort()
 	tl.list.Top()
+	return t
 }
 
 func (tl *TaskList) AddItem(t task.Task) {
@@ -132,15 +147,16 @@ func (tl *TaskList) AddItem(t task.Task) {
 	tl.Sort(tl.sort)
 }
 
-func (tl *TaskList) AddItemBottom(t task.Task) {
+func (tl *TaskList) AddItemBottom(t task.Task) task.Task {
 	maxOrder := 0
 	for _, lt := range tl.list.GetAllItems() {
 		maxOrder = max(maxOrder, lt.(task.Task).Item.ChildOrder)
 	}
 	t.Item.ChildOrder = maxOrder + 1
 	tl.list.AddItems(t)
-	tl.Sort(tl.sort)
+	tl.list.Sort()
 	tl.list.Bottom()
+	return t
 }
 
 func (tl *TaskList) SetHeight(h int) {

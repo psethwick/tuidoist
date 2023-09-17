@@ -45,13 +45,13 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	t := task.New(ntm.main.client.Store, i)
 	ntm.main.statusBarModel.SetMessage("added", t.Title)
 	if ntm.main.state == newTaskTopState {
-		ntm.main.taskList.AddItemTop(t)
+		t = ntm.main.taskList.AddItemTop(t)
 	} else {
-		ntm.main.taskList.AddItemBottom(t)
+		t = ntm.main.taskList.AddItemBottom(t)
 	}
 	return func() tea.Msg {
 		// todo separate quick add?
-		ntm.main.client.AddItem(ntm.main.ctx, i)
+		ntm.main.client.AddItem(ntm.main.ctx, t.Item)
 		return ntm.main.sync()
 	}
 }

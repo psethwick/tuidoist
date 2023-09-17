@@ -195,6 +195,15 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.AssigneeSort))
 			case "m":
 				cmds = append(cmds, m.OpenProjects(moveToProject))
+			case "ctrl+u":
+				m.taskList.HalfPageUp()
+			case "ctrl+d":
+				m.taskList.HalfPageDown()
+			case "ctrl+f":
+				m.taskList.WholePageDown()
+			case "ctrl+b":
+				m.taskList.WholePageUp()
+
 			case "ctrl+z":
 				fallthrough
 			case "z":
