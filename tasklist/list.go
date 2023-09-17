@@ -127,6 +127,11 @@ func (tl *TaskList) AddItemTop(t task.Task) {
 	tl.list.Top()
 }
 
+func (tl *TaskList) AddItem(t task.Task) {
+	tl.list.AddItems(t)
+	tl.Sort(tl.sort)
+}
+
 func (tl *TaskList) AddItemBottom(t task.Task) {
 	maxOrder := 0
 	for _, lt := range tl.list.GetAllItems() {

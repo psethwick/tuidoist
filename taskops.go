@@ -60,12 +60,31 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 	}
 }
 
+// todo this is _not_ a good place/idea
+// I think []{actionTaken, Task} ? and treat it like a stack
+// long game is complete sync workflow where offline actions can be synced later
+// which means serializing this to disk
+var lastCompletedTask task.Task
+
+func (m *mainModel) undoCompleteTask() func() tea.Msg {
+	m.taskList.AddItem(lastCompletedTask)
+	m.statusBarModel.SetMessage("undo complete", lastCompletedTask.Title)
+	return func() tea.Msg {
+		err := m.client.UncompleteItem(m.ctx, lastCompletedTask.Item)
+		if err != nil {
+			dbg("uncomplete task err", err)
+		}
+		return m.sync()
+	}
+}
+
 func (m *mainModel) completeTask() func() tea.Msg {
 	t, err := m.taskList.GetCursorItem()
 	if err != nil {
 		dbg(err)
 		return func() tea.Msg { return nil }
 	}
+	lastCompletedTask = task.Task(t)
 	t.Completed = true
 	m.statusBarModel.SetMessage("completed", t.Title)
 	m.taskList.UpdateCurrentTask(t)
@@ -74,6 +93,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 		if err != nil {
 			dbg("complete task err", err)
 		}
+
 		return m.sync()
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -24,18 +23,20 @@ type Client struct {
 	http.Client
 	config *Config
 	Store  *Store
+	logger func(...any)
 }
 
-func NewClient(config *Config) *Client {
+func NewClient(config *Config, logger func(...any)) *Client {
 	return &Client{
 		Client: *http.DefaultClient,
 		config: config,
+		logger: logger,
 	}
 }
 
 func (c *Client) Log(format string, v ...interface{}) {
 	if c.config.DebugMode {
-		log.Printf(format, v...)
+		c.logger(v...)
 	}
 }
 
@@ -87,14 +88,16 @@ func (c *Client) doApi(ctx context.Context, method string, uri string, params ur
 }
 
 type ExecResult struct {
-	SyncToken     string      `json:"sync_token"`
-	SyncStatus    interface{} `json:"sync_status"`
-	TempIdMapping interface{} `json:"temp_id_mapping"`
+	SyncToken     string            `json:"sync_token"`
+	SyncStatus    interface{}       `json:"sync_status"`
+	TempIdMapping map[string]string `json:"temp_id_mapping"`
 }
 
 func (c *Client) ExecCommands(ctx context.Context, commands Commands) error {
 	var r ExecResult
-	return c.doApi(ctx, http.MethodPost, "sync", commands.UrlValues(), &r)
+	err := c.doApi(ctx, http.MethodPost, "sync", commands.UrlValues(), &r)
+	c.logger("EXEC RESULT", r)
+	return err
 }
 
 func (c *Client) QuickCommand(ctx context.Context, text string) error {

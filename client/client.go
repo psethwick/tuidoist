@@ -105,7 +105,7 @@ func GetClient(logger func(...any)) *todoist.Client {
 	viper.SetConfigName(configName)
 	viper.AddConfigPath(configPath)
 	viper.AddConfigPath(".")
-	viper.SetEnvPrefix("tuidoist") // uppercased automatically by viper
+	viper.SetEnvPrefix("tuidoist")
 	viper.AutomaticEnv()
 
 	var token string
@@ -156,7 +156,7 @@ func GetClient(logger func(...any)) *todoist.Client {
 		DateTimeFormat: viper.GetString("shortdatetimeformat"),
 	}
 
-	client := todoist.NewClient(config)
+	client := todoist.NewClient(config, logger)
 	client.Store = &store
 	if len(store.Projects) == 0 {
 		err := client.Sync(context.Background())

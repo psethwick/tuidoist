@@ -104,6 +104,11 @@ func (m *mainModel) Init() tea.Cmd {
 	return tea.Batch(m.sync, waitForSync(m.sub))
 }
 
+// undo
+// add -> delete
+// complete -> uncomplete
+// delete -> re-add? I will need the whole task...
+
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -190,6 +195,10 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.AssigneeSort))
 			case "m":
 				cmds = append(cmds, m.OpenProjects(moveToProject))
+			case "ctrl+z":
+				fallthrough
+			case "z":
+				cmds = append(cmds, m.undoCompleteTask())
 			case "enter":
 				t, err := m.taskList.GetCursorItem()
 				if err != nil {
@@ -269,7 +278,7 @@ func main() {
 		}
 		defer f.Close()
 	}
-	p := tea.NewProgram(initialModel())
+	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
