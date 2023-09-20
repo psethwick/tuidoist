@@ -212,8 +212,8 @@ func TestSpecialDateTimeFilter(t *testing.T) {
 
 func TestNoTime(t *testing.T) {
 	assert.Equal(t,
-	DateExpr{operation: NO_TIME},
-	Filter("no time"),
+		DateExpr{operation: NO_TIME},
+		Filter("no time"),
 	)
 }
 
