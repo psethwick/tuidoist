@@ -82,6 +82,11 @@ expr
     {
         $$ = DateExpr{operation: NO_DUE_DATE}
     }
+    | NUMBER DAYS
+    {
+        date := today().AddDate(0, 0, atoi($1.literal))
+        $$ = DateExpr{allDay: true, datetime: date, operation: DUE_BEFORE}
+    }
     | DUE BEFORE ':' s_datetime
     {
         e := $4.(DateExpr)
@@ -139,6 +144,7 @@ s_overdue
     {
         $$ = $1
     }
+
 
 s_datetime
     : s_date_year s_time
@@ -208,10 +214,6 @@ s_date
     | NUMBER '/' NUMBER
     {
         $$ = time.Date(now().Year(), time.Month(atoi($3.literal)), atoi($1.literal), 0, 0, 0, 0, timezone())
-    }
-    | NUMBER DAYS
-    {
-        $$ = today().AddDate(0, 0, atoi($1.literal))
     }
 
 s_time
