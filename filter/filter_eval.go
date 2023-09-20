@@ -70,7 +70,9 @@ func Eval(e Expression, item todoist.AbstractItem, projects todoist.Projects) (r
 
 func EvalDate(e DateExpr, itemDate time.Time) (result bool) {
 	if (itemDate == time.Time{}) {
-		return e.operation == NO_DUE_DATE
+		if e.operation != NO_TIME {
+			return e.operation == NO_DUE_DATE
+		}
 	}
 	allDay := e.allDay
 	dueDate := e.datetime
@@ -87,6 +89,8 @@ func EvalDate(e DateExpr, itemDate time.Time) (result bool) {
 		return false
 	case DUE_BEFORE:
 		return itemDate.Before(dueDate)
+	case NO_TIME:
+	  return itemDate.Hour() == 0 && itemDate.Minute() == 0 && itemDate.Second() == 0
 	case DUE_AFTER:
 		endDateTime := dueDate
 		if allDay {

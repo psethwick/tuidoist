@@ -105,6 +105,19 @@ func TestViewAllExp(t *testing.T) {
 	testFilterEval(t, "view all", todoist.Item{Priority: 3}, true)
 }
 
+func TestNoTimeExp(t *testing.T) {
+	timeNow := time.Date(2017, time.October, 2, 1, 0, 0, 0, testTimeZone) // JST: Mon 2 Oct 2017 00:00:00
+	setNow(timeNow)
+	testFilterEval(t, "no time", todoist.Item{}, true)
+	// not midnight
+	testFilterEval(t, "no time", todoist.Item{Due: due("Sun 1 Oct 2017 14:00:00 +0000")}, false)
+
+	// actually no time
+	testFilterEval(t, "no time", todoist.Item{Due: &todoist.Due{Date: "2015-03-15"}}, true)
+	// this one looks weird, but it is midnight ?? not sure of no time semantics
+	testFilterEval(t, "no time", todoist.Item{Due: due("Sun 1 Oct 2017 15:00:00 +0000")}, true)
+}
+
 func TestDueOnEval(t *testing.T) {
 	timeNow := time.Date(2017, time.October, 2, 1, 0, 0, 0, testTimeZone) // JST: Mon 2 Oct 2017 00:00:00
 	setNow(timeNow)

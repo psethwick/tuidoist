@@ -210,6 +210,13 @@ func TestSpecialDateTimeFilter(t *testing.T) {
 		Filter("14 days"), "they should be equal")
 }
 
+func TestNoTime(t *testing.T) {
+	assert.Equal(t,
+	DateExpr{operation: NO_TIME},
+	Filter("no time"),
+	)
+}
+
 func TestDateTimeElapsedFilter(t *testing.T) {
 	timeNow := time.Date(2017, time.January, 2, 18, 0, 0, 0, testTimeZone)
 	setNow(timeNow)
