@@ -50,6 +50,7 @@ const (
     DUE_BEFORE
     DUE_AFTER
     NO_DUE_DATE
+		NO_TIME
 )
 
 type DateExpr struct {
@@ -150,6 +151,8 @@ func (l *Lexer) Lex(lval *yySymType) int {
                 token = OVERDUE
             } else if lowerToken == "no" {
                 token = NO
+            } else if lowerToken == "time" {
+                token = TIME
             } else if lowerToken == "date" {
                 token = DATE
             } else if lowerToken == "labels" {

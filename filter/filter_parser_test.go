@@ -254,19 +254,24 @@ func TestNoSyntaxErrorAllOfficialExamples(t *testing.T) {
 		"#Work & no due date",
 		"Saturday & @night",
 		"(P1 | P2) & 14 days",
+		"7 days & @waiting",
 		"view all",
+		"no time",
 
 		// TODO: these all fail
-		// "#Work & assigned to: me",
-		// "due before: +8 hours & !overdue",
-		// "created before: -30 days",
-		// "created before: -365 days",
+
+		// assigned to/by
+
+		//"assigned to: me",
+		//"#Work & assigned to: me",
 		// "assigned by: me",
 		// "assigned to: Becky",
 		// "added by: me",
 		// "added by: Becky",
-		// "7 days & @waiting",
-		// "no time",
+
+		// "due before: +8 hours & !overdue",
+		// "created before: -30 days",
+		// "created before: -365 days",
 	}
 	for _, input := range tests {
 		e := Filter(input)

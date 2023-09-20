@@ -21,7 +21,7 @@ import (
 %token<token> STRING NUMBER
 %token<token> MONTH_IDENT TWELVE_CLOCK_IDENT
 %token<token> TODAY_IDENT TOMORROW_IDENT YESTERDAY_IDENT DAYS VIEW ALL
-%token<token> DUE BEFORE AFTER OVER OVERDUE NO DATE LABELS '#' '@'
+%token<token> DUE BEFORE AFTER OVER OVERDUE NO DATE TIME LABELS '#' '@'
 %left '&' '|'
 
 %%
@@ -90,6 +90,10 @@ expr
     | VIEW ALL
     {
         $$ = ViewAllExpr{}
+    }
+    | NO TIME
+    {
+        $$ = DateExpr{operation: NO_TIME}
     }
     | DUE BEFORE ':' s_datetime
     {
