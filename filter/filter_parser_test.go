@@ -204,6 +204,10 @@ func TestSpecialDateTimeFilter(t *testing.T) {
 	assert.Equal(t,
 		DateExpr{operation: DUE_ON, datetime: time.Date(2016, time.December, 31, 0, 0, 0, 0, testTimeZone), allDay: true},
 		Filter("yesterday"), "they should be equal")
+
+	assert.Equal(t,
+		DateExpr{operation: DUE_BEFORE, datetime: time.Date(2017, time.January, 15, 0, 0, 0, 0, testTimeZone), allDay: true},
+		Filter("14 days"), "they should be equal")
 }
 
 func TestDateTimeElapsedFilter(t *testing.T) {
@@ -252,7 +256,6 @@ func TestNoSyntaxErrorAllOfficialExamples(t *testing.T) {
 
 		// todo eval? or maybe I have...
 		"(P1 | P2) & 14 days",
-		// " 14 days",
 
 		// TODO: these all fail
 		// "view all",
