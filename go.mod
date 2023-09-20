@@ -9,7 +9,6 @@ require (
 	github.com/erikgeiser/promptkit v0.9.0
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/mistakenelf/teacup v0.4.1
-	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.15.2
 	github.com/psethwick/bubblelister v0.3.2
 	github.com/rkoesters/xdg v0.0.1
@@ -32,10 +31,10 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
-	github.com/sahilm/fuzzy v0.1.0 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
