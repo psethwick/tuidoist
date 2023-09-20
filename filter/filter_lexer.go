@@ -152,6 +152,8 @@ func (l *Lexer) Lex(lval *yySymType) int {
                 token = DATE
             } else if lowerToken == "labels" {
                 token = LABELS
+            } else if lowerToken == "days" {
+                token = DAYS
             } else {
                 token = STRING
             }

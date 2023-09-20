@@ -250,8 +250,11 @@ func TestNoSyntaxErrorAllOfficialExamples(t *testing.T) {
 		"#Work & no due date",
 		"Saturday & @night",
 
+		// todo eval? or maybe I have...
+		"(P1 | P2) & 14 days",
+		// " 14 days",
+
 		// TODO: these all fail
-		// "(P1 | P2) & 14 days",
 		// "view all",
 		// "#Work & assigned to: me",
 		// "due before: +8 hours & !overdue",

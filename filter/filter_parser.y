@@ -1,5 +1,6 @@
 %{
 package filter 
+
 import (
     "time"
     "strings"
@@ -19,7 +20,7 @@ import (
 %type<expr> s_time
 %token<token> STRING NUMBER
 %token<token> MONTH_IDENT TWELVE_CLOCK_IDENT
-%token<token> TODAY_IDENT TOMORROW_IDENT YESTERDAY_IDENT
+%token<token> TODAY_IDENT TOMORROW_IDENT YESTERDAY_IDENT DAYS
 %token<token> DUE BEFORE AFTER OVER OVERDUE NO DATE LABELS '#' '@'
 %left '&' '|'
 
@@ -207,6 +208,10 @@ s_date
     | NUMBER '/' NUMBER
     {
         $$ = time.Date(now().Year(), time.Month(atoi($3.literal)), atoi($1.literal), 0, 0, 0, 0, timezone())
+    }
+    | NUMBER DAYS
+    {
+        $$ = today().AddDate(0, 0, atoi($1.literal))
     }
 
 s_time
