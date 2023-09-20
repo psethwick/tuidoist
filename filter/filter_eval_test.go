@@ -99,6 +99,12 @@ func TestNotOpEval(t *testing.T) {
 	testFilterEval(t, "!(p3 | p4)", todoist.Item{Priority: 3}, true)
 }
 
+func TestViewAllExp(t *testing.T) {
+	testFilterEval(t, "view all", todoist.Item{Priority: 1}, true)
+	testFilterEval(t, "view all", todoist.Item{Priority: 2}, true)
+	testFilterEval(t, "view all", todoist.Item{Priority: 3}, true)
+}
+
 func TestDueOnEval(t *testing.T) {
 	timeNow := time.Date(2017, time.October, 2, 1, 0, 0, 0, testTimeZone) // JST: Mon 2 Oct 2017 00:00:00
 	setNow(timeNow)

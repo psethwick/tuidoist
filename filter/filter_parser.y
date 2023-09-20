@@ -20,7 +20,7 @@ import (
 %type<expr> s_time
 %token<token> STRING NUMBER
 %token<token> MONTH_IDENT TWELVE_CLOCK_IDENT
-%token<token> TODAY_IDENT TOMORROW_IDENT YESTERDAY_IDENT DAYS
+%token<token> TODAY_IDENT TOMORROW_IDENT YESTERDAY_IDENT DAYS VIEW ALL
 %token<token> DUE BEFORE AFTER OVER OVERDUE NO DATE LABELS '#' '@'
 %left '&' '|'
 
@@ -86,6 +86,10 @@ expr
     {
         date := today().AddDate(0, 0, atoi($1.literal))
         $$ = DateExpr{allDay: true, datetime: date, operation: DUE_BEFORE}
+    }
+    | VIEW ALL
+    {
+        $$ = ViewAllExpr{}
     }
     | DUE BEFORE ':' s_datetime
     {

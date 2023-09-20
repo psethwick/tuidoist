@@ -253,12 +253,10 @@ func TestNoSyntaxErrorAllOfficialExamples(t *testing.T) {
 		"!subtask",
 		"#Work & no due date",
 		"Saturday & @night",
-
-		// todo eval? or maybe I have...
 		"(P1 | P2) & 14 days",
+		"view all",
 
 		// TODO: these all fail
-		// "view all",
 		// "#Work & assigned to: me",
 		// "due before: +8 hours & !overdue",
 		// "created before: -30 days",

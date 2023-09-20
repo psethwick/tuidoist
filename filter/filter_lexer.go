@@ -20,6 +20,8 @@ type ErrorExpr struct {
 
 type VoidExpr struct {}
 
+type ViewAllExpr struct {}
+
 type StringExpr struct {
     literal string
 }
@@ -152,6 +154,10 @@ func (l *Lexer) Lex(lval *yySymType) int {
                 token = DATE
             } else if lowerToken == "labels" {
                 token = LABELS
+            } else if lowerToken == "view" {
+                token = VIEW
+            } else if lowerToken == "all" {
+                token = ALL
             } else if lowerToken == "days" {
                 token = DAYS
             } else {

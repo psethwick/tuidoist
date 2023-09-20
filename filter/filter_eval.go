@@ -52,6 +52,9 @@ func Eval(e Expression, item todoist.AbstractItem, projects todoist.Projects) (r
 	case DateExpr:
 		e := e.(DateExpr)
 		return EvalDate(e, item.DateTime()), err
+	case ViewAllExpr:
+		// we could fall through to the default, but let's not
+	  return true, nil
 	case NotOpExpr:
 		e := e.(NotOpExpr)
 		r, err := Eval(e.expr, item, projects)
