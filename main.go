@@ -8,7 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/psethwick/tuidoist/todoist"
+	todoist "github.com/sachaos/todoist/lib"
 
 	"github.com/psethwick/tuidoist/client"
 	"github.com/psethwick/tuidoist/status"

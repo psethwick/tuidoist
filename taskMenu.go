@@ -5,7 +5,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/psethwick/tuidoist/style"
-	"github.com/psethwick/tuidoist/todoist"
+
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 type taskMenuModel struct {

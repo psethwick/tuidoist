@@ -13,7 +13,7 @@ import (
 	"github.com/rkoesters/xdg/basedir"
 	"github.com/spf13/viper"
 
-	"github.com/psethwick/tuidoist/todoist"
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 const (
@@ -156,7 +156,7 @@ func GetClient(logger func(...any)) *todoist.Client {
 		DateTimeFormat: viper.GetString("shortdatetimeformat"),
 	}
 
-	client := todoist.NewClient(config, logger)
+	client := todoist.NewClient(config)
 	client.Store = &store
 	if len(store.Projects) == 0 {
 		err := client.Sync(context.Background())

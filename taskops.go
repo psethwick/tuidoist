@@ -4,9 +4,11 @@ import (
 	"os/exec"
 
 	tea "github.com/charmbracelet/bubbletea"
-	fltr "github.com/psethwick/tuidoist/filter"
+
+	todoist "github.com/sachaos/todoist/lib"
+	fltr "github.com/sachaos/todoist/lib/filter"
+
 	"github.com/psethwick/tuidoist/task"
-	"github.com/psethwick/tuidoist/todoist"
 )
 
 func (m *mainModel) setTasksFromProject(p *project) {
@@ -32,9 +34,8 @@ func (m *mainModel) setTasksFromProject(p *project) {
 
 func (m *mainModel) setTasksFromFilter(title string, expr fltr.Expression) {
 	tasks := []task.Task{}
-	projects := m.client.Store.Projects
 	for _, i := range m.client.Store.Items {
-		if res, _ := fltr.Eval(expr, i, projects); res {
+		if res, _ := fltr.Eval(expr, i, m.client.Store); res {
 			tasks = append(tasks, task.New(m.client.Store, i))
 		}
 	}
@@ -70,10 +71,11 @@ func (m *mainModel) undoCompleteTask() func() tea.Msg {
 	m.taskList.AddItem(lastCompletedTask)
 	m.statusBarModel.SetMessage("undo complete", lastCompletedTask.Title)
 	return func() tea.Msg {
-		err := m.client.UncompleteItem(m.ctx, lastCompletedTask.Item)
-		if err != nil {
-			dbg("uncomplete task err", err)
-		}
+		// TODO
+		// err := m.client.UncompleteItem(m.ctx, lastCompletedTask.Item)
+		// if err != nil {
+		// 	dbg("uncomplete task err", err)
+		// }
 		return m.sync()
 	}
 }

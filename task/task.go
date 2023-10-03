@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/psethwick/tuidoist/style"
-	"github.com/psethwick/tuidoist/todoist"
+
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 type Task struct {

@@ -6,9 +6,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/erikgeiser/promptkit/selection"
-	filt "github.com/psethwick/tuidoist/filter"
 	"github.com/psethwick/tuidoist/style"
-	"github.com/psethwick/tuidoist/todoist"
+
+	todoist "github.com/sachaos/todoist/lib"
+	filt "github.com/sachaos/todoist/lib/filter"
 )
 
 type choosePurpose uint
