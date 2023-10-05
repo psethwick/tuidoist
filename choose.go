@@ -206,9 +206,27 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 }
 
 func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
-	expr := filt.Filter(f.Query)
+	exprs := filt.Filter(f.Query)
+	dbg("gotoFitler", exprs)
+	titles := strings.Split(f.Query, ",")
+	dbg("titels", titles)
+
+	if len(titles) == 1 {
+		titles[0] = f.Name
+	}
+	var fts []filterTitle
+	for i, ex := range exprs {
+		dbg(i, fmt.Sprintf("%+v", ex))
+		if _, ok := ex.(filt.ErrorExpr); ok {
+			dbg("error", ex, f.Query)
+			pm.main.statusBarModel.SetTitle(pm.oldTitle)
+			return nil
+		}
+		fts = append(fts, filterTitle{titles[i], ex})
+	}
+
 	refresh := func() {
-		pm.main.setTasksFromFilter(f.Name, expr)
+		pm.main.setTasksFromFilter(fts)
 	}
 	pm.main.refresh = refresh
 	pm.main.statusBarModel.SetTitle(f.Name)

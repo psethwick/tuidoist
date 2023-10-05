@@ -9,39 +9,55 @@ import (
 	fltr "github.com/sachaos/todoist/lib/filter"
 
 	"github.com/psethwick/tuidoist/task"
+	"github.com/psethwick/tuidoist/tasklist"
 )
 
 func (m *mainModel) setTasksFromProject(p *project) {
 
-	tasks := []task.Task{}
+	lists := []tasklist.List{}
 	if p.section.ID == "" {
+		tasks := []task.Task{}
 		for _, i := range m.client.Store.Items {
 			if i.ProjectID == p.project.ID {
 				tasks = append(tasks, task.New(m.client.Store, i))
 			}
 		}
-	} else { // project / section
+		lists = append(lists, tasklist.List{Title: p.Display(), Tasks: tasks})
+	} else {
+		// TODO multiple lists if there are sections
+		// include (no section) if tasks exist there
+		tasks := []task.Task{}
 		for _, i := range m.client.Store.Items {
 			if i.ProjectID == p.project.ID && i.SectionID == p.section.ID {
 				tasks = append(tasks, task.New(m.client.Store, i))
 			}
 		}
+		lists = append(lists, tasklist.List{Title: p.Display(), Tasks: tasks})
 	}
-	m.statusBarModel.SetTitle(p.Display())
-	m.statusBarModel.SetNumber(len(tasks))
-	m.taskList.ResetItems(tasks)
+	m.taskList.ResetItems(lists)
+	m.statusBarModel.SetTitle(m.taskList.Title())
+	m.statusBarModel.SetNumber(m.taskList.Len())
 }
 
-func (m *mainModel) setTasksFromFilter(title string, expr fltr.Expression) {
-	tasks := []task.Task{}
-	for _, i := range m.client.Store.Items {
-		if res, _ := fltr.Eval(expr, i, m.client.Store); res {
-			tasks = append(tasks, task.New(m.client.Store, i))
+type filterTitle struct {
+	Title string
+	Expr  fltr.Expression
+}
+
+func (m *mainModel) setTasksFromFilter(lists []filterTitle) {
+	var tls []tasklist.List
+	for _, l := range lists {
+		tasks := []task.Task{}
+		for _, i := range m.client.Store.Items {
+			if res, _ := fltr.Eval(l.Expr, &i, m.client.Store); res {
+				tasks = append(tasks, task.New(m.client.Store, i))
+			}
 		}
+		tls = append(tls, tasklist.List{Title: l.Title, Tasks: tasks})
 	}
-	m.statusBarModel.SetTitle(title)
-	m.statusBarModel.SetNumber(len(tasks))
-	m.taskList.ResetItems(tasks)
+	// m.statusBarModel.SetTitle(title)
+	// m.statusBarModel.SetNumber(len(tasks))
+	m.taskList.ResetItems(tls)
 }
 
 // todo confirm

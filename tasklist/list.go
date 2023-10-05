@@ -9,10 +9,18 @@ import (
 	"github.com/psethwick/tuidoist/task"
 )
 
+type listModel struct {
+	bubblelister.Model
+	Title string
+}
+
 type TaskList struct {
-	list   bubblelister.Model
+	list   []listModel
 	logger func(...any)
 	sort   TaskSort
+	idx    int
+	height int
+	width  int
 }
 
 type TaskSort uint
@@ -76,28 +84,48 @@ func convertOut(strs []fmt.Stringer) []task.Task {
 	return tasks
 }
 
-func (tl *TaskList) ResetItems(tasks []task.Task) {
-	i, _ := tl.list.GetCursorIndex()
-	tl.list.ResetItems(convertIn(tasks)...)
-	tl.list.SetCursor(i)
+type List struct {
+	Title string
+	Tasks []task.Task
+}
+
+func (tl *TaskList) ResetItems(lists []List) {
+	ci := 0
+	if len(tl.list) > 0 {
+		ci, _ = tl.list[tl.idx].GetCursorIndex()
+	}
+	tl.list = make([]listModel, len(lists))
+	for i, l := range lists {
+		tl.list[i] = listModel{tl.newList(), l.Title}
+		tl.list[i].ResetItems(convertIn(l.Tasks)...)
+		tl.list[i].SetCursor(ci)
+	}
+}
+
+func (tl *TaskList) Title() string {
+	return tl.list[tl.idx].Title
+}
+
+func (tl *TaskList) Len() int {
+	return tl.list[tl.idx].Len()
 }
 
 func (tl *TaskList) Top() {
-	tl.list.Top()
+	tl.list[tl.idx].Top()
 }
 
 func (tl *TaskList) HalfPageUp() {
-	tl.list.MoveCursor(-5)
+	tl.list[tl.idx].MoveCursor(-5)
 }
 func (tl *TaskList) HalfPageDown() {
-	tl.list.MoveCursor(5)
+	tl.list[tl.idx].MoveCursor(5)
 }
 
 func (tl *TaskList) WholePageUp() {
-	tl.list.MoveCursor(-10)
+	tl.list[tl.idx].MoveCursor(-10)
 }
 func (tl *TaskList) WholePageDown() {
-	tl.list.MoveCursor(10)
+	tl.list[tl.idx].MoveCursor(10)
 }
 
 func updateTask(t task.Task) func(fmt.Stringer) (fmt.Stringer, error) {
@@ -107,12 +135,12 @@ func updateTask(t task.Task) func(fmt.Stringer) (fmt.Stringer, error) {
 }
 
 func (tl *TaskList) UpdateCurrentTask(t task.Task) {
-	idx, _ := tl.list.GetCursorIndex()
-	tl.list.UpdateItem(idx, updateTask(t))
+	idx, _ := tl.list[tl.idx].GetCursorIndex()
+	tl.list[tl.idx].UpdateItem(idx, updateTask(t))
 }
 
 func (tl *TaskList) Bottom() {
-	tl.list.Bottom()
+	tl.list[tl.idx].Bottom()
 }
 
 func (tl *TaskList) Sort(ts TaskSort) string {
@@ -121,13 +149,16 @@ func (tl *TaskList) Sort(ts TaskSort) string {
 	} else {
 		tl.sort = ts
 	}
-	tl.list.LessFunc = sortLessFunc[tl.sort]
-	tl.list.Sort()
+
+	for i, _ := range tl.list {
+		tl.list[i].LessFunc = sortLessFunc[tl.sort]
+		tl.list[i].Sort()
+	}
 	return sortDesc[tl.sort]
 }
 
 func (tl *TaskList) getAllItems() []task.Task {
-	return convertOut(tl.list.GetAllItems())
+	return convertOut(tl.list[tl.idx].GetAllItems())
 }
 
 func (tl *TaskList) AddItemTop(t task.Task) task.Task {
@@ -136,52 +167,69 @@ func (tl *TaskList) AddItemTop(t task.Task) task.Task {
 		minOrder = min(minOrder, t.Item.ChildOrder)
 	}
 	t.Item.ChildOrder = minOrder - 1
-	tl.list.AddItems(t)
-	tl.list.Sort()
-	tl.list.Top()
+	tl.list[tl.idx].AddItems(t)
+	tl.list[tl.idx].Sort()
+	tl.list[tl.idx].Top()
 	return t
 }
 
 func (tl *TaskList) AddItem(t task.Task) {
-	tl.list.AddItems(t)
+	tl.list[tl.idx].AddItems(t)
 	tl.Sort(tl.sort)
 }
 
 func (tl *TaskList) AddItemBottom(t task.Task) task.Task {
 	maxOrder := 0
-	for _, lt := range tl.list.GetAllItems() {
+	for _, lt := range tl.list[tl.idx].GetAllItems() {
 		maxOrder = max(maxOrder, lt.(task.Task).Item.ChildOrder)
 	}
 	t.Item.ChildOrder = maxOrder + 1
-	tl.list.AddItems(t)
-	tl.list.Sort()
-	tl.list.Bottom()
+	tl.list[tl.idx].AddItems(t)
+	tl.list[tl.idx].Sort()
+	tl.list[tl.idx].Bottom()
 	return t
 }
 
 func (tl *TaskList) SetHeight(h int) {
-	tl.list.Height = h
+	tl.height = h
+	for i, _ := range tl.list {
+		tl.list[i].Height = h
+	}
 }
 
 func (tl *TaskList) SetWidth(w int) {
-	tl.list.Width = w
+	tl.width = w
+	for i, _ := range tl.list {
+		tl.list[i].Width = w
+	}
 }
 
 func (tl *TaskList) MoveCursor(i int) {
-	tl.list.MoveCursor(i)
+	tl.list[tl.idx].MoveCursor(i)
 }
 
 func (tl *TaskList) GetCursorItem() (task.Task, error) {
-	str, err := tl.list.GetCursorItem()
-	return str.(task.Task), err
-}
-
-func (tl *TaskList) RemoveCurrentItem() (task.Task, error) {
-	idx, err := tl.list.GetCursorIndex()
+	str, err := tl.list[tl.idx].GetCursorItem()
 	if err != nil {
 		return task.Task{}, err
 	}
-	str, err := tl.list.RemoveIndex(idx)
+	return str.(task.Task), err
+
+}
+
+func (tl *TaskList) NextList() {
+	tl.idx = (tl.idx + 1) % len(tl.list)
+}
+func (tl *TaskList) PrevList() {
+	tl.idx = (tl.idx + len(tl.list) + 1) % len(tl.list)
+}
+
+func (tl *TaskList) RemoveCurrentItem() (task.Task, error) {
+	idx, err := tl.list[tl.idx].GetCursorIndex()
+	if err != nil {
+		return task.Task{}, err
+	}
+	str, err := tl.list[tl.idx].RemoveIndex(idx)
 	if err != nil {
 		return task.Task{}, err
 	}
@@ -192,28 +240,33 @@ func equals(a fmt.Stringer, b fmt.Stringer) bool {
 	return a.(task.Task).Item.ID == b.(task.Task).Item.ID
 }
 
-func New(logger func(...any)) TaskList {
-
+func (tl *TaskList) newList() bubblelister.Model {
 	bl := bubblelister.NewModel()
-	bl.LessFunc = sortLessFunc[DefaultSort]
+	bl.LessFunc = sortLessFunc[tl.sort]
 	bl.EqualsFunc = equals
 	pfxr := bubblelister.NewPrefixer()
 	pfxr.Number = false
 	pfxr.NumberRelative = false
 	bl.PrefixGen = pfxr
+	bl.Width = tl.width
+	bl.Height = tl.height
 
 	p := termenv.ColorProfile()
 	// todo maybe fork bubblelister to use lipgloss?
 	// adaptive color would probably be the motivation
 	bl.CurrentStyle = termenv.Style{}.Foreground(p.Color(style.Pink.Light))
+	return bl
+}
+
+func New(logger func(...any)) TaskList {
 
 	return TaskList{
-		list:   bl,
+		list:   []listModel{},
 		logger: logger,
 		sort:   DefaultSort,
 	}
 }
 
 func (tl *TaskList) View() string {
-	return tl.list.View()
+	return tl.list[tl.idx].View()
 }

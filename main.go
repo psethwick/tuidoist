@@ -93,6 +93,7 @@ func (m *mainModel) sync() tea.Msg {
 func (m *mainModel) Init() tea.Cmd {
 	m.refresh = func() {
 		for _, tp := range m.client.Store.Projects {
+			// todo default view prefs
 			if tp.Name == "Inbox" {
 				p := project{tp, todoist.Section{}}
 				m.setTasksFromProject(&p)
@@ -141,6 +142,10 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.taskList.MoveCursor(1)
 			case "k":
 				m.taskList.MoveCursor(-1)
+			case "h":
+				m.taskList.PrevList()
+			case "l":
+				m.taskList.NextList()
 			case "v":
 				t, _ := m.taskList.GetCursorItem()
 				if t.Url != "" {
