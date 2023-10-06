@@ -154,6 +154,7 @@ func GetClient(logger func(...any)) *todoist.Client {
 		Color:          viper.GetBool("color"),
 		DateFormat:     viper.GetString("shortdateformat"),
 		DateTimeFormat: viper.GetString("shortdatetimeformat"),
+		DebugMode:      len(os.Getenv("DEBUG")) > 0,
 	}
 
 	client := todoist.NewClient(config)

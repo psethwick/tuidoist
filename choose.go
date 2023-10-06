@@ -116,14 +116,16 @@ func (pm *chooseModel) View() string {
 
 func (m *mainModel) MoveItem(item *todoist.Item, p project) func() tea.Msg {
 	return func() tea.Msg {
-		if item.SectionID != p.section.ID {
-			item.SectionID = p.section.ID
-			err := m.client.UpdateItem(m.ctx, *item)
-			if err != nil {
-				dbg(err)
-			}
+		args := map[string]interface{}{"id": item.ID}
+		if p.section.ID != "" {
+			args["section_id"] = p.section.ID
+		} else {
+			args["project_id"] = p.project.ID
 		}
-		err := m.client.MoveItem(m.ctx, item, p.project.ID)
+		err := m.client.ExecCommands(
+			m.ctx,
+			todoist.Commands{todoist.NewCommand("item_move", args)},
+		)
 		if err != nil {
 			dbg(err)
 		}

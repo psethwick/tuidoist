@@ -23,13 +23,15 @@ func (m *mainModel) setTasksFromProject(p *project) {
 			tasks = append(tasks, task.New(m.client.Store, i))
 		}
 	}
-	lists = append(lists, tasklist.List{Title: p.project.Name, Tasks: tasks})
+	if len(tasks) > 0 {
+		lists = append(lists, tasklist.List{Title: p.project.Name, Tasks: tasks})
+	}
 
 	for _, s := range m.client.Store.Sections {
 		tasks = []task.Task{}
 		if s.ProjectID == p.project.ID {
 			for _, item := range m.client.Store.Items {
-				if item.ProjectID == p.project.ID && item.SectionID != "" && s.ID == item.SectionID {
+				if item.ProjectID == p.project.ID && s.ID == item.SectionID {
 					tasks = append(tasks, task.New(m.client.Store, item))
 				}
 			}
@@ -95,11 +97,14 @@ func (m *mainModel) undoCompleteTask() func() tea.Msg {
 	m.taskList.AddItem(lastCompletedTask)
 	m.statusBarModel.SetMessage("undo complete", lastCompletedTask.Title)
 	return func() tea.Msg {
-		// TODO
-		// err := m.client.UncompleteItem(m.ctx, lastCompletedTask.Item)
-		// if err != nil {
-		// 	dbg("uncomplete task err", err)
-		// }
+		args := map[string]interface{}{"id": lastCompletedTask.Item.ID}
+		err := m.client.ExecCommands(
+			m.ctx,
+			todoist.Commands{todoist.NewCommand("item_uncomplete", args)},
+		)
+		if err != nil {
+			dbg(err)
+		}
 		return m.sync()
 	}
 }
