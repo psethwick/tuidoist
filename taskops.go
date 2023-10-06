@@ -82,6 +82,7 @@ func (m *mainModel) deleteTask() func() tea.Msg {
 		err := m.client.DeleteItem(m.ctx, []string{t.Item.ID})
 		if err != nil {
 			dbg("del err", err)
+			return nil
 		}
 		return m.sync()
 	}
@@ -104,6 +105,7 @@ func (m *mainModel) undoCompleteTask() func() tea.Msg {
 		)
 		if err != nil {
 			dbg(err)
+			return nil
 		}
 		return m.sync()
 	}
@@ -123,6 +125,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 		err := m.client.CloseItem(m.ctx, []string{t.Item.ID})
 		if err != nil {
 			dbg("complete task err", err)
+			return nil
 		}
 
 		return m.sync()

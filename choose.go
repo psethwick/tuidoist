@@ -188,7 +188,8 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 			pm.main.refresh = func() {
 				pm.main.setTasksFromProject(&prj)
 			}
-			ProjectID = prj.project.ID
+			pm.main.newTaskModel.projectID = prj.project.ID
+			pm.main.newTaskModel.sectionId = prj.section.ID
 			pm.main.refresh()
 			pm.main.switchProject(&prj)
 		case moveToProject:
@@ -240,7 +241,6 @@ func (pm *chooseModel) handleChooseFilter() tea.Cmd {
 		return nil
 	}
 	flt := f.(filter)
-	ProjectID = ""
 	cmd := pm.chooser.Init()
 	pm.main.state = tasksState
 	return tea.Batch(pm.gotoFilter(flt), cmd)

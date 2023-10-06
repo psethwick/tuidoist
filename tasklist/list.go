@@ -109,7 +109,15 @@ func (tl *TaskList) ResetItems(lists []List, newIdx int) {
 }
 
 func (tl *TaskList) Title() string {
-	return tl.list[tl.idx].title
+	t := ""
+	if tl.idx != 0 {
+		t += "<-"
+	}
+	t += tl.list[tl.idx].title
+	if tl.idx != len(tl.list)-1 {
+		t += "->"
+	}
+	return t
 }
 
 func (tl *TaskList) Len() int {

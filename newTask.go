@@ -11,18 +11,18 @@ import (
 )
 
 type newTaskModel struct {
-	content textinput.Model
-	main    *mainModel
+	content   textinput.Model
+	main      *mainModel
+	projectID string
+	sectionId string
 }
-
-var ProjectID = ""
 
 func newNewTaskModel(m *mainModel) newTaskModel {
 	ti := textinput.New()
 	ti.Prompt = "   > "
 	return newTaskModel{
-		ti,
-		m,
+		content: ti,
+		main:    m,
 	}
 }
 
@@ -39,9 +39,9 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 	i := todoist.Item{}
 	i.Content = content
 	i.Priority = 1
-	if ProjectID != "" {
-		i.ProjectID = ProjectID
-	}
+
+	i.ProjectID = ntm.projectID
+	i.SectionID = ntm.sectionId
 
 	t := task.New(ntm.main.client.Store, i)
 	ntm.main.statusBarModel.SetMessage("added", t.Title)
@@ -51,7 +51,39 @@ func (ntm *newTaskModel) addTask() func() tea.Msg {
 		t = ntm.main.taskList.AddItemBottom(t)
 	}
 	return func() tea.Msg {
-		// todo separate quick add?
+		item := t.Item
+		param := map[string]interface{}{}
+		if item.Content != "" {
+			param["content"] = item.Content
+		}
+		if item.SectionID != "" {
+			param["section_id"] = item.SectionID
+		}
+		if item.Description != "" {
+			param["description"] = item.Description
+		}
+		if item.DateString != "" {
+			param["date_string"] = item.DateString
+		}
+		if len(item.LabelNames) != 0 {
+			param["labels"] = item.LabelNames
+		}
+		if item.Priority != 0 {
+			param["priority"] = item.Priority
+		}
+		if item.ProjectID != "" {
+			param["project_id"] = item.ProjectID
+		}
+		if item.Due != nil {
+			param["due"] = item.Due
+		}
+		param["auto_reminder"] = item.AutoReminder
+
+		ntm.main.client.ExecCommands(ntm.main.ctx,
+			todoist.Commands{
+				todoist.NewCommand("item_add", param),
+			},
+		)
 		ntm.main.client.AddItem(ntm.main.ctx, t.Item)
 		return ntm.main.sync()
 	}
@@ -71,6 +103,8 @@ func (ntm *newTaskModel) Update(msg tea.Msg) tea.Cmd {
 			ntm.content.SetValue("")
 			ntm.main.taskList.SetHeight(ntm.main.height - 1)
 			ntm.content.Blur()
+			ntm.projectID = ""
+			ntm.sectionId = ""
 			ntm.main.state = tasksState
 		}
 	}
