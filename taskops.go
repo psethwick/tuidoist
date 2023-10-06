@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os/exec"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,28 +14,35 @@ import (
 )
 
 func (m *mainModel) setTasksFromProject(p *project) {
-
 	lists := []tasklist.List{}
-	if p.section.ID == "" {
-		tasks := []task.Task{}
-		for _, i := range m.client.Store.Items {
-			if i.ProjectID == p.project.ID {
-				tasks = append(tasks, task.New(m.client.Store, i))
-			}
+	tasks := []task.Task{}
+	var selectedList int
+	for _, i := range m.client.Store.Items {
+		// no section tasks should be first
+		if i.ProjectID == p.project.ID && i.SectionID == "" {
+			tasks = append(tasks, task.New(m.client.Store, i))
 		}
-		lists = append(lists, tasklist.List{Title: p.Display(), Tasks: tasks})
-	} else {
-		// TODO multiple lists if there are sections
-		// include (no section) if tasks exist there
-		tasks := []task.Task{}
-		for _, i := range m.client.Store.Items {
-			if i.ProjectID == p.project.ID && i.SectionID == p.section.ID {
-				tasks = append(tasks, task.New(m.client.Store, i))
-			}
-		}
-		lists = append(lists, tasklist.List{Title: p.Display(), Tasks: tasks})
 	}
-	m.taskList.ResetItems(lists)
+	lists = append(lists, tasklist.List{Title: p.project.Name, Tasks: tasks})
+
+	for _, s := range m.client.Store.Sections {
+		tasks = []task.Task{}
+		if s.ProjectID == p.project.ID {
+			for _, item := range m.client.Store.Items {
+				if item.ProjectID == p.project.ID && item.SectionID != "" && s.ID == item.SectionID {
+					tasks = append(tasks, task.New(m.client.Store, item))
+				}
+			}
+			lists = append(lists, tasklist.List{
+				Title: fmt.Sprintf("%s/%s", p.project.Name, s.Name),
+				Tasks: tasks,
+			})
+			if s.ID == p.section.ID {
+				selectedList = len(lists) - 1
+			}
+		}
+	}
+	m.taskList.ResetItems(lists, selectedList)
 	m.statusBarModel.SetTitle(m.taskList.Title())
 	m.statusBarModel.SetNumber(m.taskList.Len())
 }
@@ -55,9 +63,9 @@ func (m *mainModel) setTasksFromFilter(lists []filterTitle) {
 		}
 		tls = append(tls, tasklist.List{Title: l.Title, Tasks: tasks})
 	}
-	// m.statusBarModel.SetTitle(title)
+	// m.statusBarModel.SetTitle()
 	// m.statusBarModel.SetNumber(len(tasks))
-	m.taskList.ResetItems(tls)
+	m.taskList.ResetItems(tls, 0)
 }
 
 // todo confirm

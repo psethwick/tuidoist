@@ -53,11 +53,11 @@ func initialModel() *mainModel {
 	m := mainModel{}
 	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
-	m.taskList = tasklist.New(dbg)
 	m.chooseModel = newChooseModel(&m)
 	m.newTaskModel = newNewTaskModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
+	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
 	m.sub = make(chan struct{})
 	return &m
 }

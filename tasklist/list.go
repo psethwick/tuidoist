@@ -11,16 +11,17 @@ import (
 
 type listModel struct {
 	bubblelister.Model
-	Title string
+	title string
 }
 
 type TaskList struct {
-	list   []listModel
-	logger func(...any)
-	sort   TaskSort
-	idx    int
-	height int
-	width  int
+	OnTitleChange func(string)
+	list          []listModel
+	logger        func(...any)
+	sort          TaskSort
+	idx           int
+	height        int
+	width         int
 }
 
 type TaskSort uint
@@ -89,7 +90,7 @@ type List struct {
 	Tasks []task.Task
 }
 
-func (tl *TaskList) ResetItems(lists []List) {
+func (tl *TaskList) ResetItems(lists []List, newIdx int) {
 	ci := 0
 	if len(tl.list) > 0 {
 		ci, _ = tl.list[tl.idx].GetCursorIndex()
@@ -100,10 +101,15 @@ func (tl *TaskList) ResetItems(lists []List) {
 		tl.list[i].ResetItems(convertIn(l.Tasks)...)
 		tl.list[i].SetCursor(ci)
 	}
+	tl.idx = newIdx
+	tl.OnTitleChange(tl.Title())
+	for i, l := range tl.list {
+		tl.logger(i, l.Len())
+	}
 }
 
 func (tl *TaskList) Title() string {
-	return tl.list[tl.idx].Title
+	return tl.list[tl.idx].title
 }
 
 func (tl *TaskList) Len() int {
@@ -218,10 +224,12 @@ func (tl *TaskList) GetCursorItem() (task.Task, error) {
 }
 
 func (tl *TaskList) NextList() {
-	tl.idx = (tl.idx + 1) % len(tl.list)
+	tl.idx = min(tl.idx+1, len(tl.list)-1)
+	tl.OnTitleChange(tl.Title())
 }
 func (tl *TaskList) PrevList() {
-	tl.idx = (tl.idx + len(tl.list) + 1) % len(tl.list)
+	tl.idx = max(0, tl.idx-1)
+	tl.OnTitleChange(tl.Title())
 }
 
 func (tl *TaskList) RemoveCurrentItem() (task.Task, error) {
@@ -258,12 +266,12 @@ func (tl *TaskList) newList() bubblelister.Model {
 	return bl
 }
 
-func New(logger func(...any)) TaskList {
-
+func New(onTitleChange func(string), logger func(...any)) TaskList {
 	return TaskList{
-		list:   []listModel{},
-		logger: logger,
-		sort:   DefaultSort,
+		OnTitleChange: onTitleChange,
+		list:          []listModel{},
+		logger:        logger,
+		sort:          DefaultSort,
 	}
 }
 
