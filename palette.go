@@ -1,47 +1,91 @@
 package main
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"fmt"
 
-// not all choices should be available in all contexts
+	tea "github.com/charmbracelet/bubbletea"
+)
 
-var projectCommands = []string{
-	"add project",
-	"rename project",
-	"archive project",
+type paletteContext uint
+
+const (
+	paletteProject paletteContext = iota
+	paletteTask
+)
+
+type paletteCommand struct {
+	name    string
+	command func(*mainModel) tea.Cmd
 }
 
-var taskCommands = []string{
-	"change due date",
-}
-
-var PaletteCommands = append(projectCommands, taskCommands...)
-
-var PaletteMap = map[string]func(*mainModel) tea.Cmd{
-	"add project": func(m *mainModel) tea.Cmd {
-		dbg("todo adding project")
-		return nil
-	},
-	"rename project": func(m *mainModel) tea.Cmd {
-		dbg("todo rename project")
-		return nil
-	},
-	"archive project": func(m *mainModel) tea.Cmd {
-		dbg("todo archive project")
-		return nil
+var noContextCommands = []fmt.Stringer{
+	paletteCommand{
+		"add project",
+		func(m *mainModel) tea.Cmd {
+			m.inputModel.purpose = inputAddProject
+			m.inputModel.content.Focus()
+			m.state = viewAddProject
+			return nil
+		},
 	},
 }
-
-// add project
-// rename project
-// archive project?
 
 // add section
 // rename section
 // move section (to other project, it seems)
 // archive section
+var projectCommands = []fmt.Stringer{
+	paletteCommand{
+		"rename project",
+		func(m *mainModel) tea.Cmd {
+			prj := m.client.Store.ProjectMap[m.inputModel.projectID]
+			if prj == nil {
+				dbg("did not find project", m.inputModel.projectID)
+				return nil
+			}
+			m.inputModel.purpose = inputEditProject
+			m.inputModel.content.SetValue(prj.Name)
+			m.inputModel.content.Focus()
+			m.state = viewAddProject
+			return nil
+		},
+	},
+	paletteCommand{
+		"archive project",
+		func(m *mainModel) tea.Cmd {
+			dbg("todo")
+			return nil
+		},
+	},
+}
 
 // context task
 // edit content
 // edit desc
 // re-prioritise
-// add/remove/change due date
+var taskCommands = []fmt.Stringer{
+	paletteCommand{
+		"change due date",
+		func(m *mainModel) tea.Cmd {
+			dbg("todo")
+			return nil
+		},
+	},
+}
+
+func (pc paletteCommand) String() string {
+	return pc.name
+}
+
+func PaletteCommands(contexts ...paletteContext) []fmt.Stringer {
+	commands := noContextCommands
+	for _, ctx := range contexts {
+		switch ctx {
+		case paletteProject:
+			commands = append(commands, projectCommands...)
+		case paletteTask:
+			commands = append(commands, taskCommands...)
+		}
+	}
+	return commands
+}

@@ -18,11 +18,12 @@ import (
 type viewState uint
 
 const (
-	tasksState viewState = iota
-	chooseState
-	newTaskTopState
-	newTaskBottomState
-	taskMenuState
+	viewTasks viewState = iota
+	viewChooser
+	viewNewTaskTop
+	viewNewTaskBottom
+	viewTaskMenu
+	viewAddProject
 )
 
 type mainModel struct {
@@ -33,7 +34,7 @@ type mainModel struct {
 	ctx            context.Context
 	chooseModel    chooseModel
 	taskList       tasklist.TaskList
-	newTaskModel   newTaskModel
+	inputModel     inputModel
 	taskMenuModel  taskMenuModel
 	statusBarModel status.Model
 	refresh        func()
@@ -54,7 +55,7 @@ func initialModel() *mainModel {
 	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
-	m.newTaskModel = newNewTaskModel(&m)
+	m.inputModel = newInputModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
@@ -125,9 +126,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	switch m.state {
-	case chooseState:
+	case viewChooser:
 		cmds = append(cmds, m.chooseModel.Update(msg))
-	case tasksState:
+	case viewTasks:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch msg.String() {
@@ -162,7 +163,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// 	}
 			case "c":
 				cmds = append(cmds, m.completeTask())
-				m.state = tasksState
+				m.state = viewTasks
 			case "delete":
 				cmds = append(cmds, m.deleteTask())
 			case "f":
@@ -180,6 +181,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					cmds = append(cmds, m.chooseModel.gotoFilter(filter{Name: "Today", Query: "today | overdue"}))
 					m.gMenu = false
 				}
+			case "ctrl+p":
+				dbg("ctrl+p")
+				cmds = append(cmds, m.OpenPalette(paletteProject, paletteTask))
 			case "p":
 				if m.gMenu {
 					cmds = append(cmds, m.OpenProjects(chooseProject))
@@ -217,27 +221,31 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.taskMenuModel.item = t.Item
 					m.taskMenuModel.content.SetValue(t.Item.Content)
 					m.taskMenuModel.desc.SetValue(t.Item.Description)
-					m.state = taskMenuState
+					m.state = viewTaskMenu
 				}
 			case "a":
-				m.taskList.SetHeight(m.height - m.newTaskModel.Height() - 1)
+				m.taskList.SetHeight(m.height - m.inputModel.Height() - 1)
 				m.taskList.Bottom()
-				m.newTaskModel.content.Focus()
-				m.state = newTaskBottomState
+				m.inputModel.content.Focus()
+				m.inputModel.purpose = inputAddTask
+				m.state = viewNewTaskBottom
 			case "A":
-				m.taskList.SetHeight(m.height - m.newTaskModel.Height() - 1)
+				m.taskList.SetHeight(m.height - m.inputModel.Height() - 1)
 				m.taskList.Top()
-				m.newTaskModel.content.Focus()
-				m.state = newTaskTopState
+				m.inputModel.content.Focus()
+				m.inputModel.purpose = inputAddTask
+				m.state = viewNewTaskTop
 			default:
 				m.gMenu = false
 			}
 		}
-	case newTaskTopState:
+	case viewAddProject:
 		fallthrough
-	case newTaskBottomState:
-		cmds = append(cmds, m.newTaskModel.Update(msg))
-	case taskMenuState:
+	case viewNewTaskTop:
+		fallthrough
+	case viewNewTaskBottom:
+		cmds = append(cmds, m.inputModel.Update(msg))
+	case viewTaskMenu:
 		cmds = append(cmds, m.taskMenuModel.Update(msg))
 	}
 	cmds = append(cmds, m.statusBarModel.Update(msg))
@@ -247,22 +255,24 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *mainModel) View() string {
 	var s string
 	switch m.state {
-	case chooseState:
+	case viewChooser:
 		s = m.chooseModel.View()
-	case tasksState:
+	case viewTasks:
 		s = m.taskList.View()
-	case taskMenuState:
+	case viewTaskMenu:
 		s = m.taskMenuModel.View()
-	case newTaskBottomState:
+	case viewAddProject:
+		fallthrough
+	case viewNewTaskBottom:
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.taskList.View(),
-			m.newTaskModel.View(),
+			m.inputModel.View(),
 		)
-	case newTaskTopState:
+	case viewNewTaskTop:
 		s = lipgloss.JoinVertical(
 			lipgloss.Left,
-			m.newTaskModel.View(),
+			m.inputModel.View(),
 			m.taskList.View(),
 		)
 	}

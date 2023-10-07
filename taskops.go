@@ -44,6 +44,9 @@ func (m *mainModel) setTasksFromProject(p *project) {
 			}
 		}
 	}
+	if len(lists) == 0 {
+		lists = append(lists, tasklist.List{Title: p.project.Name})
+	}
 	m.taskList.ResetItems(lists, selectedList)
 	m.statusBarModel.SetTitle(m.taskList.Title())
 	m.statusBarModel.SetNumber(m.taskList.Len())

@@ -18,7 +18,7 @@ const (
 	chooseProject choosePurpose = iota
 	moveToProject
 	chooseFilter
-	palette
+	choosePalette
 )
 
 type project struct {
@@ -26,7 +26,7 @@ type project struct {
 	section todoist.Section
 }
 
-func (p project) Display() string {
+func (p project) String() string {
 	if p.section.ID == "" {
 		return p.project.Name
 	}
@@ -34,7 +34,7 @@ func (p project) Display() string {
 }
 
 type chooseModel struct {
-	chooser  *selection.Model[selectable]
+	chooser  *selection.Model[fmt.Stringer]
 	main     *mainModel
 	purpose  choosePurpose
 	title    string
@@ -50,7 +50,7 @@ type filter struct {
 	Query     string
 }
 
-func (f filter) Display() string {
+func (f filter) String() string {
 	return f.Name
 }
 
@@ -79,11 +79,7 @@ const (
 {{- end}}`
 )
 
-type selectable interface {
-	Display() string
-}
-
-func (pm *chooseModel) initChooser(p []selectable, prompt string, purpose choosePurpose) tea.Cmd {
+func (pm *chooseModel) initChooser(p []fmt.Stringer, prompt string, purpose choosePurpose) tea.Cmd {
 	sel := selection.New("", p)
 	sm := selection.NewModel(sel)
 	pm.oldTitle = pm.main.statusBarModel.GetTitle()
@@ -95,20 +91,21 @@ func (pm *chooseModel) initChooser(p []selectable, prompt string, purpose choose
 	// sm.FilterInputTextStyle        lipgloss.Style
 	// sm.FilterInputPlaceholderStyle lipgloss.Style
 	// sm.FilterInputCursorStyle      lipgloss.Style
-	sm.Filter = func(filter string, choice *selection.Choice[selectable]) bool {
+	sm.Filter = func(filter string, choice *selection.Choice[fmt.Stringer]) bool {
 		// todo fuzzier matching would be cool
 		// https://github.com/charmbracelet/bubbles/blob/master/list/list.go#L87
 		// short answer sahilm/fuzzy
-		return strings.Contains(strings.ToLower(choice.Value.Display()), strings.ToLower(filter))
+		return strings.Contains(strings.ToLower(choice.Value.String()), strings.ToLower(filter))
 	}
-	sm.SelectedChoiceStyle = func(c *selection.Choice[selectable]) string {
-		return style.SelectedTitle.Render(c.Value.Display())
+	sm.SelectedChoiceStyle = func(c *selection.Choice[fmt.Stringer]) string {
+		return style.SelectedTitle.Render(c.Value.String())
 	}
-	sm.UnselectedChoiceStyle = func(c *selection.Choice[selectable]) string {
-		return style.NormalTitle.Render(c.Value.Display())
+	sm.UnselectedChoiceStyle = func(c *selection.Choice[fmt.Stringer]) string {
+		return style.NormalTitle.Render(c.Value.String())
 	}
 	pm.chooser = sm
 	pm.purpose = purpose
+	pm.main.state = viewChooser
 	return sm.Init()
 }
 
@@ -140,27 +137,20 @@ func (m *mainModel) MoveItem(item *todoist.Item, p project) func() tea.Msg {
 }
 
 func (m *mainModel) OpenFilters() tea.Cmd {
-	fls := make([]selectable, len(m.client.Store.Filters))
+	fls := make([]fmt.Stringer, len(m.client.Store.Filters))
 	for i, f := range m.client.Store.Filters {
 		fls[i] = filter(f)
 	}
-	m.state = chooseState
 	return m.chooseModel.initChooser(fls, "Choose Filter", chooseFilter)
 }
-func (m *mainModel) OpenPalette() tea.Cmd {
-	// fls := make([]selectable, len(m.client.Store.Filters))
-	// for i, f := range m.client.Store.Filters {
-	// 	fls[i] = filter(f)
-	// }
-	// m.state = chooseState
-	// return m.chooseModel.initChooser(PaletteCommands, "Choose Filter", chooseFilter)
-	return nil
+func (m *mainModel) OpenPalette(contexts ...paletteContext) tea.Cmd {
+	return m.chooseModel.initChooser(PaletteCommands(contexts...), "Choose Command", choosePalette)
 }
 
 func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
 	p := m.client.Store.Projects
 	sections := m.client.Store.Sections
-	var projs []selectable
+	var projs []fmt.Stringer
 	for _, prj := range p {
 		var projectSections []todoist.Section
 		for _, s := range sections {
@@ -180,43 +170,10 @@ func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
 	} else {
 		prompt = "Move to Project"
 	}
-	m.state = chooseState
 	return m.chooseModel.initChooser(projs, prompt, purpose)
 }
 
-func (pm *chooseModel) handleChooseProject() tea.Cmd {
-	p, err := pm.chooser.Value()
-	prj, ok := p.(project)
-	if !ok {
-		return nil
-	}
-	var cmds []tea.Cmd
-	if err == nil {
-		switch pm.purpose {
-		case chooseProject:
-			pm.main.refresh = func() {
-				pm.main.setTasksFromProject(&prj)
-			}
-			pm.main.newTaskModel.projectID = prj.project.ID
-			pm.main.newTaskModel.sectionId = prj.section.ID
-			pm.main.refresh()
-			pm.main.switchProject(&prj)
-		case moveToProject:
-			task, err := pm.main.taskList.RemoveCurrentItem()
-			if err != nil {
-				dbg(err)
-			}
-			if ok {
-				cmds = append(cmds, pm.main.MoveItem(&task.Item, prj))
-				pm.main.statusBarModel.SetTitle(pm.oldTitle)
-			}
-		}
-	}
-	pm.main.state = tasksState
-	return tea.Batch(cmds...)
-}
-
-func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
+func (cm *chooseModel) gotoFilter(f filter) tea.Cmd {
 	exprs := filt.Filter(f.Query)
 	titles := strings.Split(f.Query, ",")
 
@@ -228,32 +185,56 @@ func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
 		dbg(i, fmt.Sprintf("%+v", ex))
 		if _, ok := ex.(filt.ErrorExpr); ok {
 			dbg("error", ex, f.Query)
-			pm.main.statusBarModel.SetTitle(pm.oldTitle)
+			cm.main.statusBarModel.SetTitle(cm.oldTitle)
 			return nil
 		}
 		fts = append(fts, filterTitle{titles[i], ex})
 	}
 
-	pm.main.refresh = func() {
-		pm.main.setTasksFromFilter(fts)
+	cm.main.refresh = func() {
+		cm.main.setTasksFromFilter(fts)
 	}
-	pm.main.refresh()
+	cm.main.refresh()
+	cm.main.state = viewTasks
 	return nil
 }
 
-func (pm *chooseModel) handleChooseFilter() tea.Cmd {
-	f, err := pm.chooser.Value()
+func (cm *chooseModel) handleChoose() tea.Cmd {
+	v, err := cm.chooser.Value()
 	if err != nil {
 		dbg(err)
 		return nil
 	}
-	flt := f.(filter)
-	pm.main.state = tasksState
-	return pm.gotoFilter(flt)
-}
-
-func (cm *chooseModel) handleChooseCommand() tea.Cmd {
-	// c, err := cm.chooser.Value()
+	switch v.(type) {
+	case filter:
+		return cm.gotoFilter(v.(filter))
+	case paletteCommand:
+		return v.(paletteCommand).command(cm.main)
+	case project:
+		prj := v.(project)
+		var cmds []tea.Cmd
+		if err == nil {
+			switch cm.purpose {
+			case chooseProject:
+				cm.main.refresh = func() {
+					cm.main.setTasksFromProject(&prj)
+				}
+				cm.main.inputModel.projectID = prj.project.ID
+				cm.main.inputModel.sectionId = prj.section.ID
+				cm.main.refresh()
+				cm.main.switchProject(&prj)
+			case moveToProject:
+				task, err := cm.main.taskList.RemoveCurrentItem()
+				if err != nil {
+					dbg(err)
+				}
+				cmds = append(cmds, cm.main.MoveItem(&task.Item, prj))
+				cm.main.statusBarModel.SetTitle(cm.oldTitle)
+			}
+		}
+		cm.main.state = viewTasks
+		return tea.Batch(cmds...)
+	}
 	return nil
 }
 
@@ -263,19 +244,10 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			switch pm.purpose {
-			case chooseProject:
-				fallthrough
-			case moveToProject:
-				cmds = append(cmds, pm.handleChooseProject())
-			case chooseFilter:
-				cmds = append(cmds, pm.handleChooseFilter())
-			case palette:
-				cmds = append(cmds, pm.handleChooseCommand())
-			}
+			cmds = append(cmds, pm.handleChoose())
 			return tea.Batch(cmds...)
 		case "esc":
-			pm.main.state = tasksState
+			pm.main.state = viewTasks
 			pm.main.statusBarModel.SetTitle(pm.oldTitle)
 			return nil
 		}
@@ -290,5 +262,5 @@ func newChooseModel(m *mainModel) chooseModel {
 }
 
 func (m *mainModel) switchProject(p *project) {
-	m.state = chooseState
+	m.state = viewChooser
 }

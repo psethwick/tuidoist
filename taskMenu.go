@@ -75,14 +75,14 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, tm.main.OpenProjects(moveToProject))
 		case "c":
 			cmds = append(cmds, tm.main.completeTask())
-			tm.main.state = tasksState
+			tm.main.state = viewTasks
 		case "delete":
 			cmds = append(cmds, tm.main.deleteTask())
 		case "enter":
 			tm.item.Content = tm.content.Value()
 			tm.item.Description = tm.desc.Value()
 			cmds = append(cmds, tm.main.UpdateItem(tm.item))
-			tm.main.state = tasksState
+			tm.main.state = viewTasks
 		case "tab":
 			tm.focus = (tm.focus + 1) % 3
 			tm.updateFocus()
@@ -90,7 +90,7 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 			tm.focus = (tm.focus - 1) % 3
 			tm.updateFocus()
 		case "esc":
-			tm.main.state = tasksState
+			tm.main.state = viewTasks
 
 		}
 	}
