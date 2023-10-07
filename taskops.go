@@ -120,7 +120,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 	lastCompletedTask = task.Task(t)
 	t.Completed = true
 	m.statusBarModel.SetMessage("completed", t.Title)
-	m.taskList.UpdateCurrentTask(t)
+	m.taskList.RemoveCurrentItem()
 	return func() tea.Msg {
 		err := m.client.CloseItem(m.ctx, []string{t.Item.ID})
 		if err != nil {
@@ -128,7 +128,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 			return nil
 		}
 
-		return m.sync()
+		return nil //m.sync()
 	}
 }
 
@@ -142,14 +142,15 @@ func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
 }
 
 func (m *mainModel) openInbox() tea.Cmd {
-	if len(m.client.Store.Projects) == 0 {
-		return nil
-	}
-	prj := project{m.client.Store.Projects[0], todoist.Section{}}
-	var cmd tea.Cmd
-	m.refresh = func() {
-		m.setTasksFromProject(&prj)
+	for _, tp := range m.client.Store.Projects {
+		if tp.Name == "Inbox" {
+			p := project{tp, todoist.Section{}}
+			m.refresh = func() {
+				m.setTasksFromProject(&p)
+			}
+			break
+		}
 	}
 	m.refresh()
-	return cmd
+	return nil
 }

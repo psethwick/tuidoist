@@ -62,11 +62,6 @@ func initialModel() *mainModel {
 	return &m
 }
 
-func (m *mainModel) refreshFromStore() tea.Cmd {
-	m.refresh()
-	return nil
-}
-
 func (m *mainModel) sync() tea.Msg {
 	m.statusBarModel.SetSyncStatus(status.Syncing)
 	m.sub <- struct{}{}
@@ -84,7 +79,7 @@ func (m *mainModel) sync() tea.Msg {
 		m.sub <- struct{}{}
 		return nil
 	}
-	m.refreshFromStore()
+	m.refresh()
 	m.statusBarModel.SetSyncStatus(status.Synced)
 	m.sub <- struct{}{}
 	return nil
@@ -101,7 +96,7 @@ func (m *mainModel) Init() tea.Cmd {
 			}
 		}
 	}
-	m.refreshFromStore()
+	m.refresh()
 	return tea.Batch(m.sync, waitForSync(m.sub))
 }
 

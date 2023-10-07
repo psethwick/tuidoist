@@ -18,6 +18,7 @@ const (
 	chooseProject choosePurpose = iota
 	moveToProject
 	chooseFilter
+	palette
 )
 
 type project struct {
@@ -82,7 +83,7 @@ type selectable interface {
 	Display() string
 }
 
-func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
+func (pm *chooseModel) initChooser(p []selectable, prompt string, purpose choosePurpose) tea.Cmd {
 	sel := selection.New("", p)
 	sm := selection.NewModel(sel)
 	pm.oldTitle = pm.main.statusBarModel.GetTitle()
@@ -107,6 +108,7 @@ func (pm *chooseModel) initChooser(p []selectable, prompt string) tea.Cmd {
 		return style.NormalTitle.Render(c.Value.Display())
 	}
 	pm.chooser = sm
+	pm.purpose = purpose
 	return sm.Init()
 }
 
@@ -142,9 +144,17 @@ func (m *mainModel) OpenFilters() tea.Cmd {
 	for i, f := range m.client.Store.Filters {
 		fls[i] = filter(f)
 	}
-	m.chooseModel.purpose = chooseFilter
 	m.state = chooseState
-	return m.chooseModel.initChooser(fls, "Choose Filter")
+	return m.chooseModel.initChooser(fls, "Choose Filter", chooseFilter)
+}
+func (m *mainModel) OpenPalette() tea.Cmd {
+	// fls := make([]selectable, len(m.client.Store.Filters))
+	// for i, f := range m.client.Store.Filters {
+	// 	fls[i] = filter(f)
+	// }
+	// m.state = chooseState
+	// return m.chooseModel.initChooser(PaletteCommands, "Choose Filter", chooseFilter)
+	return nil
 }
 
 func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
@@ -170,9 +180,8 @@ func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
 	} else {
 		prompt = "Move to Project"
 	}
-	m.chooseModel.purpose = purpose
 	m.state = chooseState
-	return m.chooseModel.initChooser(projs, prompt)
+	return m.chooseModel.initChooser(projs, prompt, purpose)
 }
 
 func (pm *chooseModel) handleChooseProject() tea.Cmd {
@@ -204,7 +213,6 @@ func (pm *chooseModel) handleChooseProject() tea.Cmd {
 		}
 	}
 	pm.main.state = tasksState
-	cmds = append(cmds, pm.chooser.Init())
 	return tea.Batch(cmds...)
 }
 
@@ -226,11 +234,10 @@ func (pm *chooseModel) gotoFilter(f filter) tea.Cmd {
 		fts = append(fts, filterTitle{titles[i], ex})
 	}
 
-	refresh := func() {
+	pm.main.refresh = func() {
 		pm.main.setTasksFromFilter(fts)
 	}
-	pm.main.refresh = refresh
-	refresh()
+	pm.main.refresh()
 	return nil
 }
 
@@ -241,9 +248,13 @@ func (pm *chooseModel) handleChooseFilter() tea.Cmd {
 		return nil
 	}
 	flt := f.(filter)
-	cmd := pm.chooser.Init()
 	pm.main.state = tasksState
-	return tea.Batch(pm.gotoFilter(flt), cmd)
+	return pm.gotoFilter(flt)
+}
+
+func (cm *chooseModel) handleChooseCommand() tea.Cmd {
+	// c, err := cm.chooser.Value()
+	return nil
 }
 
 func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
@@ -259,6 +270,8 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 				cmds = append(cmds, pm.handleChooseProject())
 			case chooseFilter:
 				cmds = append(cmds, pm.handleChooseFilter())
+			case palette:
+				cmds = append(cmds, pm.handleChooseCommand())
 			}
 			return tea.Batch(cmds...)
 		case "esc":
@@ -273,9 +286,7 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func newChooseModel(m *mainModel) chooseModel {
-	pm := chooseModel{}
-	pm.main = m
-	return pm
+	return chooseModel{main: m}
 }
 
 func (m *mainModel) switchProject(p *project) {
