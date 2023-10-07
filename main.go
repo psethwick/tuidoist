@@ -182,8 +182,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.gMenu = false
 				}
 			case "ctrl+p":
-				dbg("ctrl+p")
-				cmds = append(cmds, m.OpenPalette(paletteProject, paletteTask))
+				cmds = append(cmds, m.OpenPalette())
 			case "p":
 				if m.gMenu {
 					cmds = append(cmds, m.OpenProjects(chooseProject))

@@ -91,15 +91,15 @@ type List struct {
 }
 
 func (tl *TaskList) ResetItems(lists []List, newIdx int) {
-	// ci := 0
-	// if len(tl.list) > 0 {
-	// 	ci, _ = tl.list[tl.idx].GetCursorIndex()
-	// }
+	ci := 0
+	if len(tl.list) > 0 {
+		ci, _ = tl.list[tl.idx].GetCursorIndex()
+	}
 	tl.list = make([]listModel, len(lists))
 	for i, l := range lists {
 		tl.list[i] = listModel{tl.newList(), l.Title}
 		tl.list[i].ResetItems(convertIn(l.Tasks)...)
-		// tl.list[i].SetCursor(ci)
+		tl.list[i].SetCursor(ci)
 	}
 	tl.idx = newIdx
 	tl.OnTitleChange(tl.Title())

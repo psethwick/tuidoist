@@ -10,6 +10,7 @@ type paletteContext uint
 
 const (
 	paletteProject paletteContext = iota
+	paletteSection
 	paletteTask
 )
 

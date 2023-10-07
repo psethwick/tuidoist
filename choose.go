@@ -143,8 +143,16 @@ func (m *mainModel) OpenFilters() tea.Cmd {
 	}
 	return m.chooseModel.initChooser(fls, "Choose Filter", chooseFilter)
 }
-func (m *mainModel) OpenPalette(contexts ...paletteContext) tea.Cmd {
-	return m.chooseModel.initChooser(PaletteCommands(contexts...), "Choose Command", choosePalette)
+func (m *mainModel) OpenPalette() tea.Cmd {
+	var ctxs []paletteContext
+	if m.inputModel.projectID != "" {
+		ctxs = append(ctxs, paletteProject)
+	}
+	if m.inputModel.sectionId != "" {
+		ctxs = append(ctxs, paletteSection)
+	}
+
+	return m.chooseModel.initChooser(PaletteCommands(ctxs...), "Choose Command", choosePalette)
 }
 
 func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {

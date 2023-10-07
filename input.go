@@ -105,16 +105,16 @@ func (im *inputModel) addProject() tea.Cmd {
 }
 
 func (im *inputModel) editProject() tea.Cmd {
+	param := map[string]interface{}{}
+	param["id"] = im.projectID
+	param["name"] = im.content.Value()
 	return func() tea.Msg {
-		param := map[string]interface{}{}
-		param["id"] = im.projectID
-		param["name"] = im.content.Value()
 		im.main.client.ExecCommands(im.main.ctx,
 			todoist.Commands{
 				todoist.NewCommand("project_update", param),
 			},
 		)
-		return nil
+		return im.main.sync()
 	}
 }
 
