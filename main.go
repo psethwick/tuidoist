@@ -226,13 +226,13 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.taskList.SetHeight(m.height - m.inputModel.Height() - 1)
 				m.taskList.Bottom()
 				m.inputModel.content.Focus()
-				m.inputModel.purpose = inputAddTask
+				m.inputModel.onAccept = m.addTask
 				m.state = viewNewTaskBottom
 			case "A":
 				m.taskList.SetHeight(m.height - m.inputModel.Height() - 1)
 				m.taskList.Top()
 				m.inputModel.content.Focus()
-				m.inputModel.purpose = inputAddTask
+				m.inputModel.onAccept = m.addTask
 				m.state = viewNewTaskTop
 			default:
 				m.gMenu = false

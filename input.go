@@ -10,18 +10,10 @@ import (
 	"github.com/psethwick/tuidoist/task"
 )
 
-type inputPurpose uint
-
-const (
-	inputAddTask inputPurpose = iota
-	inputAddProject
-	inputEditProject
-)
-
 type inputModel struct {
 	content   textinput.Model
 	main      *mainModel
-	purpose   inputPurpose
+	onAccept  func(string) tea.Cmd
 	projectID string
 	sectionId string
 }
@@ -39,9 +31,7 @@ func (im *inputModel) Height() int {
 	return 4 // height of textinput + dialog
 }
 
-func (im *inputModel) addTask() tea.Cmd {
-	content := im.content.Value()
-	im.content.SetValue("")
+func (m *mainModel) addTask(content string) tea.Cmd {
 	if content == "" {
 		return func() tea.Msg { return nil }
 	}
@@ -49,15 +39,15 @@ func (im *inputModel) addTask() tea.Cmd {
 	i.Content = content
 	i.Priority = 1
 
-	i.ProjectID = im.projectID
-	i.SectionID = im.sectionId
+	i.ProjectID = m.inputModel.projectID
+	i.SectionID = m.inputModel.sectionId
 
-	t := task.New(im.main.client.Store, i)
-	im.main.statusBarModel.SetMessage("added", t.Title)
-	if im.main.state == viewNewTaskTop {
-		t = im.main.taskList.AddItemTop(t)
+	t := task.New(m.client.Store, i)
+	m.statusBarModel.SetMessage("added", t.Title)
+	if m.state == viewNewTaskTop {
+		t = m.taskList.AddItemTop(t)
 	} else {
-		t = im.main.taskList.AddItemBottom(t)
+		t = m.taskList.AddItemBottom(t)
 	}
 	return func() tea.Msg {
 		item := t.Item
@@ -88,33 +78,12 @@ func (im *inputModel) addTask() tea.Cmd {
 		}
 		param["auto_reminder"] = item.AutoReminder
 
-		im.main.client.ExecCommands(im.main.ctx,
+		m.client.ExecCommands(m.ctx,
 			todoist.Commands{
 				todoist.NewCommand("item_add", param),
 			},
 		)
-		return im.main.sync()
-	}
-}
-
-func (im *inputModel) addProject() tea.Cmd {
-	return func() tea.Msg {
-		im.main.client.AddProject(im.main.ctx, todoist.Project{Name: im.content.Value()})
-		return im.main.sync()
-	}
-}
-
-func (im *inputModel) editProject() tea.Cmd {
-	param := map[string]interface{}{}
-	param["id"] = im.projectID
-	param["name"] = im.content.Value()
-	return func() tea.Msg {
-		im.main.client.ExecCommands(im.main.ctx,
-			todoist.Commands{
-				todoist.NewCommand("project_update", param),
-			},
-		)
-		return im.main.sync()
+		return m.sync()
 	}
 }
 
@@ -127,16 +96,9 @@ func (im *inputModel) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			switch im.purpose {
-			case inputEditProject:
-				cmds = append(cmds, im.editProject())
-				im.main.state = viewTasks
-			case inputAddProject:
-				cmds = append(cmds, im.addProject())
-				im.main.state = viewTasks
-			case inputAddTask:
-				cmds = append(cmds, im.addTask())
-			}
+			cmds = append(cmds, im.onAccept(im.content.Value()))
+			im.content.SetValue("")
+			im.content.Blur()
 		case "esc":
 			im.content.SetValue("")
 			im.main.taskList.SetHeight(im.main.height - 1)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 type paletteContext uint
@@ -19,32 +20,53 @@ type paletteCommand struct {
 	command func(*mainModel) tea.Cmd
 }
 
-var noContextCommands = []fmt.Stringer{
+var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"add project",
 		func(m *mainModel) tea.Cmd {
-			m.inputModel.purpose = inputAddProject
+			m.inputModel.onAccept = func(input string) tea.Cmd {
+				return func() tea.Msg {
+					m.client.AddProject(m.ctx, todoist.Project{Name: input})
+					return m.sync()
+				}
+			}
+			// todo maybe all the song and dance could be owned by input
 			m.inputModel.content.Focus()
 			m.state = viewAddProject
 			return nil
 		},
 	},
-}
-
-// add section
-// rename section
-// move section (to other project, it seems)
-// archive section
-var projectCommands = []fmt.Stringer{
+	paletteCommand{
+		"change due date",
+		func(m *mainModel) tea.Cmd {
+			dbg("todo")
+			return nil
+		},
+	},
 	paletteCommand{
 		"rename project",
 		func(m *mainModel) tea.Cmd {
+			// todo maybe input model is not the right place for task/projetc 'context'
 			prj := m.client.Store.ProjectMap[m.inputModel.projectID]
 			if prj == nil {
 				dbg("did not find project", m.inputModel.projectID)
 				return nil
 			}
-			m.inputModel.purpose = inputEditProject
+			m.inputModel.onAccept = func(input string) tea.Cmd {
+				param := map[string]interface{}{}
+				param["id"] = prj.ID
+				param["name"] = input
+				m.state = viewTasks
+				return func() tea.Msg {
+					m.client.ExecCommands(m.ctx,
+						todoist.Commands{
+							todoist.NewCommand("project_update", param),
+						},
+					)
+					return m.sync()
+				}
+			}
+			// initial value, onAccept, maybe title or something params
 			m.inputModel.content.SetValue(prj.Name)
 			m.inputModel.content.Focus()
 			m.state = viewAddProject
@@ -60,33 +82,16 @@ var projectCommands = []fmt.Stringer{
 	},
 }
 
+// add section
+// rename section
+// move section (to other project, it seems)
+// archive section
+
 // context task
 // edit content
 // edit desc
 // re-prioritise
-var taskCommands = []fmt.Stringer{
-	paletteCommand{
-		"change due date",
-		func(m *mainModel) tea.Cmd {
-			dbg("todo")
-			return nil
-		},
-	},
-}
 
 func (pc paletteCommand) String() string {
 	return pc.name
-}
-
-func PaletteCommands(contexts ...paletteContext) []fmt.Stringer {
-	commands := noContextCommands
-	for _, ctx := range contexts {
-		switch ctx {
-		case paletteProject:
-			commands = append(commands, projectCommands...)
-		case paletteTask:
-			commands = append(commands, taskCommands...)
-		}
-	}
-	return commands
 }
