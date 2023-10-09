@@ -11,6 +11,8 @@ import (
 	todoist "github.com/sachaos/todoist/lib"
 
 	"github.com/psethwick/tuidoist/client"
+	"github.com/psethwick/tuidoist/input"
+	"github.com/psethwick/tuidoist/overlay"
 	"github.com/psethwick/tuidoist/status"
 	"github.com/psethwick/tuidoist/tasklist"
 )
@@ -20,10 +22,8 @@ type viewState uint
 const (
 	viewTasks viewState = iota
 	viewChooser
-	viewNewTaskTop
-	viewNewTaskBottom
+	viewInput
 	viewTaskMenu
-	viewAddProject
 )
 
 type mainModel struct {
@@ -34,12 +34,15 @@ type mainModel struct {
 	ctx            context.Context
 	chooseModel    chooseModel
 	taskList       tasklist.TaskList
-	inputModel     inputModel
+	inputModel     input.InputModel
 	taskMenuModel  taskMenuModel
 	statusBarModel status.Model
 	refresh        func()
 	gMenu          bool
 	sub            chan struct{}
+
+	projectId string
+	sectionId string
 }
 
 type syncedMsg struct{}
@@ -55,10 +58,10 @@ func initialModel() *mainModel {
 	m.client = client.GetClient(dbg)
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
-	m.inputModel = newInputModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
+	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks })
 	m.sub = make(chan struct{})
 	return &m
 }
@@ -223,26 +226,14 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.state = viewTaskMenu
 				}
 			case "a":
-				m.taskList.SetHeight(m.height - m.inputModel.Height() - 1)
 				m.taskList.Bottom()
-				m.inputModel.content.Focus()
-				m.inputModel.onAccept = m.addTask
-				m.state = viewNewTaskBottom
-			case "A":
-				m.taskList.SetHeight(m.height - m.inputModel.Height() - 1)
-				m.taskList.Top()
-				m.inputModel.content.Focus()
-				m.inputModel.onAccept = m.addTask
-				m.state = viewNewTaskTop
+				m.inputModel.GetOnce("hey", "", m.addTask)
+				m.state = viewInput
 			default:
 				m.gMenu = false
 			}
 		}
-	case viewAddProject:
-		fallthrough
-	case viewNewTaskTop:
-		fallthrough
-	case viewNewTaskBottom:
+	case viewInput:
 		cmds = append(cmds, m.inputModel.Update(msg))
 	case viewTaskMenu:
 		cmds = append(cmds, m.taskMenuModel.Update(msg))
@@ -252,33 +243,23 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *mainModel) View() string {
-	var s string
+	base := lipgloss.Place(
+		m.width, m.height, lipgloss.Left, lipgloss.Top,
+		lipgloss.JoinVertical(lipgloss.Left, m.statusBarModel.View(), m.taskList.View()),
+	)
+	s := ""
 	switch m.state {
+	// case viewTasks:
+	// 	s = m.taskList.View()
+	// case viewTaskMenu: // todo do I really need this? might still be useful tbf
+	// 	s = m.taskMenuModel.View()
 	case viewChooser:
 		s = m.chooseModel.View()
-	case viewTasks:
-		s = m.taskList.View()
-	case viewTaskMenu:
-		s = m.taskMenuModel.View()
-	case viewAddProject:
-		fallthrough
-	case viewNewTaskBottom:
-		s = lipgloss.JoinVertical(
-			lipgloss.Left,
-			m.taskList.View(),
-			m.inputModel.View(),
-		)
-	case viewNewTaskTop:
-		s = lipgloss.JoinVertical(
-			lipgloss.Left,
-			m.inputModel.View(),
-			m.taskList.View(),
-		)
+	case viewInput:
+		s = m.inputModel.View()
 	}
-	return lipgloss.Place(
-		m.width, m.height, lipgloss.Left, lipgloss.Top,
-		lipgloss.JoinVertical(lipgloss.Left, m.statusBarModel.View(), s),
-	)
+
+	return overlay.PlaceOverlay(10, 1, s, base)
 }
 
 func dbg(a ...any) {

@@ -131,7 +131,7 @@ func (m *mainModel) completeTask() func() tea.Msg {
 			return nil
 		}
 
-		return nil //m.sync()
+		return m.sync()
 	}
 }
 
@@ -156,4 +156,57 @@ func (m *mainModel) openInbox() tea.Cmd {
 	}
 	m.refresh()
 	return nil
+}
+
+func (m *mainModel) addTask(content string) tea.Cmd {
+	if content == "" {
+		return func() tea.Msg { return nil }
+	}
+	i := todoist.Item{}
+	i.Content = content
+	i.Priority = 1
+
+	i.ProjectID = m.projectId
+	i.SectionID = m.sectionId
+
+	t := task.New(m.client.Store, i)
+	m.statusBarModel.SetMessage("added", t.Title)
+	t = m.taskList.AddItemBottom(t)
+	m.state = viewTasks
+	return func() tea.Msg {
+		item := t.Item
+		param := map[string]interface{}{}
+		if item.Content != "" {
+			param["content"] = item.Content
+		}
+		if item.SectionID != "" {
+			param["section_id"] = item.SectionID
+		}
+		if item.Description != "" {
+			param["description"] = item.Description
+		}
+		if item.DateString != "" {
+			param["date_string"] = item.DateString
+		}
+		if len(item.LabelNames) != 0 {
+			param["labels"] = item.LabelNames
+		}
+		if item.Priority != 0 {
+			param["priority"] = item.Priority
+		}
+		if item.ProjectID != "" {
+			param["project_id"] = item.ProjectID
+		}
+		if item.Due != nil {
+			param["due"] = item.Due
+		}
+		param["auto_reminder"] = item.AutoReminder
+
+		m.client.ExecCommands(m.ctx,
+			todoist.Commands{
+				todoist.NewCommand("item_add", param),
+			},
+		)
+		return m.sync()
+	}
 }

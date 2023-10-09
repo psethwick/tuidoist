@@ -72,9 +72,9 @@ const (
   {{- end -}}
 
   {{- if eq $.SelectedIndex $i }}
-   {{- print (Foreground "32" (Bold "  ▸ ")) (Selected $choice) "\n\n" }}
+   {{- print (Foreground "32" (Bold "  ▸ ")) (Selected $choice) "\n" }}
   {{- else }}
-    {{- print "    " (Unselected $choice) "\n\n" }}
+    {{- print "    " (Unselected $choice) "\n" }}
   {{- end }}
 {{- end}}`
 )
@@ -86,7 +86,7 @@ func (pm *chooseModel) initChooser(p []fmt.Stringer, prompt string, purpose choo
 	pm.main.statusBarModel.SetTitle(prompt)
 	sm.Template = customTemplate
 	// we're double spacing + some room for the prompt
-	sm.PageSize = pm.main.height/2 - 3
+	sm.PageSize = 20
 	// todo
 	// sm.FilterInputTextStyle        lipgloss.Style
 	// sm.FilterInputPlaceholderStyle lipgloss.Style
@@ -220,8 +220,8 @@ func (cm *chooseModel) handleChoose() tea.Cmd {
 				cm.main.refresh = func() {
 					cm.main.setTasksFromProject(&prj)
 				}
-				cm.main.inputModel.projectID = prj.project.ID
-				cm.main.inputModel.sectionId = prj.section.ID
+				cm.main.projectId = prj.project.ID
+				cm.main.sectionId = prj.section.ID
 				cm.main.refresh()
 				cm.main.switchProject(&prj)
 			case moveToProject:

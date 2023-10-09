@@ -24,15 +24,13 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"add project",
 		func(m *mainModel) tea.Cmd {
-			m.inputModel.onAccept = func(input string) tea.Cmd {
+			onAccept := func(input string) tea.Cmd {
 				return func() tea.Msg {
 					m.client.AddProject(m.ctx, todoist.Project{Name: input})
 					return m.sync()
 				}
 			}
-			// todo maybe all the song and dance could be owned by input
-			m.inputModel.content.Focus()
-			m.state = viewAddProject
+			m.inputModel.GetOnce("", "", onAccept)
 			return nil
 		},
 	},
@@ -47,12 +45,12 @@ var PaletteCommands = []fmt.Stringer{
 		"rename project",
 		func(m *mainModel) tea.Cmd {
 			// todo maybe input model is not the right place for task/projetc 'context'
-			prj := m.client.Store.ProjectMap[m.inputModel.projectID]
+			prj := m.client.Store.ProjectMap[m.projectId]
 			if prj == nil {
-				dbg("did not find project", m.inputModel.projectID)
+				dbg("did not find project", m.projectId)
 				return nil
 			}
-			m.inputModel.onAccept = func(input string) tea.Cmd {
+			onAccept := func(input string) tea.Cmd {
 				param := map[string]interface{}{}
 				param["id"] = prj.ID
 				param["name"] = input
@@ -66,10 +64,7 @@ var PaletteCommands = []fmt.Stringer{
 					return m.sync()
 				}
 			}
-			// initial value, onAccept, maybe title or something params
-			m.inputModel.content.SetValue(prj.Name)
-			m.inputModel.content.Focus()
-			m.state = viewAddProject
+			m.inputModel.GetOnce("", prj.Name, onAccept)
 			return nil
 		},
 	},
