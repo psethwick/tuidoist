@@ -89,8 +89,8 @@ func (m *mainModel) openInbox() {
 			m.refresh = func() {
 				m.setTasksFromProject(&p)
 			}
-			break
+			m.refresh()
+			return
 		}
 	}
-	m.refresh()
 }

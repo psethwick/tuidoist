@@ -17,7 +17,7 @@ func (m *mainModel) undoCompleteTask() tea.Cmd {
 	m.statusBarModel.SetMessage("undo complete", lastCompletedTask.Title)
 	args := map[string]interface{}{"id": lastCompletedTask.Item.ID}
 	// todo undoop
-	return m.DoOp(todoist.NewCommand("item_uncomplete", args))
+	return m.sync(todoist.NewCommand("item_uncomplete", args))
 }
 
 // todo confirm
@@ -28,7 +28,7 @@ func (m *mainModel) deleteTask() tea.Cmd {
 		return nil
 	}
 	m.statusBarModel.SetMessage("deleted", t.Title)
-	return m.DoOp(
+	return m.sync(
 		todoist.NewCommand("item_delete", map[string]interface{}{"id": t.Item.ID}),
 	)
 }
@@ -75,7 +75,7 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 	}
 	args["auto_reminder"] = item.AutoReminder
 
-	return m.DoOp(todoist.NewCommand("item_add", args))
+	return m.sync(todoist.NewCommand("item_add", args))
 }
 
 func (m *mainModel) completeTask() tea.Cmd {
@@ -88,24 +88,24 @@ func (m *mainModel) completeTask() tea.Cmd {
 	t.Completed = true
 	m.statusBarModel.SetMessage("completed", t.Title)
 	m.taskList.RemoveCurrentItem()
-	return m.DoOp(todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID}))
+	return m.sync(todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID}))
 }
 
-func (m *mainModel) MoveItem(item *todoist.Item, p project) func() tea.Msg {
+func (m *mainModel) MoveItem(item *todoist.Item, p project) tea.Cmd {
 	args := map[string]interface{}{"id": item.ID}
 	if p.section.ID != "" {
 		args["section_id"] = p.section.ID
 	} else {
 		args["project_id"] = p.project.ID
 	}
-	return m.DoOp(todoist.NewCommand("item_move", args))
+	return m.sync(todoist.NewCommand("item_move", args))
 }
 
 func (m *mainModel) AddProject(name string) tea.Cmd {
 	param := map[string]interface{}{
 		"name": name,
 	}
-	return m.DoOp(todoist.NewCommand("project_add", param))
+	return m.sync(todoist.NewCommand("project_add", param))
 }
 
 func (m *mainModel) RenameProject(projectId string, newName string) tea.Cmd {
@@ -113,32 +113,11 @@ func (m *mainModel) RenameProject(projectId string, newName string) tea.Cmd {
 		"id":   projectId,
 		"name": newName,
 	}
-	m.state = viewTasks
+	// m.state = viewTasks
 
-	return m.DoOp(todoist.NewCommand("project_update", args))
+	return m.sync(todoist.NewCommand("project_update", args))
 }
 
-func (m *mainModel) UpdateItem(i todoist.Item) func() tea.Msg {
-	// todo use DoOp
-	return func() tea.Msg {
-		m.client.UpdateItem(m.ctx, i)
-		return m.sync()
-	}
-}
-
-func (m *mainModel) DoOp(cmd todoist.Command) tea.Cmd {
-	return m.DoOps(todoist.Commands{cmd})
-}
-
-func (m *mainModel) DoOps(cmds todoist.Commands) tea.Cmd {
-	*m.opQueue = append(*m.opQueue, cmds...)
-	return func() tea.Msg {
-		err := m.client.ExecCommands(m.ctx, cmds)
-		if err == nil {
-			m.opQueue = &todoist.Commands{}
-		} else {
-			dbg(err)
-		}
-		return m.sync()
-	}
+func (m *mainModel) UpdateItem(i todoist.Item) tea.Cmd {
+	return m.sync(todoist.NewCommand("item_update", i.UpdateParam()))
 }

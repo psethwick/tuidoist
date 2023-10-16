@@ -42,7 +42,6 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"rename project",
 		func(m *mainModel) tea.Cmd {
-			// todo maybe input model is not the right place for task/projetc 'context'
 			prj := m.store.ProjectMap[m.projectId]
 			if prj == nil {
 				dbg("did not find project", m.projectId)

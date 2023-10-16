@@ -28,8 +28,9 @@ const (
 
 type mainModel struct {
 	client *todoist.Client
-	// copy + offline actions applied
-	store          *todoist.Store
+
+	store *todoist.Store
+
 	height         int
 	width          int
 	state          viewState
@@ -43,7 +44,7 @@ type mainModel struct {
 	gMenu          bool
 	sub            chan struct{}
 
-	opQueue *todoist.Commands
+	cmdQueue *todoist.Commands
 
 	projectId string
 	sectionId string
@@ -59,11 +60,9 @@ func waitForSync(sub chan struct{}) tea.Cmd {
 
 func initialModel() *mainModel {
 	m := mainModel{}
-	m.client, m.opQueue = client.GetClient(dbg)
-    m.store = COPY here
-    apply any ops from the cache
+	m.client, m.store, m.cmdQueue = client.GetClient(dbg)
+	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
 
-	dbg("INIT QUEUE", m.opQueue)
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
@@ -74,35 +73,77 @@ func initialModel() *mainModel {
 	return &m
 }
 
-func (m *mainModel) sync() tea.Msg {
-	dbg("QUEUE", m.opQueue)
-	m.statusBarModel.SetSyncStatus(status.Syncing)
-	m.sub <- struct{}{}
-	// TODO flush opsqueue too here?
-	err := m.client.Sync(m.ctx)
-	if err != nil {
-		dbg(err)
-		m.statusBarModel.SetSyncStatus(status.Error)
-		err = client.WriteCache(m.client.Store, m.opQueue)
-		m.sub <- struct{}{}
-		return nil
-	}
-	err = client.WriteCache(m.client.Store, m.opQueue)
-	if err != nil {
-		dbg(err)
-		m.statusBarModel.SetSyncStatus(status.Error)
-		m.sub <- struct{}{}
-		return nil
+func (m *mainModel) applyCmds(cmds []todoist.Command) {
+	inboxId := m.store.User.InboxProjectID
+	for _, op := range cmds {
+		args := op.Args.(map[string]interface{})
+		switch op.Type {
+		case "item_add":
+			var projectId string
+			if args["project_id"] == nil {
+				projectId = inboxId
+			} else {
+				projectId = args["project_id"].(string)
+			}
+			m.store.Items = append(m.store.Items, todoist.Item{
+				BaseItem: todoist.BaseItem{
+					HaveProjectID: todoist.HaveProjectID{
+						ProjectID: projectId,
+					},
+					Content: args["content"].(string),
+					HaveID:  todoist.HaveID{ID: op.TempID},
+				}})
+		}
 	}
 	m.refresh()
-	m.statusBarModel.SetSyncStatus(status.Synced)
+}
+
+func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
+	m.statusBarModel.SetSyncStatus(status.Syncing)
+	m.applyCmds(cmds) // only 'new' ones
+	*m.cmdQueue = append(*m.cmdQueue, cmds...)
 	m.sub <- struct{}{}
-	return nil
+	return func() tea.Msg {
+		err := m.client.ExecCommands(m.ctx, *m.cmdQueue)
+		if err != nil {
+			dbg(err)
+			// the cache is the 'real' store and any unflushed commands
+			err = client.WriteCache(m.client.Store, m.cmdQueue)
+			dbg(err)
+			return nil // no reason to sync if api calls aren't working
+		}
+		m.cmdQueue = &todoist.Commands{}
+
+		err = m.client.Sync(m.ctx)
+		if err != nil {
+			dbg(err)
+			m.statusBarModel.SetSyncStatus(status.Error)
+			m.sub <- struct{}{}
+			return nil
+		}
+		err = client.WriteCache(m.client.Store, m.cmdQueue)
+		if err != nil {
+			dbg(err)
+			m.statusBarModel.SetSyncStatus(status.Error)
+			m.sub <- struct{}{}
+			return nil
+		}
+		err = client.LoadCache(m.store, m.cmdQueue)
+		if err != nil {
+			dbg(err)
+		} else {
+			m.refresh()
+			m.sub <- struct{}{}
+		}
+		m.statusBarModel.SetSyncStatus(status.Synced)
+		m.sub <- struct{}{}
+		return nil
+	}
 }
 
 func (m *mainModel) Init() tea.Cmd {
 	m.openInbox()
-	return tea.Batch(m.sync, waitForSync(m.sub))
+	return tea.Batch(m.sync(), waitForSync(m.sub))
 }
 
 // undo
@@ -229,7 +270,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case "a":
 				m.taskList.Bottom()
-				m.inputModel.GetOnce("hey", "", m.addTask)
+				m.inputModel.GetRepeat("add task", "", m.addTask)
 				m.state = viewInput
 			default:
 				m.gMenu = false

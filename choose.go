@@ -206,9 +206,9 @@ func (cm *chooseModel) handleChoose() tea.Cmd {
 				cm.main.refresh = func() {
 					cm.main.setTasksFromProject(&prj)
 				}
+				cm.main.refresh()
 				cm.main.projectId = prj.project.ID
 				cm.main.sectionId = prj.section.ID
-				cm.main.refresh()
 				cm.main.switchProject(&prj)
 			case moveToProject:
 				task, err := cm.main.taskList.RemoveCurrentItem()

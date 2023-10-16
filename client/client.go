@@ -55,10 +55,10 @@ func AssureExists(filePath string) error {
 	return nil
 }
 
-func LoadCache(s *todoist.Store, o *todoist.Commands) error {
-	err := ReadCache(s, o)
+func LoadCache(s *todoist.Store, cmds *todoist.Commands) error {
+	err := ReadCache(s, cmds)
 	if err != nil {
-		err = WriteCache(s, o)
+		err = WriteCache(s, cmds)
 		if err != nil {
 			return err
 		}
@@ -84,27 +84,6 @@ func ReadCache(s *todoist.Store, o *todoist.Commands) error {
 		return err
 	}
 	*o = todoist.Commands(ops)
-	inboxId := s.User.InboxProjectID
-	for _, op := range *o {
-		args := op.Args.(map[string]interface{})
-		switch op.Type {
-		case "item_add":
-			var projectId string
-			if args["project_id"] == nil {
-				projectId = inboxId
-			} else {
-				projectId = args["project_id"].(string)
-			}
-			s.Items = append(s.Items, todoist.Item{
-				BaseItem: todoist.BaseItem{
-					HaveProjectID: todoist.HaveProjectID{
-						ProjectID: projectId,
-					},
-					Content: args["content"].(string),
-					HaveID:  todoist.HaveID{ID: op.TempID},
-				}})
-		}
-	}
 	s.ConstructItemTree()
 	return nil
 }
@@ -133,11 +112,16 @@ func WriteCache(s *todoist.Store, o *todoist.Commands) error {
 	return nil
 }
 
-func GetClient(logger func(...any)) (*todoist.Client, *todoist.Commands) {
+func GetClient(logger func(...any)) (*todoist.Client, *todoist.Store, *todoist.Commands) {
 	var store todoist.Store
+	var store2 todoist.Store
 	var ops todoist.Commands
 
 	if err := LoadCache(&store, &ops); err != nil {
+		panic(err)
+	}
+
+	if err := LoadCache(&store2, &ops); err != nil {
 		panic(err)
 	}
 
@@ -198,7 +182,7 @@ func GetClient(logger func(...any)) (*todoist.Client, *todoist.Commands) {
 		Color:          viper.GetBool("color"),
 		DateFormat:     viper.GetString("shortdateformat"),
 		DateTimeFormat: viper.GetString("shortdatetimeformat"),
-		DebugMode:      false, //len(os.Getenv("DEBUG")) > 0,
+		DebugMode:      false, // len(os.Getenv("DEBUG")) > 0,
 	}
 
 	client := todoist.NewClient(config)
@@ -210,5 +194,5 @@ func GetClient(logger func(...any)) (*todoist.Client, *todoist.Commands) {
 		}
 		WriteCache(&store, &ops)
 	}
-	return client, &ops
+	return client, &store2, &ops
 }
