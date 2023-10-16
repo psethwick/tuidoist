@@ -17,22 +17,22 @@ func (m *mainModel) setTasksFromProject(p *project) {
 	lists := []tasklist.List{}
 	tasks := []task.Task{}
 	var selectedList int
-	for _, i := range m.client.Store.Items {
+	for _, i := range m.store.Items {
 		// no section tasks should be first
 		if i.ProjectID == p.project.ID && i.SectionID == "" {
-			tasks = append(tasks, task.New(m.client.Store, i))
+			tasks = append(tasks, task.New(m.store, i))
 		}
 	}
 	if len(tasks) > 0 {
 		lists = append(lists, tasklist.List{Title: p.project.Name, Tasks: tasks})
 	}
 
-	for _, s := range m.client.Store.Sections {
+	for _, s := range m.store.Sections {
 		tasks = []task.Task{}
 		if s.ProjectID == p.project.ID {
-			for _, item := range m.client.Store.Items {
+			for _, item := range m.store.Items {
 				if item.ProjectID == p.project.ID && s.ID == item.SectionID {
-					tasks = append(tasks, task.New(m.client.Store, item))
+					tasks = append(tasks, task.New(m.store, item))
 				}
 			}
 			lists = append(lists, tasklist.List{
@@ -61,9 +61,9 @@ func (m *mainModel) setTasksFromFilter(lists []filterTitle) {
 	var tls []tasklist.List
 	for _, l := range lists {
 		tasks := []task.Task{}
-		for _, i := range m.client.Store.Items {
-			if res, _ := fltr.Eval(l.Expr, &i, m.client.Store); res {
-				tasks = append(tasks, task.New(m.client.Store, i))
+		for _, i := range m.store.Items {
+			if res, _ := fltr.Eval(l.Expr, &i, m.store); res {
+				tasks = append(tasks, task.New(m.store, i))
 			}
 		}
 		tls = append(tls, tasklist.List{Title: l.Title, Tasks: tasks})
@@ -71,68 +71,6 @@ func (m *mainModel) setTasksFromFilter(lists []filterTitle) {
 	// m.statusBarModel.SetTitle()
 	// m.statusBarModel.SetNumber(len(tasks))
 	m.taskList.ResetItems(tls, 0)
-}
-
-// todo confirm
-func (m *mainModel) deleteTask() func() tea.Msg {
-	t, err := m.taskList.RemoveCurrentItem()
-	if err != nil {
-		dbg(err)
-		return nil
-	}
-	m.statusBarModel.SetMessage("deleted", t.Title)
-	return func() tea.Msg {
-		err := m.client.DeleteItem(m.ctx, []string{t.Item.ID})
-		if err != nil {
-			dbg("del err", err)
-			return nil
-		}
-		return m.sync()
-	}
-}
-
-// todo this is _not_ a good place/idea
-// I think []{actionTaken, Task} ? and treat it like a stack
-// long game is complete sync workflow where offline actions can be synced later
-// which means serializing this to disk
-var lastCompletedTask task.Task
-
-func (m *mainModel) undoCompleteTask() func() tea.Msg {
-	m.taskList.AddItem(lastCompletedTask)
-	m.statusBarModel.SetMessage("undo complete", lastCompletedTask.Title)
-	return func() tea.Msg {
-		args := map[string]interface{}{"id": lastCompletedTask.Item.ID}
-		err := m.client.ExecCommands(
-			m.ctx,
-			todoist.Commands{todoist.NewCommand("item_uncomplete", args)},
-		)
-		if err != nil {
-			dbg(err)
-			return nil
-		}
-		return m.sync()
-	}
-}
-
-func (m *mainModel) completeTask() func() tea.Msg {
-	t, err := m.taskList.GetCursorItem()
-	if err != nil {
-		dbg(err)
-		return func() tea.Msg { return nil }
-	}
-	lastCompletedTask = task.Task(t)
-	t.Completed = true
-	m.statusBarModel.SetMessage("completed", t.Title)
-	m.taskList.RemoveCurrentItem()
-	return func() tea.Msg {
-		err := m.client.CloseItem(m.ctx, []string{t.Item.ID})
-		if err != nil {
-			dbg("complete task err", err)
-			return nil
-		}
-
-		return m.sync()
-	}
 }
 
 func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
@@ -144,9 +82,9 @@ func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
 	}
 }
 
-func (m *mainModel) openInbox() tea.Cmd {
-	for _, tp := range m.client.Store.Projects {
-		if tp.Name == "Inbox" {
+func (m *mainModel) openInbox() {
+	for _, tp := range m.store.Projects {
+		if tp.ID == m.store.User.InboxProjectID {
 			p := project{tp, todoist.Section{}}
 			m.refresh = func() {
 				m.setTasksFromProject(&p)
@@ -155,58 +93,4 @@ func (m *mainModel) openInbox() tea.Cmd {
 		}
 	}
 	m.refresh()
-	return nil
-}
-
-func (m *mainModel) addTask(content string) tea.Cmd {
-	if content == "" {
-		return func() tea.Msg { return nil }
-	}
-	i := todoist.Item{}
-	i.Content = content
-	i.Priority = 1
-
-	i.ProjectID = m.projectId
-	i.SectionID = m.sectionId
-
-	t := task.New(m.client.Store, i)
-	m.statusBarModel.SetMessage("added", t.Title)
-	t = m.taskList.AddItemBottom(t)
-	m.state = viewTasks
-	return func() tea.Msg {
-		item := t.Item
-		param := map[string]interface{}{}
-		if item.Content != "" {
-			param["content"] = item.Content
-		}
-		if item.SectionID != "" {
-			param["section_id"] = item.SectionID
-		}
-		if item.Description != "" {
-			param["description"] = item.Description
-		}
-		if item.DateString != "" {
-			param["date_string"] = item.DateString
-		}
-		if len(item.LabelNames) != 0 {
-			param["labels"] = item.LabelNames
-		}
-		if item.Priority != 0 {
-			param["priority"] = item.Priority
-		}
-		if item.ProjectID != "" {
-			param["project_id"] = item.ProjectID
-		}
-		if item.Due != nil {
-			param["due"] = item.Due
-		}
-		param["auto_reminder"] = item.AutoReminder
-
-		m.client.ExecCommands(m.ctx,
-			todoist.Commands{
-				todoist.NewCommand("item_add", param),
-			},
-		)
-		return m.sync()
-	}
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	todoist "github.com/sachaos/todoist/lib"
 )
 
 type paletteContext uint
@@ -26,8 +25,7 @@ var PaletteCommands = []fmt.Stringer{
 		func(m *mainModel) tea.Cmd {
 			onAccept := func(input string) tea.Cmd {
 				return func() tea.Msg {
-					m.client.AddProject(m.ctx, todoist.Project{Name: input})
-					return m.sync()
+					return m.AddProject(input)
 				}
 			}
 			m.inputModel.GetOnce("", "", onAccept)
@@ -45,24 +43,13 @@ var PaletteCommands = []fmt.Stringer{
 		"rename project",
 		func(m *mainModel) tea.Cmd {
 			// todo maybe input model is not the right place for task/projetc 'context'
-			prj := m.client.Store.ProjectMap[m.projectId]
+			prj := m.store.ProjectMap[m.projectId]
 			if prj == nil {
 				dbg("did not find project", m.projectId)
 				return nil
 			}
 			onAccept := func(input string) tea.Cmd {
-				param := map[string]interface{}{}
-				param["id"] = prj.ID
-				param["name"] = input
-				m.state = viewTasks
-				return func() tea.Msg {
-					m.client.ExecCommands(m.ctx,
-						todoist.Commands{
-							todoist.NewCommand("project_update", param),
-						},
-					)
-					return m.sync()
-				}
+				return m.RenameProject(prj.ID, input)
 			}
 			m.inputModel.GetOnce("", prj.Name, onAccept)
 			return nil

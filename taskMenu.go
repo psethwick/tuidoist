@@ -37,13 +37,6 @@ func newTaskMenuModel(m *mainModel) taskMenuModel {
 	}
 }
 
-func (m *mainModel) UpdateItem(i todoist.Item) func() tea.Msg {
-	return func() tea.Msg {
-		m.client.UpdateItem(m.ctx, i)
-		return m.sync()
-	}
-}
-
 func (tm *taskMenuModel) updateFocus() {
 	switch tm.focus {
 	case focusBox:

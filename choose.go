@@ -113,32 +113,9 @@ func (pm *chooseModel) View() string {
 	return pm.chooser.View()
 }
 
-func (m *mainModel) MoveItem(item *todoist.Item, p project) func() tea.Msg {
-	return func() tea.Msg {
-		args := map[string]interface{}{"id": item.ID}
-		if p.section.ID != "" {
-			args["section_id"] = p.section.ID
-		} else {
-			args["project_id"] = p.project.ID
-		}
-		err := m.client.ExecCommands(
-			m.ctx,
-			todoist.Commands{todoist.NewCommand("item_move", args)},
-		)
-		if err != nil {
-			dbg(err)
-		}
-		err = m.client.Sync(m.ctx)
-		if err != nil {
-			dbg(err)
-		}
-		return nil
-	}
-}
-
 func (m *mainModel) OpenFilters() tea.Cmd {
-	fls := make([]fmt.Stringer, len(m.client.Store.Filters))
-	for i, f := range m.client.Store.Filters {
+	fls := make([]fmt.Stringer, len(m.store.Filters))
+	for i, f := range m.store.Filters {
 		fls[i] = filter(f)
 	}
 	return m.chooseModel.initChooser(fls, "Choose Filter", chooseFilter)
@@ -149,8 +126,8 @@ func (m *mainModel) OpenPalette() tea.Cmd {
 }
 
 func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
-	p := m.client.Store.Projects
-	sections := m.client.Store.Sections
+	p := m.store.Projects
+	sections := m.store.Sections
 	var projs []fmt.Stringer
 	for _, prj := range p {
 		var projectSections []todoist.Section

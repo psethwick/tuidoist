@@ -27,7 +27,9 @@ const (
 )
 
 type mainModel struct {
-	client         *todoist.Client
+	client *todoist.Client
+	// copy + offline actions applied
+	store          *todoist.Store
 	height         int
 	width          int
 	state          viewState
@@ -40,6 +42,8 @@ type mainModel struct {
 	refresh        func()
 	gMenu          bool
 	sub            chan struct{}
+
+	opQueue *todoist.Commands
 
 	projectId string
 	sectionId string
@@ -55,7 +59,11 @@ func waitForSync(sub chan struct{}) tea.Cmd {
 
 func initialModel() *mainModel {
 	m := mainModel{}
-	m.client = client.GetClient(dbg)
+	m.client, m.opQueue = client.GetClient(dbg)
+    m.store = COPY here
+    apply any ops from the cache
+
+	dbg("INIT QUEUE", m.opQueue)
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
 	m.taskMenuModel = newTaskMenuModel(&m)
@@ -67,16 +75,19 @@ func initialModel() *mainModel {
 }
 
 func (m *mainModel) sync() tea.Msg {
+	dbg("QUEUE", m.opQueue)
 	m.statusBarModel.SetSyncStatus(status.Syncing)
 	m.sub <- struct{}{}
+	// TODO flush opsqueue too here?
 	err := m.client.Sync(m.ctx)
 	if err != nil {
 		dbg(err)
 		m.statusBarModel.SetSyncStatus(status.Error)
+		err = client.WriteCache(m.client.Store, m.opQueue)
 		m.sub <- struct{}{}
 		return nil
 	}
-	err = client.WriteCache(m.client.Store)
+	err = client.WriteCache(m.client.Store, m.opQueue)
 	if err != nil {
 		dbg(err)
 		m.statusBarModel.SetSyncStatus(status.Error)
@@ -90,17 +101,7 @@ func (m *mainModel) sync() tea.Msg {
 }
 
 func (m *mainModel) Init() tea.Cmd {
-	m.refresh = func() {
-		for _, tp := range m.client.Store.Projects {
-			// todo default view prefs
-			if tp.Name == "Inbox" {
-				p := project{tp, todoist.Section{}}
-				m.setTasksFromProject(&p)
-				break
-			}
-		}
-	}
-	m.refresh()
+	m.openInbox()
 	return tea.Batch(m.sync, waitForSync(m.sub))
 }
 
@@ -136,6 +137,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "q":
+
 				return m, tea.Quit
 			case "j":
 				m.taskList.MoveCursor(1)
@@ -176,7 +178,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case "i":
 				if m.gMenu {
-					cmds = append(cmds, m.openInbox())
+					m.openInbox()
 					m.gMenu = false
 				}
 			case "t":
@@ -219,7 +221,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					dbg(err)
 				} else {
-					m.taskMenuModel.project = m.client.Store.FindProject(t.Item.ProjectID)
+					m.taskMenuModel.project = m.store.FindProject(t.Item.ProjectID)
 					m.taskMenuModel.item = t.Item
 					m.taskMenuModel.content.SetValue(t.Item.Content)
 					m.taskMenuModel.desc.SetValue(t.Item.Description)

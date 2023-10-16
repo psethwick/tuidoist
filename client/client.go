@@ -23,6 +23,7 @@ const (
 
 var (
 	cachePath           = filepath.Join(basedir.CacheHome, "tuidoist", "cache.json")
+	opsPath             = filepath.Join(basedir.CacheHome, "tuidoist", "ops.json")
 	configPath          = filepath.Join(basedir.ConfigHome, "tuidoist")
 	ShortDateTimeFormat = "06/01/02(Mon) 15:04"
 	ShortDateFormat     = "06/01/02(Mon)"
@@ -54,10 +55,10 @@ func AssureExists(filePath string) error {
 	return nil
 }
 
-func LoadCache(s *todoist.Store) error {
-	err := ReadCache(s)
+func LoadCache(s *todoist.Store, o *todoist.Commands) error {
+	err := ReadCache(s, o)
 	if err != nil {
-		err = WriteCache(s)
+		err = WriteCache(s, o)
 		if err != nil {
 			return err
 		}
@@ -65,21 +66,55 @@ func LoadCache(s *todoist.Store) error {
 	return nil
 }
 
-func ReadCache(s *todoist.Store) error {
+func ReadCache(s *todoist.Store, o *todoist.Commands) error {
 	jsonString, err := os.ReadFile(cachePath)
 	if err != nil {
 		return err
 	}
 	err = json.Unmarshal(jsonString, &s)
+
+	jsonOpsString, err := os.ReadFile(opsPath)
 	if err != nil {
 		return err
+	}
+	var ops []todoist.Command
+	err = json.Unmarshal(jsonOpsString, &ops)
+	fmt.Print(jsonOpsString)
+	if err != nil {
+		return err
+	}
+	*o = todoist.Commands(ops)
+	inboxId := s.User.InboxProjectID
+	for _, op := range *o {
+		args := op.Args.(map[string]interface{})
+		switch op.Type {
+		case "item_add":
+			var projectId string
+			if args["project_id"] == nil {
+				projectId = inboxId
+			} else {
+				projectId = args["project_id"].(string)
+			}
+			s.Items = append(s.Items, todoist.Item{
+				BaseItem: todoist.BaseItem{
+					HaveProjectID: todoist.HaveProjectID{
+						ProjectID: projectId,
+					},
+					Content: args["content"].(string),
+					HaveID:  todoist.HaveID{ID: op.TempID},
+				}})
+		}
 	}
 	s.ConstructItemTree()
 	return nil
 }
 
-func WriteCache(s *todoist.Store) error {
+func WriteCache(s *todoist.Store, o *todoist.Commands) error {
 	buf, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+	buf2, err := json.MarshalIndent(o, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -91,13 +126,18 @@ func WriteCache(s *todoist.Store) error {
 	if err2 != nil {
 		return errors.New("Couldn't write to the cache file")
 	}
+	err3 := os.WriteFile(opsPath, buf2, os.ModePerm)
+	if err3 != nil {
+		return errors.New("Couldn't write to the ops file")
+	}
 	return nil
 }
 
-func GetClient(logger func(...any)) *todoist.Client {
+func GetClient(logger func(...any)) (*todoist.Client, *todoist.Commands) {
 	var store todoist.Store
+	var ops todoist.Commands
 
-	if err := LoadCache(&store); err != nil {
+	if err := LoadCache(&store, &ops); err != nil {
 		panic(err)
 	}
 
@@ -112,6 +152,10 @@ func GetClient(logger func(...any)) *todoist.Client {
 
 	configFile := filepath.Join(configPath, configName+"."+configType)
 	if err := AssureExists(configFile); err != nil {
+		panic(err)
+	}
+
+	if err := AssureExists(opsPath); err != nil {
 		panic(err)
 	}
 
@@ -154,7 +198,7 @@ func GetClient(logger func(...any)) *todoist.Client {
 		Color:          viper.GetBool("color"),
 		DateFormat:     viper.GetString("shortdateformat"),
 		DateTimeFormat: viper.GetString("shortdatetimeformat"),
-		DebugMode:      len(os.Getenv("DEBUG")) > 0,
+		DebugMode:      false, //len(os.Getenv("DEBUG")) > 0,
 	}
 
 	client := todoist.NewClient(config)
@@ -164,7 +208,7 @@ func GetClient(logger func(...any)) *todoist.Client {
 		if err != nil {
 			logger("Sync err", err)
 		}
-		WriteCache(&store)
+		WriteCache(&store, &ops)
 	}
-	return client
+	return client, &ops
 }
