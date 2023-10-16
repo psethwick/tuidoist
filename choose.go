@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/erikgeiser/promptkit/selection"
 	"github.com/psethwick/tuidoist/style"
 
@@ -110,7 +111,15 @@ func (pm *chooseModel) initChooser(p []fmt.Stringer, prompt string, purpose choo
 }
 
 func (pm *chooseModel) View() string {
-	return pm.chooser.View()
+	dialogBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#874BFD")).
+		Padding(1, 0).
+		BorderTop(true).
+		BorderLeft(true).
+		BorderRight(true).
+		BorderBottom(true)
+	return dialogBoxStyle.Render(pm.chooser.View())
 }
 
 func (m *mainModel) OpenFilters() tea.Cmd {
