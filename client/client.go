@@ -79,7 +79,6 @@ func ReadCache(s *todoist.Store, o *todoist.Commands) error {
 	}
 	var ops []todoist.Command
 	err = json.Unmarshal(jsonOpsString, &ops)
-	fmt.Print(jsonOpsString)
 	if err != nil {
 		return err
 	}

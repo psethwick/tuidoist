@@ -61,14 +61,14 @@ func waitForSync(sub chan struct{}) tea.Cmd {
 func initialModel() *mainModel {
 	m := mainModel{}
 	m.client, m.store, m.cmdQueue = client.GetClient(dbg)
-	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
-
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
+	m.refresh = func() {}
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
 	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks })
+	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
 	m.sub = make(chan struct{})
 	return &m
 }
@@ -102,7 +102,6 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 	m.statusBarModel.SetSyncStatus(status.Syncing)
 	m.applyCmds(cmds) // only 'new' ones
 	*m.cmdQueue = append(*m.cmdQueue, cmds...)
-	m.sub <- struct{}{}
 	return func() tea.Msg {
 		err := m.client.ExecCommands(m.ctx, *m.cmdQueue)
 		if err != nil {
