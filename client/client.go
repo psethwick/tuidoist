@@ -55,8 +55,8 @@ func AssureExists(filePath string) error {
 	return nil
 }
 
-func LoadCache(s *todoist.Store, cmds *todoist.Commands) error {
-	err := ReadCache(s, cmds)
+func LoadCache(s *todoist.Store, l *todoist.Store, cmds *todoist.Commands) error {
+	err := ReadCache(s, l, cmds)
 	if err != nil {
 		err = WriteCache(s, cmds)
 		if err != nil {
@@ -66,7 +66,7 @@ func LoadCache(s *todoist.Store, cmds *todoist.Commands) error {
 	return nil
 }
 
-func ReadCache(s *todoist.Store, o *todoist.Commands) error {
+func ReadCache(s *todoist.Store, l *todoist.Store, o *todoist.Commands) error {
 	jsonString, err := os.ReadFile(cachePath)
 	if err != nil {
 		return err
@@ -77,6 +77,8 @@ func ReadCache(s *todoist.Store, o *todoist.Commands) error {
 	if err != nil {
 		return err
 	}
+	json.Unmarshal(jsonString, &l)
+
 	var ops []todoist.Command
 	err = json.Unmarshal(jsonOpsString, &ops)
 	if err != nil {
@@ -84,6 +86,7 @@ func ReadCache(s *todoist.Store, o *todoist.Commands) error {
 	}
 	*o = todoist.Commands(ops)
 	s.ConstructItemTree()
+	l.ConstructItemTree()
 	return nil
 }
 
@@ -113,14 +116,10 @@ func WriteCache(s *todoist.Store, o *todoist.Commands) error {
 
 func GetClient(logger func(...any)) (*todoist.Client, *todoist.Store, *todoist.Commands) {
 	var store todoist.Store
-	var store2 todoist.Store
+	var local todoist.Store
 	var ops todoist.Commands
 
-	if err := LoadCache(&store, &ops); err != nil {
-		panic(err)
-	}
-
-	if err := LoadCache(&store2, &ops); err != nil {
+	if err := LoadCache(&store, &local, &ops); err != nil {
 		panic(err)
 	}
 
@@ -193,5 +192,5 @@ func GetClient(logger func(...any)) (*todoist.Client, *todoist.Store, *todoist.C
 		}
 		WriteCache(&store, &ops)
 	}
-	return client, &store2, &ops
+	return client, &local, &ops
 }

@@ -8,17 +8,18 @@ import (
 )
 
 func (m *mainModel) applyCmds(cmds []todoist.Command) {
+	var dirty bool
 	for _, op := range cmds {
 		args := op.Args.(map[string]interface{})
 		switch op.Type {
 		case "item_add":
 			var projectId string
 			if args["project_id"] == nil {
-				projectId = m.inboxId
+				projectId = m.local.User.InboxProjectID
 			} else {
 				projectId = args["project_id"].(string)
 			}
-			m.items = append(m.items, todoist.Item{
+			m.local.Items = append(m.local.Items, todoist.Item{
 				BaseItem: todoist.BaseItem{
 					HaveProjectID: todoist.HaveProjectID{
 						ProjectID: projectId,
@@ -26,6 +27,7 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 					Content: args["content"].(string),
 					HaveID:  todoist.HaveID{ID: op.TempID},
 				}})
+			dirty = true
 		case "item_delete":
 		case "item_uncomplete":
 		case "item_close":
@@ -34,6 +36,9 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 		case "project_update":
 		case "item_update":
 		}
+	}
+	if dirty {
+		m.local.ConstructItemTree()
 	}
 	m.refresh()
 }
@@ -68,13 +73,8 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 			m.sub <- struct{}{}
 			return nil
 		}
-		err = client.LoadCache(m.client.Store, m.cmdQueue)
-		if err != nil {
-			dbg(err)
-		} else {
-			m.refresh()
-			m.sub <- struct{}{}
-		}
+		// err = client.LoadCache(m.client.Store, m.cmdQueue)
+		m.refresh()
 		m.statusBarModel.SetSyncStatus(status.Synced)
 		m.sub <- struct{}{}
 		return nil

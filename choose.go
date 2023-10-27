@@ -123,8 +123,8 @@ func (pm *chooseModel) View() string {
 }
 
 func (m *mainModel) OpenFilters() tea.Cmd {
-	fls := make([]fmt.Stringer, len(m.store.Filters))
-	for i, f := range m.store.Filters {
+	fls := make([]fmt.Stringer, len(m.local.Filters))
+	for i, f := range m.local.Filters {
 		fls[i] = filter(f)
 	}
 	return m.chooseModel.initChooser(fls, "Choose Filter", chooseFilter)
@@ -135,8 +135,8 @@ func (m *mainModel) OpenPalette() tea.Cmd {
 }
 
 func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
-	p := m.store.Projects
-	sections := m.store.Sections
+	p := m.local.Projects
+	sections := m.local.Sections
 	var projs []fmt.Stringer
 	for _, prj := range p {
 		var projectSections []todoist.Section

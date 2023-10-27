@@ -17,22 +17,22 @@ func (m *mainModel) setTasksFromProject(p *project) {
 	lists := []tasklist.List{}
 	tasks := []task.Task{}
 	var selectedList int
-	for _, i := range m.store.Items {
+	for _, i := range m.local.Items {
 		// no section tasks should be first
 		if i.ProjectID == p.project.ID && i.SectionID == "" {
-			tasks = append(tasks, task.New(m.store, i))
+			tasks = append(tasks, task.New(m.local, i))
 		}
 	}
 	if len(tasks) > 0 {
 		lists = append(lists, tasklist.List{Title: p.project.Name, Tasks: tasks})
 	}
 
-	for _, s := range m.store.Sections {
+	for _, s := range m.local.Sections {
 		tasks = []task.Task{}
 		if s.ProjectID == p.project.ID {
-			for _, item := range m.store.Items {
+			for _, item := range m.local.Items {
 				if item.ProjectID == p.project.ID && s.ID == item.SectionID {
-					tasks = append(tasks, task.New(m.store, item))
+					tasks = append(tasks, task.New(m.local, item))
 				}
 			}
 			lists = append(lists, tasklist.List{
@@ -61,9 +61,9 @@ func (m *mainModel) setTasksFromFilter(lists []filterTitle) {
 	var tls []tasklist.List
 	for _, l := range lists {
 		tasks := []task.Task{}
-		for _, i := range m.store.Items {
-			if res, _ := fltr.Eval(l.Expr, &i, m.store); res {
-				tasks = append(tasks, task.New(m.store, i))
+		for _, i := range m.local.Items {
+			if res, _ := fltr.Eval(l.Expr, &i, m.local); res {
+				tasks = append(tasks, task.New(m.local, i))
 			}
 		}
 		tls = append(tls, tasklist.List{Title: l.Title, Tasks: tasks})
@@ -83,8 +83,8 @@ func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
 }
 
 func (m *mainModel) openInbox() {
-	for _, tp := range m.store.Projects {
-		if tp.ID == m.store.User.InboxProjectID {
+	for _, tp := range m.local.Projects {
+		if tp.ID == m.local.User.InboxProjectID {
 			p := project{tp, todoist.Section{}}
 			m.refresh = func() {
 				m.setTasksFromProject(&p)

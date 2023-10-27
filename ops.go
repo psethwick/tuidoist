@@ -43,7 +43,7 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 	i.ProjectID = m.projectId
 	i.SectionID = m.sectionId
 
-	t := task.New(m.store, i)
+	t := task.New(m.local, i)
 	m.statusBarModel.SetMessage("added", t.Title)
 	t = m.taskList.AddItemBottom(t)
 	m.state = viewTasks

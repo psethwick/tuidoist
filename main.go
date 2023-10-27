@@ -14,7 +14,6 @@ import (
 	"github.com/psethwick/tuidoist/input"
 	"github.com/psethwick/tuidoist/overlay"
 	"github.com/psethwick/tuidoist/status"
-	"github.com/psethwick/tuidoist/task"
 	"github.com/psethwick/tuidoist/tasklist"
 )
 
@@ -59,39 +58,9 @@ func waitForSync(sub chan struct{}) tea.Cmd {
 	}
 }
 
-func (m *mainModel) load(s *todoist.Store) {
-	for _, prj := range s.Projects {
-		var projectSections []todoist.Section
-		for _, s := range s.Sections {
-			if s.ProjectID == prj.ID {
-				projectSections = append(projectSections, s)
-			}
-		}
-		// always add the 'whole' project even if there's sections
-		m.projects = append(m.projects, project{prj, todoist.Section{}})
-		for _, s := range projectSections {
-			m.projects = append(m.projects, project{prj, s})
-		}
-	}
-
-	m.filters = make([]filter, len(s.Filters))
-	for i, f := range s.Filters {
-		m.filters[i] = filter{Name: f.Name, Query: f.Query}
-	}
-	m.items = make([]todoist.Item, len(m.client.Store.Items))
-	for i, item := range m.client.Store.Items {
-		m.items[i] = item
-	}
-	m.tasks = make([]task.Task, len(m.client.Store.Items))
-	for i, item := range m.client.Store.Items {
-		m.tasks[i] = task.New(m.items, item)
-	}
-}
-
 func initialModel() *mainModel {
 	m := mainModel{}
-	m.client, m.cmdQueue = client.GetClient(dbg)
-	m.load(m.client.Store)
+	m.client, m.local, m.cmdQueue = client.GetClient(dbg)
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
 	m.refresh = func() {}
