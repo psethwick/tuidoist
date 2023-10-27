@@ -46,17 +46,46 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 			m.local.Items = removeItem(m.local.Items, id)
 			delete(m.local.ItemMap, id)
 		case "item_move":
+			id := args["id"].(string)
+			if args["section_id"] != nil {
+				sectionId := args["section_id"].(string)
+				for i, item := range m.local.Items {
+					if item.ID == id {
+						item.SectionID = sectionId
+						m.local.Items[i] = item
+						break
+					}
+				}
+			}
+			if args["project_id"] != nil {
+				projectId := args["project_id"].(string)
+				for i, item := range m.local.Items {
+					if item.ID == id {
+						item.ProjectID = projectId
+						m.local.Items[i] = item
+						break
+					}
+				}
+			}
 		case "project_add":
+			project := todoist.Project{
+				HaveID: todoist.HaveID{ID: op.TempID},
+				Name:   args["name"].(string),
+			}
+			m.local.Projects = append(m.local.Projects, project)
+			m.local.ProjectMap[op.TempID] = &project
 		case "project_update":
 		case "item_update":
 		}
 	}
 	m.refresh()
 }
+
+// BIG TODO need to update tempid if we get the mapping back
+
 func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 	m.statusBarModel.SetSyncStatus(status.Syncing)
 	m.applyCmds(cmds) // only 'new' ones
-	m.refresh()
 	*m.cmdQueue = append(*m.cmdQueue, cmds...)
 	return func() tea.Msg {
 		err := m.client.ExecCommands(m.ctx, *m.cmdQueue)
@@ -84,8 +113,6 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 			m.sub <- struct{}{}
 			return nil
 		}
-		// err = client.LoadCache(m.client.Store, m.cmdQueue)
-		m.refresh()
 		m.statusBarModel.SetSyncStatus(status.Synced)
 		m.sub <- struct{}{}
 		return nil
