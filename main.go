@@ -14,6 +14,7 @@ import (
 	"github.com/psethwick/tuidoist/input"
 	"github.com/psethwick/tuidoist/overlay"
 	"github.com/psethwick/tuidoist/status"
+	"github.com/psethwick/tuidoist/task"
 	"github.com/psethwick/tuidoist/tasklist"
 )
 
@@ -28,8 +29,8 @@ const (
 
 type mainModel struct {
 	client *todoist.Client
-
-	store *todoist.Store
+	// optimistic updates and offline actions applied
+	local *todoist.Store
 
 	height         int
 	width          int
@@ -58,9 +59,39 @@ func waitForSync(sub chan struct{}) tea.Cmd {
 	}
 }
 
+func (m *mainModel) load(s *todoist.Store) {
+	for _, prj := range s.Projects {
+		var projectSections []todoist.Section
+		for _, s := range s.Sections {
+			if s.ProjectID == prj.ID {
+				projectSections = append(projectSections, s)
+			}
+		}
+		// always add the 'whole' project even if there's sections
+		m.projects = append(m.projects, project{prj, todoist.Section{}})
+		for _, s := range projectSections {
+			m.projects = append(m.projects, project{prj, s})
+		}
+	}
+
+	m.filters = make([]filter, len(s.Filters))
+	for i, f := range s.Filters {
+		m.filters[i] = filter{Name: f.Name, Query: f.Query}
+	}
+	m.items = make([]todoist.Item, len(m.client.Store.Items))
+	for i, item := range m.client.Store.Items {
+		m.items[i] = item
+	}
+	m.tasks = make([]task.Task, len(m.client.Store.Items))
+	for i, item := range m.client.Store.Items {
+		m.tasks[i] = task.New(m.items, item)
+	}
+}
+
 func initialModel() *mainModel {
 	m := mainModel{}
-	m.client, m.store, m.cmdQueue = client.GetClient(dbg)
+	m.client, m.cmdQueue = client.GetClient(dbg)
+	m.load(m.client.Store)
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
 	m.refresh = func() {}
@@ -73,76 +104,9 @@ func initialModel() *mainModel {
 	return &m
 }
 
-func (m *mainModel) applyCmds(cmds []todoist.Command) {
-	inboxId := m.store.User.InboxProjectID
-	for _, op := range cmds {
-		args := op.Args.(map[string]interface{})
-		switch op.Type {
-		case "item_add":
-			var projectId string
-			if args["project_id"] == nil {
-				projectId = inboxId
-			} else {
-				projectId = args["project_id"].(string)
-			}
-			m.store.Items = append(m.store.Items, todoist.Item{
-				BaseItem: todoist.BaseItem{
-					HaveProjectID: todoist.HaveProjectID{
-						ProjectID: projectId,
-					},
-					Content: args["content"].(string),
-					HaveID:  todoist.HaveID{ID: op.TempID},
-				}})
-		}
-	}
-	m.refresh()
-}
-
-func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
-	m.statusBarModel.SetSyncStatus(status.Syncing)
-	m.applyCmds(cmds) // only 'new' ones
-	*m.cmdQueue = append(*m.cmdQueue, cmds...)
-	return func() tea.Msg {
-		err := m.client.ExecCommands(m.ctx, *m.cmdQueue)
-		if err != nil {
-			dbg(err)
-			// the cache is the 'real' store and any unflushed commands
-			err = client.WriteCache(m.client.Store, m.cmdQueue)
-			dbg(err)
-			return nil // no reason to sync if api calls aren't working
-		}
-		m.cmdQueue = &todoist.Commands{}
-
-		err = m.client.Sync(m.ctx)
-		if err != nil {
-			dbg(err)
-			m.statusBarModel.SetSyncStatus(status.Error)
-			m.sub <- struct{}{}
-			return nil
-		}
-		err = client.WriteCache(m.client.Store, m.cmdQueue)
-		if err != nil {
-			dbg(err)
-			m.statusBarModel.SetSyncStatus(status.Error)
-			m.sub <- struct{}{}
-			return nil
-		}
-		err = client.LoadCache(m.store, m.cmdQueue)
-		if err != nil {
-			dbg(err)
-		} else {
-			m.refresh()
-			m.sub <- struct{}{}
-		}
-		m.statusBarModel.SetSyncStatus(status.Synced)
-		m.sub <- struct{}{}
-		return nil
-	}
-}
-
 func (m *mainModel) Init() tea.Cmd {
 	m.openInbox()
-	return tea.Batch(m.sync(), waitForSync(m.sub))
+	return tea.Sequence(m.sync(), waitForSync(m.sub))
 }
 
 // undo
@@ -256,17 +220,17 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				fallthrough
 			case "z":
 				cmds = append(cmds, m.undoCompleteTask())
-			case "enter":
-				t, err := m.taskList.GetCursorItem()
-				if err != nil {
-					dbg(err)
-				} else {
-					m.taskMenuModel.project = m.store.FindProject(t.Item.ProjectID)
-					m.taskMenuModel.item = t.Item
-					m.taskMenuModel.content.SetValue(t.Item.Content)
-					m.taskMenuModel.desc.SetValue(t.Item.Description)
-					m.state = viewTaskMenu
-				}
+			// case "enter":
+			// 	t, err := m.taskList.GetCursorItem()
+			// 	if err != nil {
+			// 		dbg(err)
+			// 	} else {
+			// 		m.taskMenuModel.project = m.store.FindProject(t.Item.ProjectID)
+			// 		m.taskMenuModel.item = t.Item
+			// 		m.taskMenuModel.content.SetValue(t.Item.Content)
+			// 		m.taskMenuModel.desc.SetValue(t.Item.Description)
+			// 		m.state = viewTaskMenu
+			// 	}
 			case "a":
 				m.taskList.Bottom()
 				m.inputModel.GetRepeat("add task", "", m.addTask)

@@ -42,7 +42,7 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"rename project",
 		func(m *mainModel) tea.Cmd {
-			prj := m.store.ProjectMap[m.projectId]
+			prj := m.local.ProjectMap[m.projectId]
 			if prj == nil {
 				dbg("did not find project", m.projectId)
 				return nil
