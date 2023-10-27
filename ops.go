@@ -10,15 +10,15 @@ import (
 // I think []{actionTaken, Task} ? and treat it like a stack
 // long game is complete sync workflow where offline actions can be synced later
 // which means serializing this to disk
-var lastCompletedTask task.Task
-
-func (m *mainModel) undoCompleteTask() tea.Cmd {
-	m.taskList.AddItem(lastCompletedTask)
-	m.statusBarModel.SetMessage("undo complete", lastCompletedTask.Title)
-	args := map[string]interface{}{"id": lastCompletedTask.Item.ID}
-	// todo undoop
-	return m.sync(todoist.NewCommand("item_uncomplete", args))
-}
+// var lastCompletedTask task.Task
+//
+// func (m *mainModel) undoCompleteTask() tea.Cmd {
+// 	m.taskList.AddItem(lastCompletedTask)
+// 	m.statusBarModel.SetMessage("undo complete", lastCompletedTask.Title)
+// 	args := map[string]interface{}{"id": lastCompletedTask.Item.ID}
+// 	// todo undoop
+// 	return m.sync(todoist.NewCommand("item_uncomplete", args))
+// }
 
 // todo confirm
 func (m *mainModel) deleteTask() tea.Cmd {
@@ -45,8 +45,8 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 
 	t := task.New(m.local, i)
 	m.statusBarModel.SetMessage("added", t.Title)
-	t = m.taskList.AddItemBottom(t)
-	m.state = viewTasks
+	// t = m.taskList.AddItemBottom(t)
+	// m.state = viewTasks
 	item := t.Item
 	args := map[string]interface{}{}
 	if item.Content != "" {
@@ -84,7 +84,7 @@ func (m *mainModel) completeTask() tea.Cmd {
 		dbg(err)
 		return func() tea.Msg { return nil }
 	}
-	lastCompletedTask = task.Task(t)
+	// lastCompletedTask = task.Task(t)
 	t.Completed = true
 	m.statusBarModel.SetMessage("completed", t.Title)
 	m.taskList.RemoveCurrentItem()

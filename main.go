@@ -188,7 +188,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "ctrl+z":
 				fallthrough
 			case "z":
-				cmds = append(cmds, m.undoCompleteTask())
+				// cmds = append(cmds, m.undoCompleteTask())
+
 			// case "enter":
 			// 	t, err := m.taskList.GetCursorItem()
 			// 	if err != nil {

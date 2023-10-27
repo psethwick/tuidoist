@@ -192,18 +192,6 @@ func (tl *TaskList) AddItem(t task.Task) {
 	tl.Sort(tl.sort)
 }
 
-func (tl *TaskList) AddItemBottom(t task.Task) task.Task {
-	maxOrder := 0
-	for _, lt := range tl.list[tl.idx].GetAllItems() {
-		maxOrder = max(maxOrder, lt.(task.Task).Item.ChildOrder)
-	}
-	t.Item.ChildOrder = maxOrder + 1
-	tl.list[tl.idx].AddItems(t)
-	tl.list[tl.idx].Sort()
-	tl.list[tl.idx].Bottom()
-	return t
-}
-
 func (tl *TaskList) SetHeight(h int) {
 	tl.height = h
 	for i, _ := range tl.list {

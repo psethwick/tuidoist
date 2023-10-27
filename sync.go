@@ -7,8 +7,17 @@ import (
 	todoist "github.com/sachaos/todoist/lib"
 )
 
+func removeItem(s []todoist.Item, itemId string) []todoist.Item {
+	for i, item := range s {
+		if item.ID == itemId {
+			s[i] = s[len(s)-1]
+			return s[:len(s)-1]
+		}
+	}
+	return s
+}
+
 func (m *mainModel) applyCmds(cmds []todoist.Command) {
-	var dirty bool
 	for _, op := range cmds {
 		args := op.Args.(map[string]interface{})
 		switch op.Type {
@@ -19,26 +28,28 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 			} else {
 				projectId = args["project_id"].(string)
 			}
-			m.local.Items = append(m.local.Items, todoist.Item{
+			item := todoist.Item{
 				BaseItem: todoist.BaseItem{
 					HaveProjectID: todoist.HaveProjectID{
 						ProjectID: projectId,
 					},
 					Content: args["content"].(string),
 					HaveID:  todoist.HaveID{ID: op.TempID},
-				}})
-			dirty = true
-		case "item_delete":
+				}}
+			m.local.Items = append(m.local.Items, item)
+			m.local.ItemMap[op.TempID] = &item
 		case "item_uncomplete":
+		case "item_delete":
+			fallthrough
 		case "item_close":
+			id := args["id"].(string)
+			m.local.Items = removeItem(m.local.Items, id)
+			delete(m.local.ItemMap, id)
 		case "item_move":
 		case "project_add":
 		case "project_update":
 		case "item_update":
 		}
-	}
-	if dirty {
-		m.local.ConstructItemTree()
 	}
 	m.refresh()
 }
