@@ -104,7 +104,7 @@ func (tl *TaskList) ResetItems(lists []List, newIdx int) {
 	tl.idx = newIdx
 	tl.OnTitleChange(tl.Title())
 	for i, l := range tl.list {
-		tl.logger(i, l.Len())
+		tl.logger("ResetItems", i, l.Len())
 	}
 }
 
@@ -272,5 +272,8 @@ func New(onTitleChange func(string), logger func(...any)) TaskList {
 }
 
 func (tl *TaskList) View() string {
-	return tl.list[tl.idx].View()
+	if len(tl.list) > 0 {
+		return tl.list[tl.idx].View()
+	}
+	return ""
 }

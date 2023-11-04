@@ -70,10 +70,12 @@ func initialModel() *mainModel {
 	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks })
 	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
 	m.sub = make(chan struct{})
+	dbg("end initialModel")
 	return &m
 }
 
 func (m *mainModel) Init() tea.Cmd {
+	dbg("start Init")
 	m.openInbox()
 	return tea.Sequence(m.sync(), waitForSync(m.sub))
 }
