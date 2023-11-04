@@ -156,7 +156,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case "t":
 				if m.gMenu {
-					cmds = append(cmds, m.chooseModel.gotoFilter(filter{Name: "Today", Query: "today | overdue"}))
+					cmds = append(cmds, m.chooseModel.gotoFilter(
+						filter{todoist.Filter{Name: "Today", Query: "today | overdue"}}),
+					)
 					m.gMenu = false
 				}
 			case "ctrl+p":

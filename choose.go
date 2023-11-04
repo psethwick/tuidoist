@@ -43,12 +43,7 @@ type chooseModel struct {
 }
 
 type filter struct {
-	Color     string
-	ID        string
-	IsDeleted bool
-	ItemOrder int
-	Name      string
-	Query     string
+	todoist.Filter
 }
 
 func (f filter) String() string {
@@ -125,7 +120,7 @@ func (pm *chooseModel) View() string {
 func (m *mainModel) OpenFilters() tea.Cmd {
 	fls := make([]fmt.Stringer, len(m.local.Filters))
 	for i, f := range m.local.Filters {
-		fls[i] = filter(f)
+		fls[i] = filter{f}
 	}
 	return m.chooseModel.initChooser(fls, "Choose Filter", chooseFilter)
 }
