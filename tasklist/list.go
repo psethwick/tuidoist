@@ -103,9 +103,6 @@ func (tl *TaskList) ResetItems(lists []List, newIdx int) {
 	}
 	tl.idx = newIdx
 	tl.OnTitleChange(tl.Title())
-	for i, l := range tl.list {
-		tl.logger("ResetItems", i, l.Len())
-	}
 }
 
 func (tl *TaskList) Title() string {

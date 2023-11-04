@@ -99,15 +99,12 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 }
 
 func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
-	dbg("start sync")
 	m.statusBarModel.SetSyncStatus(status.Syncing)
 	if len(cmds) > 0 {
 		m.applyCmds(cmds) // only 'new' ones
 		*m.cmdQueue = append(*m.cmdQueue, cmds...)
 	}
-	dbg("end of sync sync")
 	return func() tea.Msg {
-		dbg("start sync tea.Cmd")
 		if len(*m.cmdQueue) > 0 {
 			res, err := m.client.ExecCommands(m.ctx, *m.cmdQueue)
 			// TODO check res.SyncStatus and roll back failed ??
@@ -133,17 +130,15 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 				}
 			}
 		}
-		dbg("start IncrementalSync")
 		incStore, err := m.client.IncrementalSync(m.ctx, m.client.Store.SyncToken)
-		dbg("end IncrementalSync")
 		m.client.Store.ApplyIncrementalSync(incStore)
 		m.local.ApplyIncrementalSync(incStore)
 		m.refresh()
-		// m.sub <- struct{}{}
+		m.sub <- struct{}{}
 		if err != nil {
 			dbg(err)
 			m.statusBarModel.SetSyncStatus(status.Error)
-			// m.sub <- struct{}{}
+			m.sub <- struct{}{}
 			return nil
 		}
 		err = client.WriteCache(m.client.Store, m.cmdQueue)
@@ -154,8 +149,7 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 			return nil
 		}
 		m.statusBarModel.SetSyncStatus(status.Synced)
-		// m.sub <- struct{}{}
-		dbg("end sync tea.Cmd")
+		m.sub <- struct{}{}
 		return nil
 	}
 }

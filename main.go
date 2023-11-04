@@ -54,7 +54,8 @@ type syncedMsg struct{}
 
 func waitForSync(sub chan struct{}) tea.Cmd {
 	return func() tea.Msg {
-		return syncedMsg(<-sub)
+		s := <-sub
+		return syncedMsg(s)
 	}
 }
 
@@ -77,7 +78,7 @@ func initialModel() *mainModel {
 func (m *mainModel) Init() tea.Cmd {
 	dbg("start Init")
 	m.openInbox()
-	return tea.Sequence(m.sync(), waitForSync(m.sub))
+	return tea.Batch(waitForSync(m.sub), m.sync())
 }
 
 // undo
