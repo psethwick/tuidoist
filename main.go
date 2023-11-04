@@ -71,12 +71,10 @@ func initialModel() *mainModel {
 	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks })
 	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
 	m.sub = make(chan struct{})
-	dbg("end initialModel")
 	return &m
 }
 
 func (m *mainModel) Init() tea.Cmd {
-	dbg("start Init")
 	m.openInbox()
 	return tea.Batch(waitForSync(m.sub), m.sync())
 }
@@ -93,7 +91,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.width = msg.Width
 		// for children to get the size they can actually have
-		m.taskList.SetHeight(msg.Height - 1)
+		m.taskList.SetHeight(msg.Height - 2)
 		m.taskList.SetWidth(msg.Width)
 	case syncedMsg:
 		return m, waitForSync(m.sub)
@@ -208,7 +206,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// 	}
 			case "a":
 				m.taskList.Bottom()
-				m.inputModel.GetRepeat("add task", "", m.addTask)
+				m.inputModel.GetRepeat("add >", "", m.addTask)
 				m.state = viewInput
 			default:
 				m.gMenu = false
@@ -224,20 +222,18 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *mainModel) View() string {
-	base := lipgloss.Place(
-		m.width, m.height, lipgloss.Left, lipgloss.Top,
-		lipgloss.JoinVertical(lipgloss.Left, m.statusBarModel.View(), m.taskList.View()),
-	)
+	base := lipgloss.JoinVertical(lipgloss.Left, lipgloss.Place(
+		m.width, m.height-1, lipgloss.Left, lipgloss.Top,
+		lipgloss.JoinVertical(
+			lipgloss.Left, m.statusBarModel.View(), m.taskList.View(),
+		),
+	), m.inputModel.View())
 	s := ""
 	switch m.state {
-	// case viewTasks:
-	// 	s = m.taskList.View()
 	// case viewTaskMenu: // todo do I really need this? might still be useful tbf
 	// 	s = m.taskMenuModel.View()
 	case viewChooser:
 		s = m.chooseModel.View()
-	case viewInput:
-		s = m.inputModel.View()
 	}
 
 	return overlay.PlaceOverlay(10, 1, s, base)

@@ -5,9 +5,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-
-	"github.com/psethwick/tuidoist/style"
 )
 
 type InputModel struct {
@@ -22,17 +19,14 @@ type InputModel struct {
 
 func New(show func(), hide func()) InputModel {
 	ti := textinput.New()
+	ti.Prompt = ""
 	return InputModel{
-		Width:    20, // todo??
+		Width:    20, // TODO
 		show:     show,
 		hide:     hide,
 		content:  ti,
 		onAccept: func(c string) tea.Cmd { return nil },
 	}
-}
-
-func (im *InputModel) Height() int {
-	return 4 // height of textinput + dialog
 }
 
 func (im *InputModel) Update(msg tea.Msg) tea.Cmd {
@@ -49,6 +43,7 @@ func (im *InputModel) Update(msg tea.Msg) tea.Cmd {
 			}
 		case "esc":
 			im.content.SetValue("")
+			im.content.Prompt = ""
 			im.content.Blur()
 			im.hide()
 		}
@@ -66,7 +61,7 @@ func (im *InputModel) GetRepeat(prompt string, initialValue string, onAccept fun
 }
 
 func (im *InputModel) GetOnce(prompt string, initialValue string, onAccept func(string) tea.Cmd) {
-	im.content.Prompt = fmt.Sprintf("%s > ", prompt)
+	im.content.Prompt = fmt.Sprintf("%s ", prompt)
 	im.content.SetValue(initialValue)
 	im.onAccept = onAccept
 	im.repeat = false
@@ -75,8 +70,5 @@ func (im *InputModel) GetOnce(prompt string, initialValue string, onAccept func(
 }
 
 func (im *InputModel) View() string {
-	return lipgloss.Place(im.Width, 3,
-		lipgloss.Left, lipgloss.Left,
-		style.DialogBox.Render(im.content.View()),
-	)
+	return im.content.View()
 }

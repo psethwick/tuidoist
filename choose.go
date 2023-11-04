@@ -52,12 +52,9 @@ func (f filter) String() string {
 
 const (
 	customTemplate = `
-{{- print "\n"}}
 {{ if .IsFiltered }}
   {{- print "   " .FilterInput }}
 {{ end }}
-    {{- print "\n"}}
-
 {{- range  $i, $choice := .Choices }}
   {{- if IsScrollUpHintPosition $i }}
     {{- "⇡ " -}}
@@ -81,7 +78,6 @@ func (pm *chooseModel) initChooser(p []fmt.Stringer, prompt string, purpose choo
 	pm.oldTitle = pm.main.statusBarModel.GetTitle()
 	pm.main.statusBarModel.SetTitle(prompt)
 	sm.Template = customTemplate
-	// we're double spacing + some room for the prompt
 	sm.PageSize = 20
 	// todo
 	// sm.FilterInputTextStyle        lipgloss.Style
@@ -107,9 +103,9 @@ func (pm *chooseModel) initChooser(p []fmt.Stringer, prompt string, purpose choo
 
 func (pm *chooseModel) View() string {
 	dialogBoxStyle := lipgloss.NewStyle().
+		Width(40).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#874BFD")).
-		Padding(1, 0).
 		BorderTop(true).
 		BorderLeft(true).
 		BorderRight(true).
