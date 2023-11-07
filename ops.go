@@ -32,6 +32,7 @@ func (m *mainModel) deleteTask() tea.Cmd {
 		todoist.NewCommand("item_delete", map[string]interface{}{"id": t.Item.ID}),
 	)
 }
+
 func (m *mainModel) addTask(content string) tea.Cmd {
 	if content == "" {
 		return func() tea.Msg { return nil }
@@ -45,8 +46,6 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 
 	t := task.New(m.local, i)
 	m.statusBarModel.SetMessage("added", t.Title)
-	// t = m.taskList.AddItemBottom(t)
-	// m.state = viewTasks
 	item := t.Item
 	args := map[string]interface{}{}
 	if item.Content != "" {
@@ -84,10 +83,8 @@ func (m *mainModel) completeTask() tea.Cmd {
 		dbg(err)
 		return func() tea.Msg { return nil }
 	}
-	// lastCompletedTask = task.Task(t)
 	t.Completed = true
 	m.statusBarModel.SetMessage("completed", t.Title)
-	m.taskList.RemoveCurrentItem()
 	return m.sync(todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID}))
 }
 
@@ -113,8 +110,6 @@ func (m *mainModel) RenameProject(projectId string, newName string) tea.Cmd {
 		"id":   projectId,
 		"name": newName,
 	}
-	// m.state = viewTasks
-
 	return m.sync(todoist.NewCommand("project_update", args))
 }
 

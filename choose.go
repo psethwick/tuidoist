@@ -170,7 +170,7 @@ func (cm *chooseModel) gotoFilter(f filter) tea.Cmd {
 	}
 
 	cm.main.refresh = func() {
-		cm.main.setTasksFromFilter(fts)
+		cm.main.setTasksFromFilter(filterSelection{fts, 0})
 	}
 	cm.main.refresh()
 	cm.main.state = viewTasks
@@ -200,14 +200,13 @@ func (cm *chooseModel) handleChoose() tea.Cmd {
 				cm.main.refresh()
 				cm.main.projectId = prj.project.ID
 				cm.main.sectionId = prj.section.ID
-				cm.main.switchProject(&prj)
 			case moveToProject:
-				task, err := cm.main.taskList.RemoveCurrentItem()
-				if err != nil {
+				if task, err := cm.main.taskList.RemoveCurrentItem(); err == nil {
+					cmds = append(cmds, cm.main.MoveItem(&task.Item, prj))
+					cm.main.statusBarModel.SetTitle(cm.oldTitle)
+				} else {
 					dbg(err)
 				}
-				cmds = append(cmds, cm.main.MoveItem(&task.Item, prj))
-				cm.main.statusBarModel.SetTitle(cm.oldTitle)
 			}
 		}
 		cm.main.state = viewTasks
@@ -237,8 +236,4 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 
 func newChooseModel(m *mainModel) chooseModel {
 	return chooseModel{main: m}
-}
-
-func (m *mainModel) switchProject(p *project) {
-	m.state = viewChooser
 }

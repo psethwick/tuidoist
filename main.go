@@ -84,6 +84,22 @@ func (m *mainModel) Init() tea.Cmd {
 // complete -> uncomplete
 // delete -> re-add? I will need the whole task...
 
+func (m *mainModel) resetRefresh(listId interface{}) {
+	switch listId.(type) {
+	case filterSelection:
+		m.refresh = func() {
+			m.setTasksFromFilter(listId.(filterSelection))
+		}
+	case project:
+		p := listId.(project)
+		m.projectId = p.project.ID
+		m.sectionId = p.section.ID
+		m.refresh = func() {
+			m.setTasksFromProject(&p)
+		}
+	}
+}
+
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -118,9 +134,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "k":
 				m.taskList.MoveCursor(-1)
 			case "h":
-				m.taskList.PrevList()
+				m.resetRefresh(m.taskList.PrevList())
 			case "l":
-				m.taskList.NextList()
+				m.resetRefresh(m.taskList.NextList())
 			case "v":
 				t, _ := m.taskList.GetCursorItem()
 				if t.Url != "" {

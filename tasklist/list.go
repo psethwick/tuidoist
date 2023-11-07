@@ -11,7 +11,8 @@ import (
 
 type listModel struct {
 	bubblelister.Model
-	title string
+	title  string
+	listId interface{}
 }
 
 type TaskList struct {
@@ -86,8 +87,9 @@ func convertOut(strs []fmt.Stringer) []task.Task {
 }
 
 type List struct {
-	Title string
-	Tasks []task.Task
+	Title  string
+	Tasks  []task.Task
+	ListId interface{}
 }
 
 func (tl *TaskList) ResetItems(lists []List, newIdx int) {
@@ -97,7 +99,7 @@ func (tl *TaskList) ResetItems(lists []List, newIdx int) {
 	}
 	tl.list = make([]listModel, len(lists))
 	for i, l := range lists {
-		tl.list[i] = listModel{tl.newList(), l.Title}
+		tl.list[i] = listModel{tl.newList(), l.Title, l.ListId}
 		tl.list[i].ResetItems(convertIn(l.Tasks)...)
 		tl.list[i].SetCursor(ci)
 	}
@@ -216,13 +218,16 @@ func (tl *TaskList) GetCursorItem() (task.Task, error) {
 
 }
 
-func (tl *TaskList) NextList() {
+func (tl *TaskList) NextList() interface{} {
 	tl.idx = min(tl.idx+1, len(tl.list)-1)
 	tl.OnTitleChange(tl.Title())
+	return tl.list[tl.idx].listId
 }
-func (tl *TaskList) PrevList() {
+
+func (tl *TaskList) PrevList() interface{} {
 	tl.idx = max(0, tl.idx-1)
 	tl.OnTitleChange(tl.Title())
+	return tl.list[tl.idx].listId
 }
 
 func (tl *TaskList) RemoveCurrentItem() (task.Task, error) {

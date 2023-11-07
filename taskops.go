@@ -24,7 +24,11 @@ func (m *mainModel) setTasksFromProject(p *project) {
 		}
 	}
 	if len(tasks) > 0 {
-		lists = append(lists, tasklist.List{Title: p.project.Name, Tasks: tasks})
+		lists = append(
+			lists,
+			tasklist.List{
+				Title: p.project.Name, Tasks: tasks, ListId: project{p.project, todoist.Section{}},
+			})
 	}
 
 	for _, s := range m.local.Sections {
@@ -36,8 +40,9 @@ func (m *mainModel) setTasksFromProject(p *project) {
 				}
 			}
 			lists = append(lists, tasklist.List{
-				Title: fmt.Sprintf("%s/%s", p.project.Name, s.Name),
-				Tasks: tasks,
+				Title:  fmt.Sprintf("%s/%s", p.project.Name, s.Name),
+				Tasks:  tasks,
+				ListId: project{p.project, s},
 			})
 			if s.ID == p.section.ID {
 				selectedList = len(lists) - 1
@@ -57,20 +62,29 @@ type filterTitle struct {
 	Expr  fltr.Expression
 }
 
-func (m *mainModel) setTasksFromFilter(lists []filterTitle) {
+type filterSelection struct {
+	lists []filterTitle
+	index int
+}
+
+func (m *mainModel) setTasksFromFilter(fs filterSelection) {
+	// this can't be the right place to do this
+	m.projectId = ""
+	m.sectionId = ""
 	var tls []tasklist.List
-	for _, l := range lists {
+	for i, l := range fs.lists {
 		tasks := []task.Task{}
 		for _, i := range m.local.Items {
 			if res, _ := fltr.Eval(l.Expr, &i, m.local); res {
 				tasks = append(tasks, task.New(m.local, i))
 			}
 		}
-		tls = append(tls, tasklist.List{Title: l.Title, Tasks: tasks})
+		tls = append(
+			tls,
+			tasklist.List{Title: l.Title, Tasks: tasks, ListId: filterSelection{fs.lists, i}},
+		)
 	}
-	// m.statusBarModel.SetTitle()
-	// m.statusBarModel.SetNumber(len(tasks))
-	m.taskList.ResetItems(tls, 0)
+	m.taskList.ResetItems(tls, fs.index)
 }
 
 func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
