@@ -2,7 +2,6 @@ package main
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/psethwick/tuidoist/task"
 	todoist "github.com/sachaos/todoist/lib"
 )
 
@@ -37,16 +36,14 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 	if content == "" {
 		return func() tea.Msg { return nil }
 	}
-	i := todoist.Item{}
-	i.Content = content
-	i.Priority = 1
+	item := todoist.Item{}
+	item.Content = content
+	item.Priority = 1
 
-	i.ProjectID = m.projectId
-	i.SectionID = m.sectionId
+	item.ProjectID = m.projectId
+	item.SectionID = m.sectionId
 
-	t := task.New(m.local, i)
-	m.statusBarModel.SetMessage("added", t.Title)
-	item := t.Item
+	m.statusBarModel.SetMessage("added", item.Content)
 	args := map[string]interface{}{}
 	if item.Content != "" {
 		args["content"] = item.Content
