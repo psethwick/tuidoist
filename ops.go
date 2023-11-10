@@ -128,3 +128,26 @@ func (m *mainModel) RenameProject(projectId string, newName string) tea.Cmd {
 func (m *mainModel) UpdateItem(i todoist.Item) tea.Cmd {
 	return m.sync(todoist.NewCommand("item_update", i.UpdateParam()))
 }
+
+func (m *mainModel) RenameSection(ID string, newName string) tea.Cmd {
+	args := map[string]interface{}{
+		"id":   ID,
+		"name": newName,
+	}
+	return m.sync(todoist.NewCommand("section_update", args))
+}
+
+func (m *mainModel) AddSection(name string) tea.Cmd {
+	// todo
+	return nil
+}
+
+func (m *mainModel) ArchiveSection() tea.Cmd {
+	// todo
+	return nil
+}
+
+func (m *mainModel) ArchiveProject() tea.Cmd {
+	// todo
+	return nil
+}

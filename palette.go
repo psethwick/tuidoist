@@ -23,50 +23,59 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"add project",
 		func(m *mainModel) tea.Cmd {
-			onAccept := func(input string) tea.Cmd {
-				return func() tea.Msg {
-					return m.AddProject(input)
-				}
-			}
-			m.inputModel.GetOnce("", "", onAccept)
-			return nil
-		},
-	},
-	paletteCommand{
-		"change due date",
-		func(m *mainModel) tea.Cmd {
-			dbg("todo")
-			return nil
-		},
-	},
-	paletteCommand{
-		"rename project",
-		func(m *mainModel) tea.Cmd {
-			prj := m.local.ProjectMap[m.projectId]
-			if prj == nil {
-				dbg("did not find project", m.projectId)
-				return nil
-			}
-			onAccept := func(input string) tea.Cmd {
-				return m.RenameProject(prj.ID, input)
-			}
-			m.inputModel.GetOnce("", prj.Name, onAccept)
+			m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
+				return m.AddProject(input)
+			})
 			return nil
 		},
 	},
 	paletteCommand{
 		"archive project",
 		func(m *mainModel) tea.Cmd {
-			dbg("todo")
+			return m.ArchiveProject()
+		},
+	},
+	paletteCommand{
+		"rename section",
+		func(m *mainModel) tea.Cmd {
+			if sct := m.local.SectionMap[m.sectionId]; sct != nil {
+				m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
+					return m.RenameSection(sct.ID, input)
+				})
+			}
+			return nil
+		},
+	},
+	paletteCommand{
+		"archive section",
+		func(m *mainModel) tea.Cmd {
+			return m.ArchiveSection()
+		},
+	},
+	paletteCommand{
+		"add section",
+		func(m *mainModel) tea.Cmd {
+			m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
+				return m.AddSection(input)
+			})
+			return nil
+		},
+	},
+	paletteCommand{
+		"rename project",
+		func(m *mainModel) tea.Cmd {
+			if prj := m.local.ProjectMap[m.projectId]; prj != nil {
+				m.inputModel.GetOnce("", prj.Name, func(input string) tea.Cmd {
+					return m.RenameProject(prj.ID, input)
+				})
+			}
+
 			return nil
 		},
 	},
 }
 
-// add section
-// rename section
 // move section (to other project, it seems)
-// archive section
 
 // context task
 // edit content
