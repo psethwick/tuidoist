@@ -38,6 +38,7 @@ func (im *InputModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, im.onAccept(im.content.Value()))
 			im.content.SetValue("")
 			if !im.repeat {
+				im.content.Prompt = ""
 				im.content.Blur()
 				im.hide()
 			}

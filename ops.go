@@ -32,6 +32,21 @@ func (m *mainModel) deleteTask() tea.Cmd {
 	)
 }
 
+func (m *mainModel) reschedule(newDate string) tea.Cmd {
+	t, err := m.taskList.GetCursorItem()
+	if err != nil {
+		dbg(err)
+		return nil
+	}
+	t.Item.Due = &todoist.Due{
+		String: newDate,
+	}
+	m.statusBarModel.SetMessage("rescheduled", t.Title)
+	return m.sync(
+		todoist.NewCommand("item_update", t.Item.UpdateParam()),
+	)
+}
+
 func (m *mainModel) addTask(content string) tea.Cmd {
 	if content == "" {
 		return func() tea.Msg { return nil }

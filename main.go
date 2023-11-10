@@ -191,8 +191,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.NameSort))
 			case "d":
 				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.DateSort))
-			case "r":
-				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.AssigneeSort))
+			// case "r":
+			// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.AssigneeSort))
 			case "m":
 				cmds = append(cmds, m.OpenProjects(moveToProject))
 			case "ctrl+u":
@@ -203,7 +203,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.taskList.WholePageDown()
 			case "ctrl+b":
 				m.taskList.WholePageUp()
-
+			case "r":
+				m.inputModel.GetOnce("reschedule >", "", m.reschedule)
+				m.state = viewInput
 			case "ctrl+z":
 				fallthrough
 			case "z":
