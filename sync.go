@@ -32,11 +32,9 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 		args := op.Args.(map[string]interface{})
 		switch op.Type {
 		case "item_add":
-			var projectId string
-			if args["project_id"] == nil {
-				projectId = m.local.User.InboxProjectID
-			} else {
-				projectId = args["project_id"].(string)
+			projectId := m.local.User.InboxProjectID
+			if pID, ok := args["project_id"].(string); ok {
+				projectId = pID
 			}
 			sectionID := ""
 			due := todoist.Due{}
@@ -69,8 +67,7 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 			m.local.Items = remove(m.local.Items, id)
 		case "item_move":
 			id := args["id"].(string)
-			if args["section_id"] != nil {
-				sectionId := args["section_id"].(string)
+			if sectionId, ok := args["section_id"].(string); ok {
 				for i, item := range m.local.Items {
 					if item.ID == id {
 						item.SectionID = sectionId
@@ -79,8 +76,7 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 					}
 				}
 			}
-			if args["project_id"] != nil {
-				projectId := args["project_id"].(string)
+			if projectId, ok := args["project_id"].(string); ok {
 				for i, item := range m.local.Items {
 					if item.ID == id {
 						item.ProjectID = projectId
@@ -99,8 +95,25 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 		case "project_update":
 			// TODO
 		case "item_update":
-			// TODO
-			// m.local.Items = replace(m.local.Items, )
+			item := todoist.Item{}
+			item.ID = args["id"].(string)
+			if content, ok := args["content"].(string); ok {
+				item.Content = content
+			}
+			if desc, ok := args["description"].(string); ok {
+				item.Description = desc
+			}
+			if labelNames, ok := args["labels"].([]string); ok {
+				item.LabelNames = labelNames
+			}
+			if priority, ok := args["priority"].(int); ok {
+				item.Priority = priority
+			}
+			if due, ok := args["due"].(todoist.Due); ok {
+				item.Due = &due
+			}
+
+			m.local.Items = replace(m.local.Items, item.ID, item)
 		case "filter_add":
 			// TODO
 		case "filter_update":
@@ -144,10 +157,9 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 			}
 		}
 		incStore, err := m.client.IncrementalSync(m.ctx, m.client.Store.SyncToken)
-		m.client.Store.ApplyIncrementalSync(incStore)
 		m.local.ApplyIncrementalSync(incStore)
 		m.refresh()
-		m.sub <- struct{}{}
+		m.client.Store.ApplyIncrementalSync(incStore)
 		if err != nil {
 			dbg(err)
 			m.statusBarModel.SetSyncStatus(status.Error)
