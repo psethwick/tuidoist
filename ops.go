@@ -89,25 +89,48 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 	return m.sync(todoist.NewCommand("item_add", args))
 }
 
-func (m *mainModel) completeTask() tea.Cmd {
-	t, err := m.taskList.GetCursorItem()
-	if err != nil {
-		dbg(err)
-		return func() tea.Msg { return nil }
+func (m *mainModel) completeTasks() tea.Cmd {
+	var cmds []todoist.Command
+	if !m.multiSelect {
+		t, err := m.taskList.GetCursorItem()
+		if err != nil {
+			dbg(err)
+			return func() tea.Msg { return nil }
+		}
+		t.Completed = true
+		m.statusBarModel.SetMessage("completed", t.Title)
+		cmds = append(cmds, todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID}))
 	}
-	t.Completed = true
-	m.statusBarModel.SetMessage("completed", t.Title)
-	return m.sync(todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID}))
+	return m.sync(cmds...)
 }
 
-func (m *mainModel) MoveItem(item *todoist.Item, p project) tea.Cmd {
-	args := map[string]interface{}{"id": item.ID}
-	if p.section.ID != "" {
-		args["section_id"] = p.section.ID
+func (m *mainModel) MoveItems(p project) tea.Cmd {
+	var cmds []todoist.Command
+	if !m.multiSelect {
+		t, err := m.taskList.GetCursorItem()
+		if err != nil {
+			dbg(err)
+			return func() tea.Msg { return nil }
+		}
+		args := map[string]interface{}{"id": t.Item.ID}
+		if p.section.ID != "" {
+			args["section_id"] = p.section.ID
+		} else {
+			args["project_id"] = p.project.ID
+		}
+		cmds = append(cmds, todoist.NewCommand("item_move", args))
 	} else {
-		args["project_id"] = p.project.ID
+		for _, t := range m.taskList.SelectedItems() {
+			args := map[string]interface{}{"id": t.Item.ID}
+			if p.section.ID != "" {
+				args["section_id"] = p.section.ID
+			} else {
+				args["project_id"] = p.project.ID
+			}
+			cmds = append(cmds, todoist.NewCommand("item_move", args))
+		}
 	}
-	return m.sync(todoist.NewCommand("item_move", args))
+	return m.sync(cmds...)
 }
 
 func (m *mainModel) AddProject(name string) tea.Cmd {

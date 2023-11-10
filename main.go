@@ -42,6 +42,7 @@ type mainModel struct {
 	statusBarModel status.Model
 	refresh        func()
 	gMenu          bool
+	multiSelect    bool
 	sub            chan struct{}
 
 	cmdQueue *todoist.Commands
@@ -126,8 +127,18 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch msg.String() {
+			case "esc":
+				m.multiSelect = false
+				m.taskList.Unselect()
+			case " ":
+				if !m.multiSelect {
+					m.multiSelect = true
+				}
+				if t, err := m.taskList.GetCursorItem(); err == nil {
+					t.Selected = !t.Selected
+					m.taskList.UpdateCurrentTask(t)
+				}
 			case "q":
-
 				return m, tea.Quit
 			case "j":
 				m.taskList.MoveCursor(1)
@@ -157,7 +168,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// todo how to do upcoming
 				// 	}
 			case "c":
-				cmds = append(cmds, m.completeTask())
+				cmds = append(cmds, m.completeTasks())
 				m.state = viewTasks
 			case "delete":
 				cmds = append(cmds, m.deleteTask())

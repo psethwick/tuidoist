@@ -201,12 +201,8 @@ func (cm *chooseModel) handleChoose() tea.Cmd {
 				cm.main.projectId = prj.project.ID
 				cm.main.sectionId = prj.section.ID
 			case moveToProject:
-				if task, err := cm.main.taskList.RemoveCurrentItem(); err == nil {
-					cmds = append(cmds, cm.main.MoveItem(&task.Item, prj))
-					cm.main.statusBarModel.SetTitle(cm.oldTitle)
-				} else {
-					dbg(err)
-				}
+				cmds = append(cmds, cm.main.MoveItems(prj))
+				cm.main.statusBarModel.SetTitle(cm.oldTitle)
 			}
 		}
 		cm.main.state = viewTasks

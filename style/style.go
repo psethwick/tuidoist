@@ -34,4 +34,5 @@ var (
 
 	Underline     = lipgloss.NewStyle().Underline(false)
 	StrikeThrough = lipgloss.NewStyle().Strikethrough(true)
+	Selected      = lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, true)
 )

@@ -17,12 +17,13 @@ type Task struct {
 	Summary   string
 	Completed bool
 	Url       string
+	Selected  bool
 }
 
 func (t Task) String() string {
 	s := fmt.Sprintf("%s\n%s", t.Title, t.Summary)
-	if t.Completed {
-		return style.StrikeThrough.Render(s)
+	if t.Selected {
+		return style.Selected.Render(s)
 	}
 	return s
 }

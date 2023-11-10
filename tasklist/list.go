@@ -218,6 +218,16 @@ func (tl *TaskList) GetCursorItem() (task.Task, error) {
 
 }
 
+// todo fix bug (it does not update the task only the copy)
+func (tl *TaskList) Unselect() {
+	for _, l := range tl.list {
+		for _, t := range l.GetAllItems() {
+			task := t.(task.Task)
+			task.Selected = false
+		}
+	}
+}
+
 func (tl *TaskList) NextList() interface{} {
 	tl.idx = min(tl.idx+1, len(tl.list)-1)
 	tl.OnTitleChange(tl.Title())

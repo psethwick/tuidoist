@@ -67,7 +67,7 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 		case "m":
 			cmds = append(cmds, tm.main.OpenProjects(moveToProject))
 		case "c":
-			cmds = append(cmds, tm.main.completeTask())
+			cmds = append(cmds, tm.main.completeTasks())
 			tm.main.state = viewTasks
 		case "delete":
 			cmds = append(cmds, tm.main.deleteTask())
