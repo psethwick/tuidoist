@@ -27,6 +27,8 @@ type TaskList struct {
 
 type TaskSort uint
 
+var selected map[string]*task.Task = map[string]*task.Task{}
+
 const (
 	DefaultSort TaskSort = iota
 	NameSort
@@ -73,6 +75,9 @@ var sortDesc = map[TaskSort]string{
 func convertIn(tasks []task.Task) []fmt.Stringer {
 	strs := make([]fmt.Stringer, len(tasks))
 	for i, t := range tasks {
+		if _, ok := selected[t.Item.ID]; ok {
+			t.Selected = true
+		}
 		strs[i] = t
 	}
 	return strs
@@ -84,6 +89,54 @@ func convertOut(strs []fmt.Stringer) []task.Task {
 		tasks[i] = t
 	}
 	return tasks
+}
+
+func (tl *TaskList) Select() {
+	ci, err := tl.list[tl.idx].GetCursorIndex()
+	if err != nil {
+		return
+	}
+	str, err := tl.list[tl.idx].GetItem(ci)
+	if err != nil {
+		return
+	}
+	task := str.(task.Task)
+	if _, ok := selected[task.Item.ID]; ok {
+		task.Selected = false
+		delete(selected, task.Item.ID)
+	} else {
+		task.Selected = true
+		selected[task.Item.ID] = &task
+	}
+	tl.list[tl.idx].UpdateItem(ci, updateTask(task))
+}
+
+func (tl *TaskList) SelectedItems() []task.Task {
+	var tasks []task.Task
+	for _, t := range selected {
+		tasks = append(tasks, *t)
+	}
+	if len(tasks) == 0 {
+		itm, err := tl.list[tl.idx].GetCursorItem()
+		if err != nil {
+			return nil
+		}
+		tasks = append(tasks, itm.(task.Task))
+	}
+	return tasks
+}
+
+func (tl *TaskList) Unselect() {
+	selected = map[string]*task.Task{}
+	for idx, l := range tl.list {
+		for i, t := range l.GetAllItems() {
+			task := t.(task.Task)
+			if task.Selected {
+				task.Selected = false
+				tl.list[idx].UpdateItem(i, updateTask(task))
+			}
+		}
+	}
 }
 
 type List struct {
@@ -170,27 +223,6 @@ func (tl *TaskList) Sort(ts TaskSort) string {
 	return sortDesc[tl.sort]
 }
 
-func (tl *TaskList) getAllItems() []task.Task {
-	return convertOut(tl.list[tl.idx].GetAllItems())
-}
-
-func (tl *TaskList) AddItemTop(t task.Task) task.Task {
-	minOrder := 0
-	for _, t := range tl.getAllItems() {
-		minOrder = min(minOrder, t.Item.ChildOrder)
-	}
-	t.Item.ChildOrder = minOrder - 1
-	tl.list[tl.idx].AddItems(t)
-	tl.list[tl.idx].Sort()
-	tl.list[tl.idx].Top()
-	return t
-}
-
-func (tl *TaskList) AddItem(t task.Task) {
-	tl.list[tl.idx].AddItems(t)
-	tl.Sort(tl.sort)
-}
-
 func (tl *TaskList) SetHeight(h int) {
 	tl.height = h
 	for i, _ := range tl.list {
@@ -218,38 +250,18 @@ func (tl *TaskList) GetCursorItem() (task.Task, error) {
 
 }
 
-// todo fix bug (it does not update the task only the copy)
-func (tl *TaskList) Unselect() {
-	for _, l := range tl.list {
-		for _, t := range l.GetAllItems() {
-			task := t.(task.Task)
-			task.Selected = false
-		}
-	}
-}
-
 func (tl *TaskList) NextList() interface{} {
 	tl.idx = min(tl.idx+1, len(tl.list)-1)
 	tl.OnTitleChange(tl.Title())
+	tl.Unselect()
 	return tl.list[tl.idx].listId
 }
 
 func (tl *TaskList) PrevList() interface{} {
 	tl.idx = max(0, tl.idx-1)
 	tl.OnTitleChange(tl.Title())
+	tl.Unselect()
 	return tl.list[tl.idx].listId
-}
-
-func (tl *TaskList) RemoveCurrentItem() (task.Task, error) {
-	idx, err := tl.list[tl.idx].GetCursorIndex()
-	if err != nil {
-		return task.Task{}, err
-	}
-	str, err := tl.list[tl.idx].RemoveIndex(idx)
-	if err != nil {
-		return task.Task{}, err
-	}
-	return str.(task.Task), nil
 }
 
 func equals(a fmt.Stringer, b fmt.Stringer) bool {

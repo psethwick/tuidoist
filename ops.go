@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/psethwick/tuidoist/task"
 	todoist "github.com/sachaos/todoist/lib"
 )
 
@@ -20,31 +23,50 @@ import (
 // }
 
 // todo confirm
-func (m *mainModel) deleteTask() tea.Cmd {
-	t, err := m.taskList.RemoveCurrentItem()
-	if err != nil {
-		dbg(err)
-		return nil
-	}
-	m.statusBarModel.SetMessage("deleted", t.Title)
-	return m.sync(
-		todoist.NewCommand("item_delete", map[string]interface{}{"id": t.Item.ID}),
-	)
+func (m *mainModel) deleteTasks() tea.Cmd {
+	return m.bulkOps("deleted", func(t task.Task) todoist.Command {
+		return todoist.NewCommand("item_delete", map[string]interface{}{"id": t.Item.ID})
+	})
 }
 
-func (m *mainModel) reschedule(newDate string) tea.Cmd {
-	t, err := m.taskList.GetCursorItem()
-	if err != nil {
-		dbg(err)
-		return nil
+func (m *mainModel) completeTasks() tea.Cmd {
+	return m.bulkOps("completed", func(t task.Task) todoist.Command {
+		return todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID})
+	})
+}
+
+func (m *mainModel) rescheduleTasks(newDate string) tea.Cmd {
+	return m.bulkOps("rescheduled", func(t task.Task) todoist.Command {
+		t.Item.Due = &todoist.Due{
+			String: newDate,
+		}
+		return todoist.NewCommand("item_update", todoist.NewCommand("item_update", t.Item.UpdateParam()))
+	})
+}
+
+func (m *mainModel) MoveItems(p project) tea.Cmd {
+	return m.bulkOps("moved", func(t task.Task) todoist.Command {
+		args := map[string]interface{}{"id": t.Item.ID}
+		if p.section.ID != "" {
+			args["section_id"] = p.section.ID
+		} else {
+			args["project_id"] = p.project.ID
+		}
+		return todoist.NewCommand("item_move", args)
+	})
+}
+
+func (m *mainModel) bulkOps(name string, builder func(task.Task) todoist.Command) tea.Cmd {
+	var cmds []todoist.Command
+	for _, t := range m.taskList.SelectedItems() {
+		m.statusBarModel.SetMessage(name, t.Title)
+		cmds = append(cmds, builder(t))
 	}
-	t.Item.Due = &todoist.Due{
-		String: newDate,
+	cmdLen := len(cmds)
+	if cmdLen > 1 {
+		m.statusBarModel.SetMessage(name, fmt.Sprint(cmdLen, "tasks"))
 	}
-	m.statusBarModel.SetMessage("rescheduled", t.Title)
-	return m.sync(
-		todoist.NewCommand("item_update", t.Item.UpdateParam()),
-	)
+	return m.sync(cmds...)
 }
 
 func (m *mainModel) addTask(content string) tea.Cmd {
@@ -87,50 +109,6 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 	args["auto_reminder"] = item.AutoReminder
 
 	return m.sync(todoist.NewCommand("item_add", args))
-}
-
-func (m *mainModel) completeTasks() tea.Cmd {
-	var cmds []todoist.Command
-	if !m.multiSelect {
-		t, err := m.taskList.GetCursorItem()
-		if err != nil {
-			dbg(err)
-			return func() tea.Msg { return nil }
-		}
-		t.Completed = true
-		m.statusBarModel.SetMessage("completed", t.Title)
-		cmds = append(cmds, todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID}))
-	}
-	return m.sync(cmds...)
-}
-
-func (m *mainModel) MoveItems(p project) tea.Cmd {
-	var cmds []todoist.Command
-	if !m.multiSelect {
-		t, err := m.taskList.GetCursorItem()
-		if err != nil {
-			dbg(err)
-			return func() tea.Msg { return nil }
-		}
-		args := map[string]interface{}{"id": t.Item.ID}
-		if p.section.ID != "" {
-			args["section_id"] = p.section.ID
-		} else {
-			args["project_id"] = p.project.ID
-		}
-		cmds = append(cmds, todoist.NewCommand("item_move", args))
-	} else {
-		for _, t := range m.taskList.SelectedItems() {
-			args := map[string]interface{}{"id": t.Item.ID}
-			if p.section.ID != "" {
-				args["section_id"] = p.section.ID
-			} else {
-				args["project_id"] = p.project.ID
-			}
-			cmds = append(cmds, todoist.NewCommand("item_move", args))
-		}
-	}
-	return m.sync(cmds...)
 }
 
 func (m *mainModel) AddProject(name string) tea.Cmd {

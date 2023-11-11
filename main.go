@@ -42,7 +42,6 @@ type mainModel struct {
 	statusBarModel status.Model
 	refresh        func()
 	gMenu          bool
-	multiSelect    bool
 	sub            chan struct{}
 
 	cmdQueue *todoist.Commands
@@ -128,16 +127,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "esc":
-				m.multiSelect = false
 				m.taskList.Unselect()
 			case " ":
-				if !m.multiSelect {
-					m.multiSelect = true
-				}
-				if t, err := m.taskList.GetCursorItem(); err == nil {
-					t.Selected = !t.Selected
-					m.taskList.UpdateCurrentTask(t)
-				}
+				m.taskList.Select()
 			case "q":
 				return m, tea.Quit
 			case "j":
@@ -149,9 +141,10 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "l":
 				m.resetRefresh(m.taskList.NextList())
 			case "v":
-				t, _ := m.taskList.GetCursorItem()
-				if t.Url != "" {
-					cmds = append(cmds, m.OpenUrl(t.Url))
+				for _, t := range m.taskList.SelectedItems() {
+					if t.Url != "" {
+						cmds = append(cmds, m.OpenUrl(t.Url))
+					}
 				}
 			case "G":
 				m.taskList.Bottom()
@@ -171,7 +164,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, m.completeTasks())
 				m.state = viewTasks
 			case "delete":
-				cmds = append(cmds, m.deleteTask())
+				cmds = append(cmds, m.deleteTasks())
 			case "f":
 				if m.gMenu {
 					cmds = append(cmds, m.OpenFilters())
@@ -215,7 +208,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "ctrl+b":
 				m.taskList.WholePageUp()
 			case "r":
-				m.inputModel.GetOnce("reschedule >", "", m.reschedule)
+				m.inputModel.GetOnce("reschedule >", "", m.rescheduleTasks)
 				m.state = viewInput
 			case "ctrl+z":
 				fallthrough

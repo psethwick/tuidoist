@@ -70,7 +70,7 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, tm.main.completeTasks())
 			tm.main.state = viewTasks
 		case "delete":
-			cmds = append(cmds, tm.main.deleteTask())
+			cmds = append(cmds, tm.main.deleteTasks())
 		case "enter":
 			tm.item.Content = tm.content.Value()
 			tm.item.Description = tm.desc.Value()

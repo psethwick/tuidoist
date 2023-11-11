@@ -126,7 +126,9 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 
 func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 	m.statusBarModel.SetSyncStatus(status.Syncing)
+	dbg(cmds)
 	if len(cmds) > 0 {
+		dbg("adding", cmds[0])
 		m.applyCmds(cmds) // only 'new' ones
 		*m.cmdQueue = append(*m.cmdQueue, cmds...)
 	}
