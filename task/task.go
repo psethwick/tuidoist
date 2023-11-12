@@ -72,7 +72,7 @@ func New(store *todoist.Store, item todoist.Item) Task {
 		var fd string
 		if strings.Contains(item.Due.Date, "T") {
 			fd = reformatDate(item.Due.Date, "2006-01-02T15:04:05", "02 Jan 06 15:04")
-		} else {
+		} else if item.Due.Date != "" {
 			fd = reformatDate(item.Due.Date, "2006-01-02", "02 Jan 06")
 		}
 		if item.Due.IsRecurring {
