@@ -40,7 +40,7 @@ func (m *mainModel) rescheduleTasks(newDate string) tea.Cmd {
 		t.Item.Due = &todoist.Due{
 			String: newDate,
 		}
-		return todoist.NewCommand("item_update", todoist.NewCommand("item_update", t.Item.UpdateParam()))
+		return todoist.NewCommand("item_update", t.Item.UpdateParam())
 	})
 }
 
