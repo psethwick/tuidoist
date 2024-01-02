@@ -85,17 +85,16 @@ func (m *mainModel) Init() tea.Cmd {
 // delete -> re-add? I will need the whole task...
 
 func (m *mainModel) resetRefresh(listId interface{}) {
-	switch listId.(type) {
+	switch typed := listId.(type) {
 	case filterSelection:
 		m.refresh = func() {
-			m.setTasksFromFilter(listId.(filterSelection))
+			m.setTasksFromFilter(typed)
 		}
 	case project:
-		p := listId.(project)
-		m.projectId = p.project.ID
-		m.sectionId = p.section.ID
+		m.projectId = typed.project.ID
+		m.sectionId = typed.section.ID
 		m.refresh = func() {
-			m.setTasksFromProject(&p)
+			m.setTasksFromProject(&typed)
 		}
 	}
 }

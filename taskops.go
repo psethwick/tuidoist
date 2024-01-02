@@ -91,12 +91,16 @@ func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
 	return func() tea.Msg {
 		// todo mac: open, win: ???
 		openCmd := exec.Command("xdg-open", url)
-		openCmd.Run()
+		if err := openCmd.Run(); err != nil {
+			dbg(err)
+		}
 		return nil
 	}
 }
 
 func (m *mainModel) openInbox() {
+	dbg("openInbox", len(m.local.Projects))
+
 	for _, tp := range m.local.Projects {
 		if tp.ID == m.local.User.InboxProjectID {
 			p := project{tp, todoist.Section{}}
@@ -107,4 +111,19 @@ func (m *mainModel) openInbox() {
 			return
 		}
 	}
+	// possible to end up here if InboxProjectID isn't set for whatever reason
+	// empty cache, mostly
+	m.projectId = "CHANGEME"
+	m.refresh = func() {
+		// one empty list in the list is better than an empty list of lists
+		dbg("empty list refresh")
+		if m.local.User.InboxProjectID != "" {
+			dbg("attempt fix loading project")
+			m.openInbox()
+
+			return
+		}
+		m.taskList.ResetItems([]tasklist.List{{Title: "Loading..."}}, 0)
+	}
+	m.refresh()
 }

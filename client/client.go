@@ -72,13 +72,19 @@ func ReadCache(s *todoist.Store, l *todoist.Store, o *todoist.Commands) error {
 		return err
 	}
 	err = json.Unmarshal(jsonString, &s)
+	if err != nil {
+		return err
+	}
 
 	jsonOpsString, err := os.ReadFile(opsPath)
 	if err != nil {
 		return err
 	}
-	json.Unmarshal(jsonString, &l)
+	err = json.Unmarshal(jsonString, &l)
 
+	if err != nil {
+		return err
+	}
 	var ops []todoist.Command
 	err = json.Unmarshal(jsonOpsString, &ops)
 	if err != nil {

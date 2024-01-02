@@ -38,7 +38,6 @@ type chooseModel struct {
 	chooser  *selection.Model[fmt.Stringer]
 	main     *mainModel
 	purpose  choosePurpose
-	title    string
 	oldTitle string
 }
 
@@ -118,6 +117,10 @@ func (m *mainModel) OpenFilters() tea.Cmd {
 	for i, f := range m.local.Filters {
 		fls[i] = filter{f}
 	}
+	if len(fls) == 0 {
+		dbg("zero filters")
+		return nil
+	}
 	return m.chooseModel.initChooser(fls, "Choose Filter", chooseFilter)
 }
 
@@ -126,7 +129,9 @@ func (m *mainModel) OpenPalette() tea.Cmd {
 }
 
 func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
+	dbg("OpenProjects")
 	p := m.local.Projects
+	dbg(len(p))
 	sections := m.local.Sections
 	var projs []fmt.Stringer
 	for _, prj := range p {
@@ -147,6 +152,11 @@ func (m *mainModel) OpenProjects(purpose choosePurpose) tea.Cmd {
 		prompt = "Choose Project"
 	} else {
 		prompt = "Move to Project"
+	}
+	if len(projs) == 0 {
+		// with zero choices chooser very rudely returns tea.Quit...
+		dbg("zero projects")
+		return nil
 	}
 	return m.chooseModel.initChooser(projs, prompt, purpose)
 }
@@ -183,25 +193,24 @@ func (cm *chooseModel) handleChoose() tea.Cmd {
 		dbg(err)
 		return nil
 	}
-	switch v.(type) {
+	switch choosy := v.(type) {
 	case filter:
-		return cm.gotoFilter(v.(filter))
+		return cm.gotoFilter(choosy)
 	case paletteCommand:
-		return v.(paletteCommand).command(cm.main)
+		return choosy.command(cm.main)
 	case project:
-		prj := v.(project)
 		var cmds []tea.Cmd
 		if err == nil {
 			switch cm.purpose {
 			case chooseProject:
 				cm.main.refresh = func() {
-					cm.main.setTasksFromProject(&prj)
+					cm.main.setTasksFromProject(&choosy)
 				}
 				cm.main.refresh()
-				cm.main.projectId = prj.project.ID
-				cm.main.sectionId = prj.section.ID
+				cm.main.projectId = choosy.project.ID
+				cm.main.sectionId = choosy.section.ID
 			case moveToProject:
-				cmds = append(cmds, cm.main.MoveItems(prj))
+				cmds = append(cmds, cm.main.MoveItems(choosy))
 				cm.main.statusBarModel.SetTitle(cm.oldTitle)
 			}
 		}

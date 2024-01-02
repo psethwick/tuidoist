@@ -126,7 +126,6 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 
 func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 	m.statusBarModel.SetSyncStatus(status.Syncing)
-	dbg(cmds)
 	if len(cmds) > 0 {
 		dbg("adding", cmds[0])
 		m.applyCmds(cmds) // only 'new' ones
@@ -159,15 +158,20 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 			}
 		}
 		incStore, err := m.client.IncrementalSync(m.ctx, m.client.Store.SyncToken)
-		m.local.ApplyIncrementalSync(incStore)
-		m.refresh()
-		m.client.Store.ApplyIncrementalSync(incStore)
+		dbg("incStore", incStore)
 		if err != nil {
 			dbg(err)
 			m.statusBarModel.SetSyncStatus(status.Error)
-			m.sub <- struct{}{}
 			return nil
 		}
+		m.client.Store.ApplyIncrementalSync(incStore)
+		m.local.ApplyIncrementalSync(incStore)
+		dbg("applied to both")
+		// if m.projectId == "CHANGEME" && m.local.User.InboxProjectID != "" {
+		// 	dbg("CHANGEME, doing inbox")
+		// 	m.openInbox()
+		// } else {
+		// }
 		err = client.WriteCache(m.client.Store, m.cmdQueue)
 		if err != nil {
 			dbg(err)
@@ -177,6 +181,8 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 		}
 		m.statusBarModel.SetSyncStatus(status.Synced)
 		m.sub <- struct{}{}
+		dbg("refreshing")
+		m.refresh()
 		return nil
 	}
 }

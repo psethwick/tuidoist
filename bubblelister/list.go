@@ -108,7 +108,6 @@ func (m Model) Lines() ([]string, error) {
 // But since they both (Lines and View) can call this method,
 // its only one copy of the model when calling either View or Lines.
 func (m *Model) lines() ([]string, error) {
-	m.Logger(m.lineOffset, m.cursorIndex)
 	if m.Len() == 0 {
 		return nil, NoItems(fmt.Errorf("no items"))
 	}

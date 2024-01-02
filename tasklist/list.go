@@ -159,7 +159,9 @@ func (tl *TaskList) ResetItems(lists []List, newIdx int) {
 		if newLists[i] == nil { // didn't find list or we're on a different set of lists
 			newLists[i] = &listModel{tl.newList(), l.Title, l.ListId}
 		}
-		newLists[i].ResetItems(convertIn(l.Tasks)...)
+		if err := newLists[i].ResetItems(convertIn(l.Tasks)...); err != nil {
+			tl.logger(err)
+		}
 	}
 	tl.lists = newLists
 	tl.idx = newIdx
