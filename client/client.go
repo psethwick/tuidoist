@@ -197,6 +197,7 @@ func GetClient(logger func(...any)) (*todoist.Client, *todoist.Store, *todoist.C
 			logger("Sync err", err)
 		}
 		WriteCache(&store, &ops)
+		ReadCache(&store, &local, &ops)
 	}
 	return client, &local, &ops
 }

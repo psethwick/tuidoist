@@ -120,7 +120,6 @@ func (m *mainModel) openInbox() {
 		if m.local.User.InboxProjectID != "" {
 			dbg("attempt fix loading project")
 			m.openInbox()
-
 			return
 		}
 		m.taskList.ResetItems([]tasklist.List{{Title: "Loading..."}}, 0)
