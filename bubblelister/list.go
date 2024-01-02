@@ -375,12 +375,12 @@ func (m *Model) ResetItems(newStringers ...fmt.Stringer) error {
 
 	m.listItems = newItems
 
-	if m.LessFunc != nil {
-		m.Sort()
-	}
 	if idx, _ := m.ValidIndex(m.cursorIndex); idx != m.cursorIndex {
 		m.cursorIndex = idx
 		// m.lineOffset = 0 // ??
+	}
+	if m.LessFunc != nil {
+		m.Sort()
 	}
 	return nil
 }
