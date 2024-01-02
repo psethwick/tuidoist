@@ -361,9 +361,6 @@ func (m *Model) AddItems(itemList ...fmt.Stringer) error {
 	return nil
 }
 
-// ResetItems replaces all list items with the new items, if a entry is nil its not added.
-// If equals function is set and a new item yields true in comparison to the old cursor item
-// the cursor is set on this (or if equals-func is bad the last-)item.
 func (m *Model) ResetItems(newStringers ...fmt.Stringer) error {
 	newItems := make([]item, 0, len(newStringers))
 	for _, newValue := range newStringers {
@@ -372,13 +369,12 @@ func (m *Model) ResetItems(newStringers ...fmt.Stringer) error {
 		}
 		newItems = append(newItems, item{value: newValue, id: m.getID()})
 	}
-
 	m.listItems = newItems
 
 	if idx, _ := m.ValidIndex(m.cursorIndex); idx != m.cursorIndex {
 		m.cursorIndex = idx
-		// m.lineOffset = 0 // ??
 	}
+
 	if m.LessFunc != nil {
 		m.Sort()
 	}
