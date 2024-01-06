@@ -158,7 +158,6 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 			}
 		}
 		incStore, err := m.client.IncrementalSync(m.ctx, m.client.Store.SyncToken)
-		dbg("incStore", incStore)
 		if err != nil {
 			dbg(err)
 			m.statusBarModel.SetSyncStatus(status.Error)
@@ -166,7 +165,6 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 		}
 		m.client.Store.ApplyIncrementalSync(incStore)
 		m.local.ApplyIncrementalSync(incStore)
-		dbg("applied to both")
 		// if m.projectId == "CHANGEME" && m.local.User.InboxProjectID != "" {
 		// 	dbg("CHANGEME, doing inbox")
 		// 	m.openInbox()

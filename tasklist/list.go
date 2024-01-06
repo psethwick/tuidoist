@@ -18,7 +18,6 @@ type listModel struct {
 type TaskList struct {
 	OnTitleChange func(string)
 	lists         []*listModel
-	listsId       string
 	logger        func(...any)
 	sort          TaskSort
 	idx           int
@@ -82,14 +81,6 @@ func convertIn(tasks []task.Task) []fmt.Stringer {
 		strs[i] = t
 	}
 	return strs
-}
-
-func convertOut(strs []fmt.Stringer) []task.Task {
-	tasks := make([]task.Task, len(strs))
-	for i, t := range tasks {
-		tasks[i] = t
-	}
-	return tasks
 }
 
 func (tl *TaskList) Select() {
@@ -208,11 +199,6 @@ func updateTask(t task.Task) func(fmt.Stringer) (fmt.Stringer, error) {
 	}
 }
 
-func (tl *TaskList) UpdateCurrentTask(t task.Task) {
-	idx, _ := tl.lists[tl.idx].GetCursorIndex()
-	tl.lists[tl.idx].UpdateItem(idx, updateTask(t))
-}
-
 func (tl *TaskList) Bottom() {
 	tl.lists[tl.idx].Bottom()
 }
@@ -224,7 +210,7 @@ func (tl *TaskList) Sort(ts TaskSort) string {
 		tl.sort = ts
 	}
 
-	for i, _ := range tl.lists {
+	for i := range tl.lists {
 		tl.lists[i].LessFunc = sortLessFunc[tl.sort]
 		tl.lists[i].Sort()
 	}
@@ -233,20 +219,23 @@ func (tl *TaskList) Sort(ts TaskSort) string {
 
 func (tl *TaskList) SetHeight(h int) {
 	tl.height = h
-	for i, _ := range tl.lists {
+	for i := range tl.lists {
 		tl.lists[i].Height = h
 	}
 }
 
 func (tl *TaskList) SetWidth(w int) {
 	tl.width = w
-	for i, _ := range tl.lists {
+	for i := range tl.lists {
 		tl.lists[i].Width = w
 	}
 }
 
 func (tl *TaskList) MoveCursor(i int) {
-	tl.lists[tl.idx].MoveCursor(i)
+	_, err := tl.lists[tl.idx].MoveCursor(i)
+	if err != nil {
+		tl.logger("MoveCursor", err)
+	}
 }
 
 func (tl *TaskList) GetCursorItem() (task.Task, error) {

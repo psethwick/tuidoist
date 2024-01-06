@@ -81,7 +81,7 @@ func (m *mainModel) setTasksFromFilter(fs filterSelection) {
 		}
 		tls = append(
 			tls,
-			tasklist.List{Title: l.Title, Tasks: tasks, ListId: filterSelection{fs.lists, i}},
+			tasklist.List{Title: l.Title, Tasks: tasks, ListId: fmt.Sprint(i, l.Title)},
 		)
 	}
 	m.taskList.ResetItems(tls, fs.index)
