@@ -100,7 +100,7 @@ func (tl *TaskList) Select() {
 		task.Selected = true
 		selected[task.Item.ID] = &task
 	}
-	tl.lists[tl.idx].UpdateItem(ci, updateTask(task))
+	_ = tl.lists[tl.idx].UpdateItem(ci, updateTask(task))
 }
 
 func (tl *TaskList) SelectedItems() []task.Task {
@@ -126,7 +126,7 @@ func (tl *TaskList) Unselect() {
 			task := t.(task.Task)
 			if task.Selected {
 				task.Selected = false
-				tl.lists[idx].UpdateItem(i, updateTask(task))
+				_ = tl.lists[idx].UpdateItem(i, updateTask(task))
 			}
 		}
 	}
@@ -177,21 +177,21 @@ func (tl *TaskList) Len() int {
 }
 
 func (tl *TaskList) Top() {
-	tl.lists[tl.idx].Top()
+	_ = tl.lists[tl.idx].Top()
 }
 
 func (tl *TaskList) HalfPageUp() {
-	tl.lists[tl.idx].MoveCursor(-5)
+	_, _ = tl.lists[tl.idx].MoveCursor(-5)
 }
 func (tl *TaskList) HalfPageDown() {
-	tl.lists[tl.idx].MoveCursor(5)
+	_, _ = tl.lists[tl.idx].MoveCursor(5)
 }
 
 func (tl *TaskList) WholePageUp() {
-	tl.lists[tl.idx].MoveCursor(-10)
+	_, _ = tl.lists[tl.idx].MoveCursor(-10)
 }
 func (tl *TaskList) WholePageDown() {
-	tl.lists[tl.idx].MoveCursor(10)
+	_, _ = tl.lists[tl.idx].MoveCursor(10)
 }
 
 func updateTask(t task.Task) func(fmt.Stringer) (fmt.Stringer, error) {
@@ -201,7 +201,7 @@ func updateTask(t task.Task) func(fmt.Stringer) (fmt.Stringer, error) {
 }
 
 func (tl *TaskList) Bottom() {
-	tl.lists[tl.idx].Bottom()
+	_ = tl.lists[tl.idx].Bottom()
 }
 
 func (tl *TaskList) Sort(ts TaskSort) string {
