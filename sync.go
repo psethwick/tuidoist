@@ -37,14 +37,14 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 				projectId = pID
 			}
 			sectionID := ""
-			due := todoist.Due{}
+			// due := todoist.Due{}
 			// todo fill in from command
 
 			if args["section_id"] != nil {
 				sectionID = args["section_id"].(string)
 			}
 			item := todoist.Item{
-				Due:        &due,
+				// Due:        &due,
 				ChildOrder: 99, // hax??
 				Priority:   args["priority"].(int),
 				HaveSectionID: todoist.HaveSectionID{
