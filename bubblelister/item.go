@@ -74,19 +74,3 @@ func (m *Model) getItemLines(index, contentWidth int) ([]string, error) {
 	}
 	return completLines, nil
 }
-
-// StringItem is just a convenience to satisfy the fmt.Stringer interface with plain strings
-type StringItem string
-
-func (s StringItem) String() string {
-	return string(s)
-}
-
-// MakeStringerList is a shortcut to convert a string List to a List that satisfies the fmt.Stringer Interface
-func MakeStringerList(list ...string) []fmt.Stringer {
-	stringerList := make([]fmt.Stringer, len(list))
-	for i, item := range list {
-		stringerList[i] = StringItem(item)
-	}
-	return stringerList
-}

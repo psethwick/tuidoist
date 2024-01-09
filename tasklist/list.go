@@ -115,6 +115,7 @@ func (tl *TaskList) SelectedItems() []task.Task {
 		}
 		tasks = append(tasks, itm.(task.Task))
 	}
+	tl.Unselect()
 	return tasks
 }
 
@@ -234,7 +235,7 @@ func (tl *TaskList) SetWidth(w int) {
 func (tl *TaskList) MoveCursor(i int) {
 	_, err := tl.lists[tl.idx].MoveCursor(i)
 	if err != nil {
-		tl.logger("MoveCursor", err)
+		tl.logger("")
 	}
 }
 
