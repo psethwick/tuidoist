@@ -270,7 +270,6 @@ func (m *Model) validOffset(newCursor int) (int, error) {
 // MoveCursor moves the cursor by amount and returns the absolut index of the cursor after the movement.
 // If any error occurs the cursor is not moved.
 func (m *Model) MoveCursor(amount int) (int, error) {
-	m.Logger("before", m.cursorIndex, m.lineOffset, m.CursorOffset)
 	target := m.cursorIndex + amount
 
 	target, err := m.ValidIndex(target)
@@ -284,7 +283,6 @@ func (m *Model) MoveCursor(amount int) (int, error) {
 
 	m.cursorIndex = target
 	m.lineOffset = newOffset
-	m.Logger("after", m.cursorIndex, m.lineOffset, m.CursorOffset)
 	return target, nil
 }
 
@@ -363,7 +361,6 @@ func (m *Model) AddItems(itemList ...fmt.Stringer) error {
 }
 
 func (m *Model) ResetItems(newStringers ...fmt.Stringer) error {
-	m.Logger("ResetItems before", m.cursorIndex, m.lineOffset, m.CursorOffset)
 	newItems := make([]item, 0, len(newStringers))
 	for _, newValue := range newStringers {
 		if newValue == nil {
@@ -374,18 +371,12 @@ func (m *Model) ResetItems(newStringers ...fmt.Stringer) error {
 	m.listItems = newItems
 
 	if idx, _ := m.ValidIndex(m.cursorIndex); idx != m.cursorIndex {
-		m.Logger("ResetItems changing!", idx, m.cursorIndex)
 		m.cursorIndex = idx
 	}
-
-	// if ofs, _ := m.validOffset(m.cursorIndex); ofs != m.lineOffset {
-	// 	m.lineOffset = ofs
-	// }
 
 	if m.LessFunc != nil {
 		m.Sort()
 	}
-	m.Logger("ResetItems after", m.cursorIndex, m.lineOffset, m.CursorOffset)
 	return nil
 }
 

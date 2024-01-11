@@ -130,25 +130,57 @@ func (m *mainModel) UpdateItem(i todoist.Item) tea.Cmd {
 	return m.sync(todoist.NewCommand("item_update", i.UpdateParam()))
 }
 
-func (m *mainModel) RenameSection(ID string, newName string) tea.Cmd {
+// todo reorder sections
+
+func (m *mainModel) MoveSection(ID string, projectId string) tea.Cmd {
 	args := map[string]interface{}{
-		"id":   ID,
-		"name": newName,
+		"id":         ID,
+		"project_id": projectId,
+	}
+	return m.sync(todoist.NewCommand("section_move", args))
+}
+
+func (m *mainModel) RenameSection(section todoist.Section, newName string) tea.Cmd {
+	args := map[string]interface{}{
+		"id":         section.ID,
+		"name":       newName,
+		"project_id": section.ProjectID,
 	}
 	return m.sync(todoist.NewCommand("section_update", args))
 }
 
-func (m *mainModel) AddSection(name string) tea.Cmd {
-	// todo
-	return nil
+func (m *mainModel) AddSection(name string, projectId string) tea.Cmd {
+	args := map[string]interface{}{
+		"name":       name,
+		"project_id": projectId,
+	}
+	return m.sync(todoist.NewCommand("section_add", args))
 }
 
-func (m *mainModel) ArchiveSection() tea.Cmd {
-	// todo
-	return nil
+func (m *mainModel) DeleteSection(ID string) tea.Cmd {
+	args := map[string]interface{}{
+		"id": ID,
+	}
+	return m.sync(todoist.NewCommand("section_delete", args))
 }
 
-func (m *mainModel) ArchiveProject() tea.Cmd {
-	// todo
-	return nil
+func (m *mainModel) ArchiveSection(ID string) tea.Cmd {
+	args := map[string]interface{}{
+		"id": ID,
+	}
+	return m.sync(todoist.NewCommand("section_archive", args))
+}
+
+func (m *mainModel) DeleteProject(ID string) tea.Cmd {
+	args := map[string]interface{}{
+		"id": ID,
+	}
+	return m.sync(todoist.NewCommand("project_delete", args))
+}
+
+func (m *mainModel) ArchiveProject(ID string) tea.Cmd {
+	args := map[string]interface{}{
+		"id": ID,
+	}
+	return m.sync(todoist.NewCommand("project_archive", args))
 }

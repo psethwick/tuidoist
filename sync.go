@@ -37,15 +37,13 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 				projectId = pID
 			}
 			sectionID := ""
-			// due := todoist.Due{}
-			// todo fill in from command
 
 			if args["section_id"] != nil {
 				sectionID = args["section_id"].(string)
 			}
 			item := todoist.Item{
-				// Due:        &due,
-				ChildOrder: 99, // hax??
+				// Due:         due := todoist.Due{}
+				ChildOrder: 999, // hax??
 				Priority:   args["priority"].(int),
 				HaveSectionID: todoist.HaveSectionID{
 					SectionID: sectionID,
@@ -85,15 +83,6 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 					}
 				}
 			}
-		case "project_add":
-			project := todoist.Project{
-				HaveID: todoist.HaveID{ID: op.TempID},
-				Name:   args["name"].(string),
-			}
-			m.local.Projects = append(m.local.Projects, project)
-			m.local.ProjectMap[op.TempID] = &project
-		case "project_update":
-			// TODO
 		case "item_update":
 			item := todoist.Item{}
 			item.ID = args["id"].(string)
@@ -114,6 +103,40 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 			}
 
 			m.local.Items = replace(m.local.Items, item.ID, item)
+		case "project_add":
+			project := todoist.Project{
+				HaveID: todoist.HaveID{ID: op.TempID},
+				Name:   args["name"].(string),
+			}
+			m.local.Projects = append(m.local.Projects, project)
+		case "project_update":
+			project := todoist.Project{
+				HaveID: todoist.HaveID{ID: op.TempID},
+				Name:   args["name"].(string),
+			}
+			m.local.Projects = replace(m.local.Projects, project.ID, project)
+		case "section_add":
+			section := todoist.Section{
+				HaveID:        todoist.HaveID{ID: op.TempID},
+				Name:          args["name"].(string),
+				HaveProjectID: todoist.HaveProjectID{ProjectID: args["project_id"].(string)},
+			}
+			m.local.Sections = append(m.local.Sections, section)
+		case "section_update":
+			section := todoist.Section{
+				HaveID:        todoist.HaveID{ID: op.TempID},
+				Name:          args["name"].(string),
+				HaveProjectID: todoist.HaveProjectID{ProjectID: args["project_id"].(string)},
+			}
+			m.local.Sections = replace(m.local.Sections, section.ID, section)
+		case "section_archive":
+			fallthrough
+		case "section_delete":
+			m.local.Sections = remove(m.local.Sections, args["id"].(string))
+		case "project_archive":
+			fallthrough
+		case "project_delete":
+			m.local.Projects = remove(m.local.Projects, args["id"].(string))
 		case "filter_add":
 			// TODO
 		case "filter_update":
