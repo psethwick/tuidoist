@@ -229,6 +229,16 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.taskList.Bottom()
 				m.inputModel.GetRepeat("add >", "", m.addTask)
 				m.state = viewInput
+			case "+":
+				if item, err := m.taskList.GetCursorItem(); err == nil {
+					item.Item.Priority = min(4, (item.Item.Priority + 1))
+					cmds = append(cmds, m.UpdateItem(item.Item))
+				}
+			case "-":
+				if item, err := m.taskList.GetCursorItem(); err == nil {
+					item.Item.Priority = max(1, (item.Item.Priority - 1))
+					cmds = append(cmds, m.UpdateItem(item.Item))
+				}
 			default:
 				m.gMenu = false
 			}

@@ -175,12 +175,17 @@ func (m *mainModel) DeleteProject(ID string) tea.Cmd {
 	args := map[string]interface{}{
 		"id": ID,
 	}
+	m.openInbox()
 	return m.sync(todoist.NewCommand("project_delete", args))
 }
 
-func (m *mainModel) ArchiveProject(ID string) tea.Cmd {
-	args := map[string]interface{}{
-		"id": ID,
+func (m *mainModel) ArchiveProject() tea.Cmd {
+	if m.projectId == "" {
+		return nil
 	}
+	args := map[string]interface{}{
+		"id": m.projectId,
+	}
+	m.openInbox()
 	return m.sync(todoist.NewCommand("project_archive", args))
 }

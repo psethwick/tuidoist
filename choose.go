@@ -125,6 +125,9 @@ func (m *mainModel) OpenFilters() tea.Cmd {
 }
 
 func (m *mainModel) OpenPalette() tea.Cmd {
+	// if there's a task
+	// if there's a project
+	// if there's a section
 	return m.chooseModel.initChooser(PaletteCommands, "Choose Command", choosePalette)
 }
 

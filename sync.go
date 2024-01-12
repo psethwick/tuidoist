@@ -84,25 +84,26 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 				}
 			}
 		case "item_update":
-			item := todoist.Item{}
-			item.ID = args["id"].(string)
-			if content, ok := args["content"].(string); ok {
-				item.Content = content
-			}
-			if desc, ok := args["description"].(string); ok {
-				item.Description = desc
-			}
-			if labelNames, ok := args["labels"].([]string); ok {
-				item.LabelNames = labelNames
-			}
-			if priority, ok := args["priority"].(int); ok {
-				item.Priority = priority
-			}
-			if due, ok := args["due"].(todoist.Due); ok {
-				item.Due = &due
-			}
+			ID := args["id"].(string)
+			if item, ok := m.local.ItemMap[ID]; ok {
+				if content, ok := args["content"].(string); ok {
+					item.Content = content
+				}
+				if desc, ok := args["description"].(string); ok {
+					item.Description = desc
+				}
+				if labelNames, ok := args["labels"].([]string); ok {
+					item.LabelNames = labelNames
+				}
+				if priority, ok := args["priority"].(int); ok {
+					item.Priority = priority
+				}
+				if due, ok := args["due"].(todoist.Due); ok {
+					item.Due = &due
+				}
 
-			m.local.Items = replace(m.local.Items, item.ID, item)
+				m.local.Items = replace(m.local.Items, item.ID, *item)
+			}
 		case "project_add":
 			project := todoist.Project{
 				HaveID: todoist.HaveID{ID: op.TempID},

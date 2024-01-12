@@ -40,7 +40,7 @@ var PaletteCommands = []fmt.Stringer{
 		func(m *mainModel) tea.Cmd {
 			if sct := m.local.SectionMap[m.sectionId]; sct != nil {
 				m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
-					return m.RenameSection(sct.ID, input)
+					return m.RenameSection(*sct, input)
 				})
 			}
 			return nil
@@ -49,14 +49,22 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"archive section",
 		func(m *mainModel) tea.Cmd {
-			return m.ArchiveSection()
+			if m.sectionId == "" {
+				dbg("no section to archive")
+				return nil
+			}
+			return m.ArchiveSection(m.sectionId)
 		},
 	},
 	paletteCommand{
 		"add section",
 		func(m *mainModel) tea.Cmd {
+			if m.projectId == "" {
+				dbg("no project to add section to")
+				return nil
+			}
 			m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
-				return m.AddSection(input)
+				return m.AddSection(input, m.projectId)
 			})
 			return nil
 		},
