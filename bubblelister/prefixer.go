@@ -51,17 +51,7 @@ func NewPrefixer() *DefaultPrefixer {
 	return &DefaultPrefixer{
 		PrefixWrap: true,
 
-		// Make clear where a item begins and where it ends
-		FirstSep:      "╭",
-		Seperator:     "├",
-		SeperatorWrap: "│",
-
-		// Mark it so that even without color support all is explicit
-		CurrentMarker: ">",
-
-		// enable Linenumber
-		Number:         true,
-		NumberRelative: false,
+		CurrentMarker: "➡",
 	}
 }
 

@@ -108,6 +108,7 @@ func (tl *TaskList) SelectedItems() []task.Task {
 	for _, t := range selected {
 		tasks = append(tasks, *t)
 	}
+	tl.Unselect()
 	if len(tasks) == 0 {
 		itm, err := tl.lists[tl.idx].GetCursorItem()
 		if err != nil {
@@ -115,7 +116,6 @@ func (tl *TaskList) SelectedItems() []task.Task {
 		}
 		tasks = append(tasks, itm.(task.Task))
 	}
-	tl.Unselect()
 	return tasks
 }
 
@@ -270,10 +270,7 @@ func (tl *TaskList) newList() bubblelister.Model {
 	bl := bubblelister.NewModel()
 	bl.LessFunc = sortLessFunc[tl.sort]
 	bl.EqualsFunc = equals
-	pfxr := bubblelister.NewPrefixer()
-	pfxr.Number = false
-	pfxr.NumberRelative = false
-	bl.PrefixGen = pfxr
+	bl.PrefixGen = bubblelister.NewPrefixer()
 	bl.Width = tl.width
 	bl.Height = tl.height
 	bl.Logger = tl.logger
