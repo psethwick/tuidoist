@@ -241,6 +241,20 @@ func (tl *TaskList) MoveCursor(i int) {
 	}
 }
 
+func (tl *TaskList) GetAboveItem() (task.Task, error) {
+	ci, err := tl.lists[tl.idx].GetCursorIndex()
+	var t task.Task
+	if err != nil {
+		return t, err
+	}
+	item, err := tl.lists[tl.idx].GetItem(ci - 1)
+	if err != nil {
+		return t, err
+	}
+	t = item.(task.Task)
+	return t, nil
+}
+
 func (tl *TaskList) GetCursorItem() (task.Task, error) {
 	str, err := tl.lists[tl.idx].GetCursorItem()
 	if err != nil {

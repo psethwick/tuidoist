@@ -83,26 +83,38 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 					}
 				}
 			}
+			if parentId, ok := args["parent_id"].(string); ok {
+				for i, item := range m.local.Items {
+					if item.ID == id {
+						item.ParentID = &parentId
+						m.local.Items[i] = item
+						break
+					}
+				}
+			}
 		case "item_update":
 			ID := args["id"].(string)
-			if item, ok := m.local.ItemMap[ID]; ok {
-				if content, ok := args["content"].(string); ok {
-					item.Content = content
-				}
-				if desc, ok := args["description"].(string); ok {
-					item.Description = desc
-				}
-				if labelNames, ok := args["labels"].([]string); ok {
-					item.LabelNames = labelNames
-				}
-				if priority, ok := args["priority"].(int); ok {
-					item.Priority = priority
-				}
-				if due, ok := args["due"].(todoist.Due); ok {
-					item.Due = &due
-				}
+			for _, item := range m.local.Items {
+				if item.ID == ID {
 
-				m.local.Items = replace(m.local.Items, item.ID, *item)
+					if content, ok := args["content"].(string); ok {
+						item.Content = content
+					}
+					if desc, ok := args["description"].(string); ok {
+						item.Description = desc
+					}
+					if labelNames, ok := args["labels"].([]string); ok {
+						item.LabelNames = labelNames
+					}
+					if priority, ok := args["priority"].(int); ok {
+						item.Priority = priority
+					}
+					if due, ok := args["due"].(todoist.Due); ok {
+						item.Due = &due
+					}
+
+					m.local.Items = replace(m.local.Items, item.ID, item)
+				}
 			}
 		case "project_add":
 			project := todoist.Project{
@@ -144,6 +156,7 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 			// TODO
 		}
 	}
+	// damned if we do, damned if we don't
 	m.local.ConstructItemTree()
 	m.refresh()
 }
@@ -167,16 +180,22 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 				return nil // no reason to sync if api calls aren't working
 			}
 			m.cmdQueue = &todoist.Commands{}
+			// todo here are there other temp mappings to worry about?
 			if res.TempIdMapping != nil {
 				for temp, actual := range res.TempIdMapping {
-					if item := m.local.ItemMap[temp]; item != nil {
-						item.ID = actual
-						m.local.Items = replace(m.local.Items, temp, *item)
-						continue
+					for _, item := range m.local.Items {
+						if item.ID == temp {
+							item.ID = actual
+							m.local.Items = replace(m.local.Items, temp, item)
+							continue
+						}
 					}
-					if item := m.local.ProjectMap[temp]; item != nil {
-						item.ID = actual
-						m.local.Projects = replace(m.local.Projects, temp, *item)
+					for _, item := range m.local.Projects {
+						if item.ID == temp {
+							item.ID = actual
+							m.local.Projects = replace(m.local.Projects, temp, item)
+							continue
+						}
 					}
 				}
 			}

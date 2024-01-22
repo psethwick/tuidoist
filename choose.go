@@ -213,7 +213,7 @@ func (cm *chooseModel) handleChoose() tea.Cmd {
 				cm.main.projectId = choosy.project.ID
 				cm.main.sectionId = choosy.section.ID
 			case moveToProject:
-				cmds = append(cmds, cm.main.MoveItems(choosy))
+				cmds = append(cmds, cm.main.MoveItemsToProject(choosy))
 				cm.main.statusBarModel.SetTitle(cm.oldTitle)
 			}
 		}

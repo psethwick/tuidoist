@@ -38,10 +38,12 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"rename section",
 		func(m *mainModel) tea.Cmd {
-			if sct := m.local.SectionMap[m.sectionId]; sct != nil {
-				m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
-					return m.RenameSection(*sct, input)
-				})
+			for _, sct := range m.local.Sections {
+				if sct.ID == m.sectionId {
+					m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
+						return m.RenameSection(sct, input)
+					})
+				}
 			}
 			return nil
 		},
@@ -72,10 +74,12 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"rename project",
 		func(m *mainModel) tea.Cmd {
-			if prj := m.local.ProjectMap[m.projectId]; prj != nil {
-				m.inputModel.GetOnce("", prj.Name, func(input string) tea.Cmd {
-					return m.RenameProject(prj.ID, input)
-				})
+			for _, prj := range m.local.Projects {
+				if prj.ID == m.projectId {
+					m.inputModel.GetOnce("", prj.Name, func(input string) tea.Cmd {
+						return m.RenameProject(prj.ID, input)
+					})
+				}
 			}
 
 			return nil

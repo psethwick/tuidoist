@@ -44,7 +44,15 @@ func (m *mainModel) rescheduleTasks(newDate string) tea.Cmd {
 	})
 }
 
-func (m *mainModel) MoveItems(p project) tea.Cmd {
+func (m *mainModel) MoveItemsToNewParent(newParentID string) tea.Cmd {
+	return m.bulkOps("moved", func(t task.Task) todoist.Command {
+		args := map[string]interface{}{"id": t.Item.ID}
+		args["parent_id"] = newParentID
+		return todoist.NewCommand("item_move", args)
+	})
+}
+
+func (m *mainModel) MoveItemsToProject(p project) tea.Cmd {
 	return m.bulkOps("moved", func(t task.Task) todoist.Command {
 		args := map[string]interface{}{"id": t.Item.ID}
 		if p.section.ID != "" {

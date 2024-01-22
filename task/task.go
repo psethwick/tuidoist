@@ -53,12 +53,12 @@ func New(store *todoist.Store, item todoist.Item) Task {
 	if len(parents) == 0 {
 		sortKey = float64(item.ChildOrder)
 	} else {
-		mult := 0.02
+		mult := 0.001
 		for i, p := range parents {
 			if i == 0 {
-				sortKey = float64(p.ChildOrder) + 0.01
+				sortKey = float64(p.ChildOrder) + mult
 			}
-			sortKey += float64(i) * mult
+			sortKey += float64(i) * float64(p.ChildOrder) * mult
 		}
 	}
 

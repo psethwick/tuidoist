@@ -225,6 +225,25 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					item.Item.Priority = max(1, (item.Item.Priority - 1))
 					cmds = append(cmds, m.UpdateItem(item.Item))
 				}
+			case ">":
+				if item, err := m.taskList.GetCursorItem(); err == nil {
+					if pitem, err := m.taskList.GetAboveItem(); err == nil {
+						item.Item.ParentID = &pitem.Item.ID
+						cmds = append(cmds, m.MoveItemsToNewParent(pitem.Item.ID))
+					}
+				}
+			case "<":
+				if item, err := m.taskList.GetCursorItem(); err == nil {
+					parents := todoist.SearchItemParents(m.local, &item.Item)
+					newParentId := ""
+					for i := 0; i < len(parents)-1; i++ {
+						if i >= 0 && i <= len(parents) {
+							dbg(i, parents[i].Content)
+							newParentId = parents[i].ID
+						}
+					}
+					cmds = append(cmds, m.MoveItemsToNewParent(newParentId))
+				}
 			default:
 				m.gMenu = false
 			}
