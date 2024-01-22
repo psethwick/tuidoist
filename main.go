@@ -155,10 +155,6 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					m.gMenu = true
 				}
-				// case "u":
-				// 	if tm.gMenu {
-				// todo how to do upcoming
-				// 	}
 			case "c":
 				cmds = append(cmds, m.completeTasks())
 				m.state = viewTasks
@@ -187,13 +183,14 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.gMenu {
 					cmds = append(cmds, m.OpenProjects(chooseProject))
 					m.gMenu = false
-				} else {
-					m.statusBarModel.SetSort(m.taskList.Sort(tasklist.PrioritySort))
+					// todo put sorts back, but make sure subtasks don't break
+					// } else {
+					// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.PrioritySort))
 				}
-			case "n":
-				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.NameSort))
-			case "d":
-				m.statusBarModel.SetSort(m.taskList.Sort(tasklist.DateSort))
+			// case "n":
+			// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.NameSort))
+			// case "d":
+			// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.DateSort))
 			// case "r":
 			// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.AssigneeSort))
 			case "m":
@@ -209,22 +206,11 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "r":
 				m.inputModel.GetOnce("reschedule >", "", m.rescheduleTasks)
 				m.state = viewInput
-			case "ctrl+z":
-				fallthrough
-			case "z":
-				// cmds = append(cmds, m.undoCompleteTask())
-
-			// case "enter":
-			// 	t, err := m.taskList.GetCursorItem()
-			// 	if err != nil {
-			// 		dbg(err)
-			// 	} else {
-			// 		m.taskMenuModel.project = m.store.FindProject(t.Item.ProjectID)
-			// 		m.taskMenuModel.item = t.Item
-			// 		m.taskMenuModel.content.SetValue(t.Item.Content)
-			// 		m.taskMenuModel.desc.SetValue(t.Item.Description)
-			// 		m.state = viewTaskMenu
-			// 	}
+				// todo put undo back
+			// case "ctrl+z":
+			// 	fallthrough
+			// case "z":
+			// 	// cmds = append(cmds, m.undoCompleteTask())
 			case "a":
 				m.taskList.Bottom()
 				m.inputModel.GetRepeat("add >", "", m.addTask)
@@ -261,8 +247,6 @@ func (m *mainModel) View() string {
 	), m.inputModel.View())
 	s := ""
 	switch m.state {
-	// case viewTaskMenu: // todo do I really need this? might still be useful tbf
-	// 	s = m.taskMenuModel.View()
 	case viewChooser:
 		s = m.chooseModel.View()
 	}

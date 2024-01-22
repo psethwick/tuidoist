@@ -12,10 +12,10 @@ require (
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.15.2
-	github.com/psethwick/bubblelister v0.3.2
 	github.com/rkoesters/xdg v0.0.1
 	github.com/sachaos/todoist v0.20.0
 	github.com/spf13/viper v1.16.0
+	github.com/treilik/reflow v0.1.1-0.20211027174018-7170e740e1ac
 )
 
 require (
@@ -38,7 +38,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/treilik/reflow v0.1.1-0.20211027174018-7170e740e1ac // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.11.0 // indirect
@@ -47,4 +46,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/sachaos/todoist => github.com/psethwick/todoist v0.20.4-0.20231112153238-667b52796484
+replace github.com/sachaos/todoist => github.com/psethwick/todoist v0.20.4-0.20240116205753-9b8a4ec0633c

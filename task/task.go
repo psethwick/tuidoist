@@ -18,6 +18,7 @@ type Task struct {
 	Completed bool
 	Url       string
 	Selected  bool
+	SortKey   float64
 }
 
 func (t Task) String() string {
@@ -46,7 +47,22 @@ var mdUrlRegex = regexp.MustCompile(`\[([^\]]+)\]\((https?:\/\/[^\)]+)\)`)
 // todo overdue should be red somewhere
 // today, maybe also highlighted?
 func New(store *todoist.Store, item todoist.Item) Task {
-	indent := strings.Repeat(" ", len(todoist.SearchItemParents(store, &item)))
+	parents := todoist.SearchItemParents(store, &item)
+	depth := len(parents)
+	var sortKey float64
+	if len(parents) == 0 {
+		sortKey = float64(item.ChildOrder)
+	} else {
+		mult := 0.02
+		for i, p := range parents {
+			if i == 0 {
+				sortKey = float64(p.ChildOrder) + 0.01
+			}
+			sortKey += float64(i) * mult
+		}
+	}
+
+	indent := strings.Repeat(" ", depth)
 	var checkbox string
 	switch item.Priority {
 	case 1:
@@ -99,5 +115,6 @@ func New(store *todoist.Store, item todoist.Item) Task {
 		Title:   title,
 		Summary: summary,
 		Url:     url,
+		SortKey: sortKey,
 	}
 }

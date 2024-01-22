@@ -41,7 +41,9 @@ type lessFunc = func(fmt.Stringer, fmt.Stringer) bool
 
 var sortLessFunc = map[TaskSort]lessFunc{
 	DefaultSort: func(a fmt.Stringer, b fmt.Stringer) bool {
-		return a.(task.Task).Item.ChildOrder < b.(task.Task).Item.ChildOrder
+		at := a.(task.Task)
+		bt := b.(task.Task)
+		return at.SortKey < bt.SortKey
 	},
 	NameSort: func(a fmt.Stringer, b fmt.Stringer) bool {
 		return a.(task.Task).Item.Content < b.(task.Task).Item.Content
