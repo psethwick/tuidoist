@@ -242,6 +242,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							newParentId = parents[i].ID
 						}
 					}
+
 					cmds = append(cmds, m.MoveItemsToNewParent(newParentId))
 				}
 			default:

@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/muesli/termenv"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Model is a bubbletea List of strings
@@ -34,8 +34,8 @@ type Model struct {
 	PrefixGen Prefixer
 	SuffixGen Suffixer
 
-	LineStyle    termenv.Style
-	CurrentStyle termenv.Style
+	LineStyle    lipgloss.Style
+	CurrentStyle lipgloss.Style
 
 	// mutex for unique ids
 	idMutex   *sync.Mutex
@@ -48,7 +48,7 @@ type Model struct {
 // design to transfer as much internal information to the user
 func NewModel() Model {
 	// just reverse colors to keep there information
-	curStyle := termenv.Style{}.Reverse()
+	curStyle := lipgloss.Style{}.Reverse(true)
 	var mut sync.Mutex
 	return Model{
 		// Try to keep $CursorOffset lines between Cursor and screen Border

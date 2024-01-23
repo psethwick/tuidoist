@@ -3,7 +3,7 @@ package tasklist
 import (
 	"fmt"
 
-	"github.com/muesli/termenv"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/psethwick/tuidoist/bubblelister"
 	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/task"
@@ -291,10 +291,8 @@ func (tl *TaskList) newList() bubblelister.Model {
 	bl.Height = tl.height
 	bl.Logger = tl.logger
 
-	p := termenv.ColorProfile()
-	// todo maybe fork bubblelister to use lipgloss?
-	// adaptive color would probably be the motivation
-	bl.CurrentStyle = termenv.Style{}.Foreground(p.Color(style.Pink.Light))
+	// todo migrate to style package and make everything adaptive
+	bl.CurrentStyle = lipgloss.Style{}.Foreground(lipgloss.Color(style.Pink.Light))
 	return bl
 }
 

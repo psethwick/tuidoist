@@ -204,7 +204,11 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 				}
 			}
 		}
-		incStore, err := m.client.IncrementalSync(m.ctx, m.client.Store.SyncToken)
+		syncToken := m.client.Store.SyncToken
+		if syncToken == "" {
+			syncToken = "*"
+		}
+		incStore, err := m.client.IncrementalSync(m.ctx, syncToken)
 		if err != nil {
 			dbg(err)
 			m.statusBarModel.SetSyncStatus(status.Error)

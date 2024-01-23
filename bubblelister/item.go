@@ -70,7 +70,7 @@ func (m *Model) getItemLines(index, contentWidth int) ([]string, error) {
 		}
 
 		// Highlight and write line
-		completLines[c] = style.Styled(line)
+		completLines[c] = style.Render(line)
 	}
 	return completLines, nil
 }
