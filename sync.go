@@ -86,7 +86,11 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 			if parentId, ok := args["parent_id"].(string); ok {
 				for i, item := range m.local.Items {
 					if item.ID == id {
-						item.ParentID = &parentId
+						if parentId == "" {
+							item.ParentID = nil
+						} else {
+							item.ParentID = &parentId
+						}
 						m.local.Items[i] = item
 						break
 					}
