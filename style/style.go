@@ -25,12 +25,9 @@ var (
 			BorderBottom(true)
 
 	NormalTitle = lipgloss.NewStyle().
-			Foreground(Gray).
-			Padding(0, 0, 0, 2)
+			Foreground(Gray)
 	SelectedTitle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder(), false, false, false, true).
-			Foreground(Pink).
-			Padding(0, 0, 0, 1)
+			Foreground(Pink)
 
 	Underline     = lipgloss.NewStyle().Underline(false)
 	StrikeThrough = lipgloss.NewStyle().Strikethrough(true)

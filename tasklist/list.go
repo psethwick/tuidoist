@@ -3,7 +3,6 @@ package tasklist
 import (
 	"fmt"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/psethwick/tuidoist/bubblelister"
 	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/task"
@@ -291,8 +290,7 @@ func (tl *TaskList) newList() bubblelister.Model {
 	bl.Height = tl.height
 	bl.Logger = tl.logger
 
-	// todo migrate to style package and make everything adaptive
-	bl.CurrentStyle = lipgloss.Style{}.Foreground(lipgloss.Color(style.Pink.Light))
+	bl.CurrentStyle = style.SelectedTitle
 	return bl
 }
 
