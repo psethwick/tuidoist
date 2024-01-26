@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -25,6 +26,7 @@ const (
 	viewChooser
 	viewInput
 	viewTaskMenu
+	viewHelp
 )
 
 type mainModel struct {
@@ -40,6 +42,7 @@ type mainModel struct {
 	taskList       tasklist.TaskList
 	inputModel     input.InputModel
 	taskMenuModel  taskMenuModel
+	helpModel      help.Model
 	statusBarModel status.Model
 	refresh        func()
 	gMenu          bool
@@ -66,6 +69,7 @@ func initialModel() *mainModel {
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m)
 	m.refresh = func() {}
+	m.helpModel = help.New()
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
@@ -79,11 +83,6 @@ func (m *mainModel) Init() tea.Cmd {
 	m.openInbox()
 	return tea.Batch(waitForSync(m.sub), m.sync())
 }
-
-// undo
-// add -> delete
-// complete -> uncomplete
-// delete -> re-add? I will need the whole task...
 
 func (m *mainModel) resetRefresh(listId interface{}) {
 	switch typed := listId.(type) {
@@ -232,19 +231,27 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *mainModel) View() string {
-	base := lipgloss.JoinVertical(lipgloss.Left, lipgloss.Place(
-		m.width, m.height-1, lipgloss.Left, lipgloss.Top,
-		lipgloss.JoinVertical(
-			lipgloss.Left, m.statusBarModel.View(), m.taskList.View(),
+	var bottom string
+	if m.state == viewInput {
+		bottom = m.inputModel.View()
+	} else {
+		bottom = m.helpModel.View(TaskListKeys)
+	}
+	base := lipgloss.JoinVertical(
+		lipgloss.Left,
+		lipgloss.Place(
+			m.width, m.height-1, lipgloss.Left, lipgloss.Top,
+			lipgloss.JoinVertical(
+				lipgloss.Left, m.statusBarModel.View(), m.taskList.View(),
+			),
 		),
-	), m.inputModel.View())
-	s := ""
+		bottom,
+	)
 	switch m.state {
 	case viewChooser:
-		s = m.chooseModel.View()
+		return overlay.PlaceOverlay(10, 1, m.chooseModel.View(), base)
 	}
-
-	return overlay.PlaceOverlay(10, 1, s, base)
+	return base
 }
 
 func dbg(a ...any) {

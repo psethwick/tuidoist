@@ -19,6 +19,7 @@ type TaskListKeyMap struct {
 	Delete         key.Binding
 	Down           key.Binding
 	GMenu          key.Binding
+	Help           key.Binding
 	Left           key.Binding
 	LowerPriority  key.Binding
 	MoveToProject  key.Binding
@@ -39,6 +40,17 @@ type TaskListKeyMap struct {
 	VisitLinks     key.Binding
 }
 
+func (k TaskListKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Help, k.Quit}
+}
+
+func (k TaskListKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down, k.Left, k.Right}, // first column
+		{k.Help, k.Quit},                // second column
+	}
+}
+
 var TaskListKeys = TaskListKeyMap{
 	AddTask:        key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "add task")),
 	Bottom:         key.NewBinding(key.WithKeys("G"), key.WithHelp("G", "goto bottom")),
@@ -46,6 +58,7 @@ var TaskListKeys = TaskListKeyMap{
 	Delete:         key.NewBinding(key.WithKeys("del"), key.WithHelp("del", "delete")),
 	Down:           key.NewBinding(key.WithKeys("j", "down"), key.WithHelp("↓/j", "down")),
 	GMenu:          key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "g submenu")),
+	Help:           key.NewBinding(key.WithKeys("?")),
 	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")), // perhaps context aware
 	LowerPriority:  key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "lower priority")),
 	MoveToProject:  key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "move to project")),
