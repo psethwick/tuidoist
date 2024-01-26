@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	todoist "github.com/sachaos/todoist/lib"
@@ -111,10 +112,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case syncedMsg:
 		return m, waitForSync(m.sub)
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+w":
-			fallthrough
-		case "ctrl+c":
+		if key.Matches(msg, GlobalKeys.Quit) {
 			return m, tea.Quit
 		}
 	}
@@ -124,129 +122,104 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case viewTasks:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "esc":
-				m.taskList.Unselect()
-			case " ":
-				m.taskList.Select()
-			case "q":
-				return m, tea.Quit
-			case "j":
-				m.taskList.MoveCursor(1)
-			case "k":
-				m.taskList.MoveCursor(-1)
-			case "h":
-				m.resetRefresh(m.taskList.PrevList())
-			case "l":
-				m.resetRefresh(m.taskList.NextList())
-			case "v":
-				for _, t := range m.taskList.SelectedItems() {
-					if t.Url != "" {
-						cmds = append(cmds, m.OpenUrl(t.Url))
+			if !m.gMenu {
+				switch {
+				case key.Matches(msg, TaskListKeys.Unselect):
+					m.taskList.Unselect()
+				case key.Matches(msg, TaskListKeys.Select):
+					m.taskList.Select()
+				case key.Matches(msg, TaskListKeys.Quit):
+					return m, tea.Quit
+				case key.Matches(msg, TaskListKeys.Down):
+					m.taskList.MoveCursor(1)
+				case key.Matches(msg, TaskListKeys.Up):
+					m.taskList.MoveCursor(-1)
+				case key.Matches(msg, TaskListKeys.Left):
+					m.resetRefresh(m.taskList.PrevList())
+				case key.Matches(msg, TaskListKeys.Right):
+					m.resetRefresh(m.taskList.NextList())
+				case key.Matches(msg, TaskListKeys.VisitLinks):
+					for _, t := range m.taskList.SelectedItems() {
+						if t.Url != "" {
+							cmds = append(cmds, m.OpenUrl(t.Url))
+						}
+					}
+				case key.Matches(msg, TaskListKeys.Bottom):
+					m.taskList.Bottom()
+				case key.Matches(msg, TaskListKeys.GMenu):
+					m.gMenu = true
+				case key.Matches(msg, TaskListKeys.Complete):
+					cmds = append(cmds, m.completeTasks())
+					m.state = viewTasks
+				case key.Matches(msg, TaskListKeys.Delete):
+					cmds = append(cmds, m.deleteTasks())
+				case key.Matches(msg, TaskListKeys.OpenPalette):
+					cmds = append(cmds, m.OpenPalette())
+				case key.Matches(msg, TaskListKeys.MoveToProject):
+					cmds = append(cmds, m.OpenProjects(moveToProject))
+				case key.Matches(msg, TaskListKeys.PageHalfUp):
+					m.taskList.HalfPageUp()
+				case key.Matches(msg, TaskListKeys.PageHalfDown):
+					m.taskList.HalfPageDown()
+				case key.Matches(msg, TaskListKeys.PageDown):
+					m.taskList.WholePageDown()
+				case key.Matches(msg, TaskListKeys.PageUp):
+					m.taskList.WholePageUp()
+				case key.Matches(msg, TaskListKeys.Reschedule):
+					m.inputModel.GetOnce("reschedule >", "", m.rescheduleTasks)
+					m.state = viewInput
+				case key.Matches(msg, TaskListKeys.AddTask):
+					m.taskList.Bottom()
+					m.inputModel.GetRepeat("add >", "", m.addTask)
+					m.state = viewInput
+				case key.Matches(msg, TaskListKeys.RaisePriority):
+					if item, err := m.taskList.GetCursorItem(); err == nil {
+						item.Item.Priority = min(4, (item.Item.Priority + 1))
+						cmds = append(cmds, m.UpdateItem(item.Item))
+					}
+				case key.Matches(msg, TaskListKeys.LowerPriority):
+					if item, err := m.taskList.GetCursorItem(); err == nil {
+						item.Item.Priority = max(1, (item.Item.Priority - 1))
+						cmds = append(cmds, m.UpdateItem(item.Item))
+					}
+				case key.Matches(msg, TaskListKeys.SubtaskPromote):
+					if item, err := m.taskList.GetCursorItem(); err == nil {
+						if pitem, err := m.taskList.GetAboveItem(); err == nil {
+							item.Item.ParentID = &pitem.Item.ID
+							cmds = append(cmds, m.MoveItemsToNewParent(pitem.Item.ID))
+						}
+					}
+				case key.Matches(msg, TaskListKeys.SubtaskDemote):
+					if item, err := m.taskList.GetCursorItem(); err == nil {
+						parents := todoist.SearchItemParents(m.local, &item.Item)
+						newParentId := ""
+						for i := 0; i < len(parents)-1; i++ {
+							if i >= 0 && i <= len(parents) {
+								dbg(i, parents[i].Content)
+								newParentId = parents[i].ID
+							}
+						}
+						cmds = append(cmds, m.MoveItemsToNewParent(newParentId))
 					}
 				}
-			case "G":
-				m.taskList.Bottom()
-			case "g":
-				if m.gMenu {
+			} else { // m.gMenu true
+				switch {
+				case key.Matches(msg, GMenuKeys.Top):
 					m.taskList.Top()
-					m.gMenu = false
-
-				} else {
-					m.gMenu = true
-				}
-			case "c":
-				cmds = append(cmds, m.completeTasks())
-				m.state = viewTasks
-			case "delete":
-				cmds = append(cmds, m.deleteTasks())
-			case "f":
-				if m.gMenu {
-					cmds = append(cmds, m.OpenFilters())
-					m.gMenu = false
-				}
-			case "i":
-				if m.gMenu {
+				case key.Matches(msg, GMenuKeys.Project):
+					cmds = append(cmds, m.OpenProjects(chooseProject))
+				case key.Matches(msg, GMenuKeys.Inbox):
 					m.openInbox()
-					m.gMenu = false
-				}
-			case "t":
-				if m.gMenu {
+				case key.Matches(msg, GMenuKeys.Filter):
+					cmds = append(cmds, m.OpenFilters())
+				case key.Matches(msg, GMenuKeys.Project):
+					cmds = append(cmds, m.OpenProjects(chooseProject))
+				case key.Matches(msg, GMenuKeys.Today):
 					cmds = append(cmds, m.chooseModel.gotoFilter(
 						filter{todoist.Filter{Name: "Today", Query: "today | overdue"}}),
 					)
-					m.gMenu = false
 				}
-			case "ctrl+p":
-				cmds = append(cmds, m.OpenPalette())
-			case "p":
-				if m.gMenu {
-					cmds = append(cmds, m.OpenProjects(chooseProject))
-					m.gMenu = false
-					// todo put sorts back, but make sure subtasks don't break
-					// } else {
-					// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.PrioritySort))
-				}
-			// case "n":
-			// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.NameSort))
-			// case "d":
-			// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.DateSort))
-			// case "r":
-			// 	m.statusBarModel.SetSort(m.taskList.Sort(tasklist.AssigneeSort))
-			case "m":
-				cmds = append(cmds, m.OpenProjects(moveToProject))
-			case "ctrl+u":
-				m.taskList.HalfPageUp()
-			case "ctrl+d":
-				m.taskList.HalfPageDown()
-			case "ctrl+f":
-				m.taskList.WholePageDown()
-			case "ctrl+b":
-				m.taskList.WholePageUp()
-			case "r":
-				m.inputModel.GetOnce("reschedule >", "", m.rescheduleTasks)
-				m.state = viewInput
-				// todo put undo back
-			// case "ctrl+z":
-			// 	fallthrough
-			// case "z":
-			// 	// cmds = append(cmds, m.undoCompleteTask())
-			case "a":
-				m.taskList.Bottom()
-				m.inputModel.GetRepeat("add >", "", m.addTask)
-				m.state = viewInput
-			case "+":
-				if item, err := m.taskList.GetCursorItem(); err == nil {
-					item.Item.Priority = min(4, (item.Item.Priority + 1))
-					cmds = append(cmds, m.UpdateItem(item.Item))
-				}
-			case "-":
-				if item, err := m.taskList.GetCursorItem(); err == nil {
-					item.Item.Priority = max(1, (item.Item.Priority - 1))
-					cmds = append(cmds, m.UpdateItem(item.Item))
-				}
-			case ">":
-				if item, err := m.taskList.GetCursorItem(); err == nil {
-					if pitem, err := m.taskList.GetAboveItem(); err == nil {
-						item.Item.ParentID = &pitem.Item.ID
-						cmds = append(cmds, m.MoveItemsToNewParent(pitem.Item.ID))
-					}
-				}
-			case "<":
-				if item, err := m.taskList.GetCursorItem(); err == nil {
-					parents := todoist.SearchItemParents(m.local, &item.Item)
-					newParentId := ""
-					for i := 0; i < len(parents)-1; i++ {
-						if i >= 0 && i <= len(parents) {
-							dbg(i, parents[i].Content)
-							newParentId = parents[i].ID
-						}
-					}
-
-					cmds = append(cmds, m.MoveItemsToNewParent(newParentId))
-				}
-			default:
-				m.gMenu = false
+				m.gMenu = false // gmenu not sticky
 			}
 		}
 	case viewInput:
