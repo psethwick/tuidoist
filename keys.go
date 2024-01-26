@@ -44,6 +44,7 @@ func (k TaskListKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Help, k.Quit}
 }
 
+// todo fully expand this on 'Help'
 func (k TaskListKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Left, k.Right}, // first column
@@ -57,8 +58,8 @@ var TaskListKeys = TaskListKeyMap{
 	Complete:       key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "complete")),
 	Delete:         key.NewBinding(key.WithKeys("del"), key.WithHelp("del", "delete")),
 	Down:           key.NewBinding(key.WithKeys("j", "down"), key.WithHelp("↓/j", "down")),
-	GMenu:          key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "g submenu")),
-	Help:           key.NewBinding(key.WithKeys("?")),
+	GMenu:          key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "submenu")),
+	Help:           key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")), // perhaps context aware
 	LowerPriority:  key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "lower priority")),
 	MoveToProject:  key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "move to project")),
