@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/erikgeiser/promptkit/selection"
+	"github.com/psethwick/tuidoist/keys"
 	"github.com/psethwick/tuidoist/style"
 
 	todoist "github.com/sachaos/todoist/lib"
@@ -38,6 +40,7 @@ type chooseModel struct {
 	main     *mainModel
 	purpose  choosePurpose
 	oldTitle string
+	keyMap   keys.InputKeyMap
 }
 
 type filter struct {
@@ -218,11 +221,11 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
+		switch {
+		case key.Matches(msg, pm.keyMap.Accept):
 			cmds = append(cmds, pm.handleChoose())
 			return tea.Batch(cmds...)
-		case "esc":
+		case key.Matches(msg, pm.keyMap.Cancel):
 			pm.main.state = viewTasks
 			pm.main.statusBarModel.SetTitle(pm.oldTitle)
 			return nil
@@ -233,6 +236,6 @@ func (pm *chooseModel) Update(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func newChooseModel(m *mainModel) chooseModel {
-	return chooseModel{main: m}
+func newChooseModel(m *mainModel, km keys.InputKeyMap) chooseModel {
+	return chooseModel{main: m, keyMap: km}
 }

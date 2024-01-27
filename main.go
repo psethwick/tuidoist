@@ -14,6 +14,7 @@ import (
 
 	"github.com/psethwick/tuidoist/client"
 	"github.com/psethwick/tuidoist/input"
+	"github.com/psethwick/tuidoist/keys"
 	"github.com/psethwick/tuidoist/overlay"
 	"github.com/psethwick/tuidoist/status"
 	"github.com/psethwick/tuidoist/style"
@@ -32,19 +33,17 @@ const (
 
 func (m *mainModel) viewKeyMap() help.KeyMap {
 	if m.gMenu {
-		return GMenuKeys
+		return keys.GMenuKeys
 	}
 	switch m.state {
 	case viewTasks:
-		return TaskListKeys
+		return keys.TaskListKeys
 	case viewChooser:
-		return InputKeys
+		fallthrough
 	case viewInput:
-		return InputKeys
+		return keys.InputKeys
 	case viewTaskMenu:
-		return TaskListKeys
-		// case viewHelp:
-		// 	return TaskListKeys
+		return keys.TaskListKeys
 	}
 	panic("rip")
 }
@@ -87,13 +86,13 @@ func initialModel() *mainModel {
 	m := mainModel{}
 	m.client, m.local, m.cmdQueue = client.GetClient(dbg)
 	m.ctx = context.Background()
-	m.chooseModel = newChooseModel(&m)
+	m.chooseModel = newChooseModel(&m, keys.InputKeys)
 	m.refresh = func() {}
 	m.helpModel = help.New()
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
-	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks })
+	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks }, keys.InputKeys)
 	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
 	m.sub = make(chan struct{})
 	return &m
@@ -131,7 +130,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case syncedMsg:
 		return m, waitForSync(m.sub)
 	case tea.KeyMsg:
-		if key.Matches(msg, GlobalKeys.Quit) {
+		if key.Matches(msg, keys.GlobalKeys.Quit) {
 			return m, tea.Quit
 		}
 	}
@@ -143,75 +142,75 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			if !m.gMenu {
 				switch {
-				case key.Matches(msg, TaskListKeys.Help):
+				case key.Matches(msg, keys.TaskListKeys.Help):
 					m.helpModel.ShowAll = true
-				case key.Matches(msg, TaskListKeys.Cancel):
+				case key.Matches(msg, keys.TaskListKeys.Cancel):
 					m.helpModel.ShowAll = false
 					m.taskList.Unselect()
-				case key.Matches(msg, TaskListKeys.Select):
+				case key.Matches(msg, keys.TaskListKeys.Select):
 					m.taskList.Select()
-				case key.Matches(msg, TaskListKeys.Quit):
+				case key.Matches(msg, keys.TaskListKeys.Quit):
 					return m, tea.Quit
-				case key.Matches(msg, TaskListKeys.Down):
+				case key.Matches(msg, keys.TaskListKeys.Down):
 					m.taskList.MoveCursor(1)
-				case key.Matches(msg, TaskListKeys.Up):
+				case key.Matches(msg, keys.TaskListKeys.Up):
 					m.taskList.MoveCursor(-1)
-				case key.Matches(msg, TaskListKeys.Left):
+				case key.Matches(msg, keys.TaskListKeys.Left):
 					m.resetRefresh(m.taskList.PrevList())
-				case key.Matches(msg, TaskListKeys.Right):
+				case key.Matches(msg, keys.TaskListKeys.Right):
 					m.resetRefresh(m.taskList.NextList())
-				case key.Matches(msg, TaskListKeys.VisitLinks):
+				case key.Matches(msg, keys.TaskListKeys.VisitLinks):
 					for _, t := range m.taskList.SelectedItems() {
 						if t.Url != "" {
 							cmds = append(cmds, m.OpenUrl(t.Url))
 						}
 					}
-				case key.Matches(msg, TaskListKeys.Bottom):
+				case key.Matches(msg, keys.TaskListKeys.Bottom):
 					m.taskList.Bottom()
-				case key.Matches(msg, TaskListKeys.GMenu):
+				case key.Matches(msg, keys.TaskListKeys.GMenu):
 					m.gMenu = true
-				case key.Matches(msg, TaskListKeys.Complete):
+				case key.Matches(msg, keys.TaskListKeys.Complete):
 					cmds = append(cmds, m.completeTasks())
 					m.state = viewTasks
-				case key.Matches(msg, TaskListKeys.Delete):
+				case key.Matches(msg, keys.TaskListKeys.Delete):
 					cmds = append(cmds, m.deleteTasks())
-				case key.Matches(msg, TaskListKeys.OpenPalette):
+				case key.Matches(msg, keys.TaskListKeys.OpenPalette):
 					cmds = append(cmds, m.OpenPalette())
-				case key.Matches(msg, TaskListKeys.MoveToProject):
+				case key.Matches(msg, keys.TaskListKeys.MoveToProject):
 					cmds = append(cmds, m.OpenProjects(moveToProject))
-				case key.Matches(msg, TaskListKeys.PageHalfUp):
+				case key.Matches(msg, keys.TaskListKeys.PageHalfUp):
 					m.taskList.HalfPageUp()
-				case key.Matches(msg, TaskListKeys.PageHalfDown):
+				case key.Matches(msg, keys.TaskListKeys.PageHalfDown):
 					m.taskList.HalfPageDown()
-				case key.Matches(msg, TaskListKeys.PageDown):
+				case key.Matches(msg, keys.TaskListKeys.PageDown):
 					m.taskList.WholePageDown()
-				case key.Matches(msg, TaskListKeys.PageUp):
+				case key.Matches(msg, keys.TaskListKeys.PageUp):
 					m.taskList.WholePageUp()
-				case key.Matches(msg, TaskListKeys.Reschedule):
+				case key.Matches(msg, keys.TaskListKeys.Reschedule):
 					m.inputModel.GetOnce("reschedule >", "", m.rescheduleTasks)
 					m.state = viewInput
-				case key.Matches(msg, TaskListKeys.AddTask):
+				case key.Matches(msg, keys.TaskListKeys.AddTask):
 					m.taskList.Bottom()
 					m.inputModel.GetRepeat("add >", "", m.addTask)
 					m.state = viewInput
-				case key.Matches(msg, TaskListKeys.RaisePriority):
+				case key.Matches(msg, keys.TaskListKeys.RaisePriority):
 					if item, err := m.taskList.GetCursorItem(); err == nil {
 						item.Item.Priority = min(4, (item.Item.Priority + 1))
 						cmds = append(cmds, m.UpdateItem(item.Item))
 					}
-				case key.Matches(msg, TaskListKeys.LowerPriority):
+				case key.Matches(msg, keys.TaskListKeys.LowerPriority):
 					if item, err := m.taskList.GetCursorItem(); err == nil {
 						item.Item.Priority = max(1, (item.Item.Priority - 1))
 						cmds = append(cmds, m.UpdateItem(item.Item))
 					}
-				case key.Matches(msg, TaskListKeys.SubtaskPromote):
+				case key.Matches(msg, keys.TaskListKeys.SubtaskPromote):
 					if item, err := m.taskList.GetCursorItem(); err == nil {
 						if pitem, err := m.taskList.GetAboveItem(); err == nil {
 							item.Item.ParentID = &pitem.Item.ID
 							cmds = append(cmds, m.MoveItemsToNewParent(pitem.Item.ID))
 						}
 					}
-				case key.Matches(msg, TaskListKeys.SubtaskDemote):
+				case key.Matches(msg, keys.TaskListKeys.SubtaskDemote):
 					if item, err := m.taskList.GetCursorItem(); err == nil {
 						parents := todoist.SearchItemParents(m.local, &item.Item)
 						newParentId := ""
@@ -225,24 +224,24 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			} else { // gMenu
-				isHelp := key.Matches(msg, GMenuKeys.Help)
+				isHelp := key.Matches(msg, keys.GMenuKeys.Help)
 				if !isHelp {
 					m.helpModel.ShowAll = false
 				}
 				switch {
 				case isHelp:
 					m.helpModel.ShowAll = true
-				case key.Matches(msg, GMenuKeys.Top):
+				case key.Matches(msg, keys.GMenuKeys.Top):
 					m.taskList.Top()
-				case key.Matches(msg, GMenuKeys.Project):
+				case key.Matches(msg, keys.GMenuKeys.Project):
 					cmds = append(cmds, m.OpenProjects(chooseProject))
-				case key.Matches(msg, GMenuKeys.Inbox):
+				case key.Matches(msg, keys.GMenuKeys.Inbox):
 					m.openInbox()
-				case key.Matches(msg, GMenuKeys.Filter):
+				case key.Matches(msg, keys.GMenuKeys.Filter):
 					cmds = append(cmds, m.OpenFilters())
-				case key.Matches(msg, GMenuKeys.Project):
+				case key.Matches(msg, keys.GMenuKeys.Project):
 					cmds = append(cmds, m.OpenProjects(chooseProject))
-				case key.Matches(msg, GMenuKeys.Today):
+				case key.Matches(msg, keys.GMenuKeys.Today):
 					cmds = append(cmds, m.chooseModel.gotoFilter(
 						filter{todoist.Filter{Name: "Today", Query: "today | overdue"}}),
 					)
@@ -262,13 +261,7 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *mainModel) View() string {
-	var bottom string
 	keyMap := m.viewKeyMap()
-	if m.state == viewInput || m.helpModel.ShowAll {
-		bottom = m.inputModel.View()
-	} else {
-		bottom = m.helpModel.View(keyMap)
-	}
 	base := lipgloss.JoinVertical(
 		lipgloss.Left,
 		lipgloss.Place(
@@ -277,13 +270,15 @@ func (m *mainModel) View() string {
 				lipgloss.Left, m.statusBarModel.View(), m.taskList.View(),
 			),
 		),
-		bottom,
+		m.helpModel.View(keyMap),
 	)
 	switch {
+	case m.state == viewInput:
+		return overlay.PlaceOverlay(style.DialogBoxStyle, m.inputModel.View(), base)
 	case m.helpModel.ShowAll:
-		return overlay.PlaceOverlay(style.DialogBoxStyle.Render(m.helpModel.View(keyMap)), base)
+		return overlay.PlaceOverlay(style.DialogBoxStyle, m.helpModel.View(keyMap), base)
 	case m.state == viewChooser:
-		return overlay.PlaceOverlay(style.DialogBoxStyle.Render(m.chooseModel.View()), base)
+		return overlay.PlaceOverlay(style.DialogBoxStyle, m.chooseModel.View(), base)
 	}
 	return base
 }

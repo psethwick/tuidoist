@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/mattn/go-runewidth"
 	"github.com/muesli/ansi"
 	"github.com/muesli/reflow/truncate"
@@ -29,8 +30,8 @@ func getLines(s string) (lines []string, widest int) {
 	return lines, widest
 }
 
-func PlaceOverlay(fg, bg string, opts ...WhitespaceOption) string {
-	fgLines, fgWidth := getLines(fg)
+func PlaceOverlay(style lipgloss.Style, fg, bg string, opts ...WhitespaceOption) string {
+	fgLines, fgWidth := getLines(style.Render(fg))
 	bgLines, bgWidth := getLines(bg)
 	bgHeight := len(bgLines)
 	fgHeight := len(fgLines)

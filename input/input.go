@@ -3,8 +3,10 @@ package input
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/psethwick/tuidoist/keys"
 )
 
 type InputModel struct {
@@ -13,11 +15,11 @@ type InputModel struct {
 	hide     func()
 	content  textinput.Model
 	onAccept func(string) tea.Cmd
-	onExit   func()
 	repeat   bool
+	keyMap   keys.InputKeyMap
 }
 
-func New(show func(), hide func()) InputModel {
+func New(show func(), hide func(), km keys.InputKeyMap) InputModel {
 	ti := textinput.New()
 	ti.Prompt = ""
 	return InputModel{
@@ -26,6 +28,7 @@ func New(show func(), hide func()) InputModel {
 		hide:     hide,
 		content:  ti,
 		onAccept: func(c string) tea.Cmd { return nil },
+		keyMap:   km,
 	}
 }
 
@@ -33,8 +36,8 @@ func (im *InputModel) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
+		switch {
+		case key.Matches(msg, im.keyMap.Accept):
 			cmds = append(cmds, im.onAccept(im.content.Value()))
 			im.content.SetValue("")
 			if !im.repeat {
@@ -42,7 +45,7 @@ func (im *InputModel) Update(msg tea.Msg) tea.Cmd {
 				im.content.Blur()
 				im.hide()
 			}
-		case "esc":
+		case key.Matches(msg, im.keyMap.Cancel):
 			im.content.SetValue("")
 			im.content.Prompt = ""
 			im.content.Blur()

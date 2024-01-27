@@ -1,4 +1,4 @@
-package main
+package keys
 
 import (
 	"github.com/charmbracelet/bubbles/key"
@@ -96,7 +96,7 @@ var TaskListKeys = TaskListKeyMap{
 	PageHalfUp:     key.NewBinding(key.WithKeys("ctrl+u"), key.WithHelp("^u", "half page up")),
 	PageUp:         key.NewBinding(key.WithKeys("ctrl+b"), key.WithHelp("^b", "page up")),
 	Quit:           key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
-	RaisePriority:  key.NewBinding(key.WithKeys("+"), key.WithHelp(">", "raise priority")),
+	RaisePriority:  key.NewBinding(key.WithKeys("+"), key.WithHelp("+", "raise priority")),
 	Reschedule:     key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "reschedule")),
 	Right:          key.NewBinding(key.WithKeys("l", "right"), key.WithHelp("→/l", "right")),
 	Select:         key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle select")),
@@ -142,14 +142,14 @@ var GMenuKeys = gKeyMap{
 	Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 }
 
-type InputKeyMap struct {
-	Accept key.Binding
-	Cancel key.Binding
-}
-
 var InputKeys = InputKeyMap{
 	Accept: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "accept")),
 	Cancel: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+}
+
+type InputKeyMap struct {
+	Accept key.Binding
+	Cancel key.Binding
 }
 
 func (k InputKeyMap) ShortHelp() []key.Binding {
