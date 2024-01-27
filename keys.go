@@ -89,6 +89,7 @@ type gKeyMap struct {
 	Project key.Binding
 	Today   key.Binding
 	Top     key.Binding
+	Cancel  key.Binding
 }
 
 func (k gKeyMap) ShortHelp() []key.Binding {
@@ -108,4 +109,5 @@ var GMenuKeys = gKeyMap{
 	Project: key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "project")),
 	Today:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "today")),
 	Top:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "top")),
+	Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear selection")),
 }

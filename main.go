@@ -142,14 +142,12 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case viewTasks:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			if m.helpModel.ShowAll {
-				m.helpModel.ShowAll = false
-			}
 			if !m.gMenu {
 				switch {
 				case key.Matches(msg, TaskListKeys.Help):
 					m.helpModel.ShowAll = true
 				case key.Matches(msg, TaskListKeys.Cancel):
+					m.helpModel.ShowAll = false
 					m.taskList.Unselect()
 				case key.Matches(msg, TaskListKeys.Select):
 					m.taskList.Select()
@@ -233,6 +231,8 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.taskList.Top()
 				case key.Matches(msg, GMenuKeys.Help):
 					m.helpModel.ShowAll = true
+				case key.Matches(msg, GMenuKeys.Cancel):
+					m.helpModel.ShowAll = false
 				case key.Matches(msg, GMenuKeys.Project):
 					cmds = append(cmds, m.OpenProjects(chooseProject))
 				case key.Matches(msg, GMenuKeys.Inbox):
@@ -246,7 +246,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						filter{todoist.Filter{Name: "Today", Query: "today | overdue"}}),
 					)
 				}
-				m.gMenu = false // gmenu not sticky
+				if !m.helpModel.ShowAll {
+					m.gMenu = false // gmenu not sticky
+				}
 			}
 		}
 	case viewInput:
