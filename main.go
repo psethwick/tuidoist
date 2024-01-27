@@ -16,6 +16,7 @@ import (
 	"github.com/psethwick/tuidoist/input"
 	"github.com/psethwick/tuidoist/overlay"
 	"github.com/psethwick/tuidoist/status"
+	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/tasklist"
 )
 
@@ -277,9 +278,9 @@ func (m *mainModel) View() string {
 	)
 	switch {
 	case m.helpModel.ShowAll:
-		return overlay.PlaceOverlay(10, 1, m.helpModel.View(keyMap), base)
+		return overlay.PlaceOverlay(style.DialogBoxStyle.Render(m.helpModel.View(keyMap)), base)
 	case m.state == viewChooser:
-		return overlay.PlaceOverlay(10, 1, m.chooseModel.View(), base)
+		return overlay.PlaceOverlay(style.DialogBoxStyle.Render(m.chooseModel.View()), base)
 	}
 	return base
 }

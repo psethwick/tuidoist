@@ -29,7 +29,7 @@ func getLines(s string) (lines []string, widest int) {
 	return lines, widest
 }
 
-func PlaceOverlay(x, y int, fg, bg string, opts ...WhitespaceOption) string {
+func PlaceOverlay(fg, bg string, opts ...WhitespaceOption) string {
 	fgLines, fgWidth := getLines(fg)
 	bgLines, bgWidth := getLines(bg)
 	bgHeight := len(bgLines)
@@ -39,9 +39,9 @@ func PlaceOverlay(x, y int, fg, bg string, opts ...WhitespaceOption) string {
 		// FIXME: return fg or bg?
 		return fg
 	}
-	// TODO: allow placement outside of the bg box?
-	x = clamp(x, 0, bgWidth-fgWidth)
-	y = clamp(y, 0, bgHeight-fgHeight)
+
+	x := (bgWidth - fgWidth) / 2
+	y := (bgHeight - fgHeight) / 2
 
 	ws := &whitespace{}
 	for _, opt := range opts {
