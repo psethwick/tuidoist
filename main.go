@@ -29,6 +29,26 @@ const (
 	viewHelp
 )
 
+func (m *mainModel) viewKeyMap() help.KeyMap {
+	if m.gMenu {
+		return GMenuKeys
+	}
+	switch m.state {
+	case viewTasks:
+		return TaskListKeys
+		// todo the rest
+	case viewChooser:
+		return TaskListKeys
+	case viewInput:
+		return TaskListKeys
+	case viewTaskMenu:
+		return TaskListKeys
+	case viewHelp:
+		return TaskListKeys
+	}
+	panic("rip")
+}
+
 type mainModel struct {
 	client *todoist.Client
 	// optimistic updates and offline actions applied
@@ -45,8 +65,8 @@ type mainModel struct {
 	helpModel      help.Model
 	statusBarModel status.Model
 	refresh        func()
-	gMenu          bool
 	sub            chan struct{}
+	gMenu          bool
 
 	cmdQueue *todoist.Commands
 
@@ -121,9 +141,14 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case viewTasks:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
+			if m.helpModel.ShowAll {
+				m.helpModel.ShowAll = false
+			}
 			if !m.gMenu {
 				switch {
-				case key.Matches(msg, TaskListKeys.Unselect):
+				case key.Matches(msg, TaskListKeys.Help):
+					m.helpModel.ShowAll = true
+				case key.Matches(msg, TaskListKeys.Cancel):
 					m.taskList.Unselect()
 				case key.Matches(msg, TaskListKeys.Select):
 					m.taskList.Select()
@@ -201,10 +226,12 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						cmds = append(cmds, m.MoveItemsToNewParent(newParentId))
 					}
 				}
-			} else { // m.gMenu true
+			} else { // gMenu
 				switch {
 				case key.Matches(msg, GMenuKeys.Top):
 					m.taskList.Top()
+				case key.Matches(msg, GMenuKeys.Help):
+					m.helpModel.ShowAll = true
 				case key.Matches(msg, GMenuKeys.Project):
 					cmds = append(cmds, m.OpenProjects(chooseProject))
 				case key.Matches(msg, GMenuKeys.Inbox):
@@ -232,10 +259,11 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *mainModel) View() string {
 	var bottom string
-	if m.state == viewInput {
+	keyMap := m.viewKeyMap()
+	if m.state == viewInput || m.helpModel.ShowAll {
 		bottom = m.inputModel.View()
 	} else {
-		bottom = m.helpModel.View(TaskListKeys)
+		bottom = m.helpModel.View(keyMap)
 	}
 	base := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -247,8 +275,10 @@ func (m *mainModel) View() string {
 		),
 		bottom,
 	)
-	switch m.state {
-	case viewChooser:
+	switch {
+	case m.helpModel.ShowAll:
+		return overlay.PlaceOverlay(10, 1, m.helpModel.View(keyMap), base)
+	case m.state == viewChooser:
 		return overlay.PlaceOverlay(10, 1, m.chooseModel.View(), base)
 	}
 	return base

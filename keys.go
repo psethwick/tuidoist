@@ -35,7 +35,7 @@ type TaskListKeyMap struct {
 	Select         key.Binding
 	SubtaskDemote  key.Binding
 	SubtaskPromote key.Binding
-	Unselect       key.Binding
+	Cancel         key.Binding
 	Up             key.Binding
 	VisitLinks     key.Binding
 }
@@ -60,7 +60,7 @@ var TaskListKeys = TaskListKeyMap{
 	Down:           key.NewBinding(key.WithKeys("j", "down"), key.WithHelp("↓/j", "down")),
 	GMenu:          key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "submenu")),
 	Help:           key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
-	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")), // perhaps context aware
+	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")),
 	LowerPriority:  key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "lower priority")),
 	MoveToProject:  key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "move to project")),
 	OpenPalette:    key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("^p", "open command palette")),
@@ -71,31 +71,41 @@ var TaskListKeys = TaskListKeyMap{
 	Quit:           key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
 	RaisePriority:  key.NewBinding(key.WithKeys("+"), key.WithHelp(">", "raise priority")),
 	Reschedule:     key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "reschedule")),
-	Right:          key.NewBinding(key.WithKeys("l", "right"), key.WithHelp("→/l", "right")), // perhaps context aware
+	Right:          key.NewBinding(key.WithKeys("l", "right"), key.WithHelp("→/l", "right")),
 	Select:         key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "select")),
 	SubtaskDemote:  key.NewBinding(key.WithKeys("<"), key.WithHelp("<", "demote subtask")),
 	SubtaskPromote: key.NewBinding(key.WithKeys(">"), key.WithHelp(">", "promote subtask")),
-	Unselect:       key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear selection")),
+	Cancel:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear selection")),
 	Up:             key.NewBinding(key.WithKeys("k", "up"), key.WithHelp("↑/k", "up")),
 	VisitLinks:     key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "visit url")),
 }
 
 type gKeyMap struct {
+	Exit    key.Binding
+	Filter  key.Binding
+	Help    key.Binding
 	Inbox   key.Binding
-	Today   key.Binding
 	Now     key.Binding
 	Project key.Binding
-	Filter  key.Binding
+	Today   key.Binding
 	Top     key.Binding
-	Exit    key.Binding
+}
+
+func (k gKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Inbox, k.Today, k.Exit}
+}
+
+func (k gKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{}
 }
 
 var GMenuKeys = gKeyMap{
+	Exit:    key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "exit submenu")),
+	Filter:  key.NewBinding(key.WithKeys("f"), key.WithHelp("f", "filter")),
+	Help:    key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 	Inbox:   key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "inbox")),
-	Today:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "today")),
 	Now:     key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "now")),
 	Project: key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "project")),
-	Filter:  key.NewBinding(key.WithKeys("f"), key.WithHelp("f", "filter")),
+	Today:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "today")),
 	Top:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "top")),
-	Exit:    key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "exit submenu")),
 }
