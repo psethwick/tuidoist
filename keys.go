@@ -44,7 +44,6 @@ func (k TaskListKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.AddTask, k.Complete, k.GMenu, k.OpenPalette, k.Help, k.Quit}
 }
 
-// todo fully expand this on 'Help'
 func (k TaskListKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{
@@ -103,7 +102,7 @@ var TaskListKeys = TaskListKeyMap{
 	Select:         key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle select")),
 	SubtaskDemote:  key.NewBinding(key.WithKeys("<"), key.WithHelp("<", "demote subtask")),
 	SubtaskPromote: key.NewBinding(key.WithKeys(">"), key.WithHelp(">", "promote subtask")),
-	Cancel:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear selection")),
+	Cancel:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	Up:             key.NewBinding(key.WithKeys("k", "up"), key.WithHelp("↑/k", "up")),
 	VisitLinks:     key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "visit url")),
 }
@@ -121,11 +120,14 @@ type gKeyMap struct {
 }
 
 func (k gKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Inbox, k.Today, k.Exit}
+	return []key.Binding{k.Inbox, k.Project, k.Help, k.Exit}
 }
 
 func (k gKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{}
+	return [][]key.Binding{
+		{k.Inbox, k.Today, k.Project, k.Filter, k.Now, k.Top},
+		{k.Cancel, k.Exit},
+	}
 }
 
 var GMenuKeys = gKeyMap{
@@ -137,5 +139,23 @@ var GMenuKeys = gKeyMap{
 	Project: key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "project")),
 	Today:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "today")),
 	Top:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "top")),
-	Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear selection")),
+	Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+}
+
+type InputKeyMap struct {
+	Accept key.Binding
+	Cancel key.Binding
+}
+
+var InputKeys = InputKeyMap{
+	Accept: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "accept")),
+	Cancel: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+}
+
+func (k InputKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Accept, k.Cancel}
+}
+
+func (k InputKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{{k.Accept, k.Cancel}}
 }

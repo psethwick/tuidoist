@@ -37,15 +37,14 @@ func (m *mainModel) viewKeyMap() help.KeyMap {
 	switch m.state {
 	case viewTasks:
 		return TaskListKeys
-		// todo the rest
 	case viewChooser:
-		return TaskListKeys
+		return InputKeys
 	case viewInput:
-		return TaskListKeys
+		return InputKeys
 	case viewTaskMenu:
 		return TaskListKeys
-	case viewHelp:
-		return TaskListKeys
+		// case viewHelp:
+		// 	return TaskListKeys
 	}
 	panic("rip")
 }
@@ -226,13 +225,15 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			} else { // gMenu
+				isHelp := key.Matches(msg, GMenuKeys.Help)
+				if !isHelp {
+					m.helpModel.ShowAll = false
+				}
 				switch {
+				case isHelp:
+					m.helpModel.ShowAll = true
 				case key.Matches(msg, GMenuKeys.Top):
 					m.taskList.Top()
-				case key.Matches(msg, GMenuKeys.Help):
-					m.helpModel.ShowAll = true
-				case key.Matches(msg, GMenuKeys.Cancel):
-					m.helpModel.ShowAll = false
 				case key.Matches(msg, GMenuKeys.Project):
 					cmds = append(cmds, m.OpenProjects(chooseProject))
 				case key.Matches(msg, GMenuKeys.Inbox):
