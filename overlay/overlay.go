@@ -36,12 +36,11 @@ func PlaceOverlay(fg, bg string, opts ...WhitespaceOption) string {
 	fgHeight := len(fgLines)
 
 	if fgWidth >= bgWidth && fgHeight >= bgHeight {
-		// FIXME: return fg or bg?
 		return fg
 	}
 
 	x := (bgWidth - fgWidth) / 2
-	y := (bgHeight - fgHeight) / 2
+	y := 5 // (bgHeight - fgHeight) / 2
 
 	ws := &whitespace{}
 	for _, opt := range opts {

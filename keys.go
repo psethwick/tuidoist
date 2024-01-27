@@ -41,14 +41,42 @@ type TaskListKeyMap struct {
 }
 
 func (k TaskListKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit}
+	return []key.Binding{k.AddTask, k.Complete, k.GMenu, k.OpenPalette, k.Help, k.Quit}
 }
 
 // todo fully expand this on 'Help'
 func (k TaskListKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Up, k.Down, k.Left, k.Right}, // first column
-		{k.Help, k.Quit},                // second column
+		{
+			k.Up,
+			k.Down,
+			k.Left,
+			k.Right,
+			k.PageUp,
+			k.PageDown,
+			k.PageHalfUp,
+			k.PageHalfDown,
+			k.Bottom,
+		},
+		{
+			k.Complete,
+			k.RaisePriority,
+			k.LowerPriority,
+			k.Reschedule,
+			k.Delete,
+			k.SubtaskDemote,
+			k.SubtaskPromote,
+			k.VisitLinks,
+			k.MoveToProject,
+		},
+		{
+			k.GMenu,
+			k.AddTask,
+			k.Select,
+			k.OpenPalette,
+			k.Cancel,
+			k.Quit,
+		},
 	}
 }
 
@@ -63,7 +91,7 @@ var TaskListKeys = TaskListKeyMap{
 	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")),
 	LowerPriority:  key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "lower priority")),
 	MoveToProject:  key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "move to project")),
-	OpenPalette:    key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("^p", "open command palette")),
+	OpenPalette:    key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("^p", "command palette")),
 	PageDown:       key.NewBinding(key.WithKeys("ctrl+f"), key.WithHelp("^f", "page down")),
 	PageHalfDown:   key.NewBinding(key.WithKeys("ctrl+d"), key.WithHelp("^d", "half page down")),
 	PageHalfUp:     key.NewBinding(key.WithKeys("ctrl+u"), key.WithHelp("^u", "half page up")),
@@ -72,7 +100,7 @@ var TaskListKeys = TaskListKeyMap{
 	RaisePriority:  key.NewBinding(key.WithKeys("+"), key.WithHelp(">", "raise priority")),
 	Reschedule:     key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "reschedule")),
 	Right:          key.NewBinding(key.WithKeys("l", "right"), key.WithHelp("→/l", "right")),
-	Select:         key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "select")),
+	Select:         key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle select")),
 	SubtaskDemote:  key.NewBinding(key.WithKeys("<"), key.WithHelp("<", "demote subtask")),
 	SubtaskPromote: key.NewBinding(key.WithKeys(">"), key.WithHelp(">", "promote subtask")),
 	Cancel:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "clear selection")),

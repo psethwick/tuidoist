@@ -26,7 +26,7 @@ var (
 			BorderRight(true).
 			BorderBottom(true)
 	DialogBoxStyle = lipgloss.NewStyle().
-			Width(40).
+			Width(70).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(Purple).
 			BorderTop(true).
