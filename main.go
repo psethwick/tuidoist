@@ -189,6 +189,10 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case key.Matches(msg, keys.TaskListKeys.Reschedule):
 					m.inputModel.GetOnce("reschedule >", "", m.rescheduleTasks)
 					m.state = viewInput
+				case key.Matches(msg, keys.TaskListKeys.MoveUp):
+					cmds = append(cmds, m.ReorderTasks(m.taskList.Move(-1)))
+				case key.Matches(msg, keys.TaskListKeys.MoveDown):
+					cmds = append(cmds, m.ReorderTasks(m.taskList.Move(1)))
 				case key.Matches(msg, keys.TaskListKeys.AddTask):
 					m.taskList.Bottom()
 					m.inputModel.GetRepeat("add >", "", m.addTask)
@@ -272,15 +276,19 @@ func (m *mainModel) View() string {
 		),
 		m.helpModel.View(keyMap),
 	)
+	popup := ""
 	switch {
 	case m.state == viewInput:
-		return overlay.PlaceOverlay(style.DialogBoxStyle, m.inputModel.View(), base)
 	case m.helpModel.ShowAll:
-		return overlay.PlaceOverlay(style.DialogBoxStyle, m.helpModel.View(keyMap), base)
+		popup = m.helpModel.View(keyMap)
 	case m.state == viewChooser:
-		return overlay.PlaceOverlay(style.DialogBoxStyle, m.chooseModel.View(), base)
+		popup = m.chooseModel.View()
 	}
-	return base
+	if popup != "" {
+		return overlay.PlaceOverlay(style.DialogBoxStyle, popup, base)
+	} else {
+		return base
+	}
 }
 
 func dbg(a ...any) {

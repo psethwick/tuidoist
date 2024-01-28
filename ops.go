@@ -35,6 +35,10 @@ func (m *mainModel) completeTasks() tea.Cmd {
 	})
 }
 
+func (m *mainModel) ReorderTasks(items []map[string]interface{}) tea.Cmd {
+	return m.sync(todoist.NewCommand("item_reorder", map[string]interface{}{"items": items}))
+}
+
 func (m *mainModel) rescheduleTasks(newDate string) tea.Cmd {
 	return m.bulkOps("rescheduled", func(t task.Task) todoist.Command {
 		t.Item.Due = &todoist.Due{

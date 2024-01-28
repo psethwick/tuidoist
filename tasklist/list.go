@@ -184,6 +184,20 @@ func (tl *TaskList) Top() {
 func (tl *TaskList) HalfPageUp() {
 	_, _ = tl.lists[tl.idx].MoveCursor(-5)
 }
+
+func (tl *TaskList) Move(amount int) []map[string]interface{} {
+	err := tl.lists[tl.idx].MoveCursorItemBy(amount)
+	if err != nil {
+		tl.logger("what", err)
+	}
+	items := make([]map[string]interface{}, tl.lists[tl.idx].Len())
+	for i, strangers := range tl.lists[tl.idx].GetAllItems() {
+		item := strangers.(task.Task).Item
+		items[i] = map[string]interface{}{"id": item.ID, "child_order": i + 1}
+	}
+	return items
+}
+
 func (tl *TaskList) HalfPageDown() {
 	_, _ = tl.lists[tl.idx].MoveCursor(5)
 }

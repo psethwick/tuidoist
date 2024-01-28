@@ -56,6 +56,15 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 					HaveID:  todoist.HaveID{ID: op.TempID},
 				}}
 			m.local.Items = append(m.local.Items, item)
+		case "item_reorder":
+			items := args["items"].([]map[string]interface{})
+			for _, item := range items {
+				id := item["id"].(string)
+				order := item["child_order"].(int)
+				if _, ok := m.local.ItemMap[id]; ok {
+					m.local.ItemMap[id].ChildOrder = order
+				}
+			}
 		case "item_uncomplete":
 			// TODO
 		case "item_delete":

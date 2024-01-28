@@ -33,6 +33,8 @@ type TaskListKeyMap struct {
 	Reschedule     key.Binding
 	Right          key.Binding
 	Select         key.Binding
+	MoveUp         key.Binding
+	MoveDown       key.Binding
 	SubtaskDemote  key.Binding
 	SubtaskPromote key.Binding
 	Cancel         key.Binding
@@ -67,6 +69,8 @@ func (k TaskListKeyMap) FullHelp() [][]key.Binding {
 			k.SubtaskPromote,
 			k.VisitLinks,
 			k.MoveToProject,
+			k.MoveUp,
+			k.MoveDown,
 		},
 		{
 			k.GMenu,
@@ -90,6 +94,8 @@ var TaskListKeys = TaskListKeyMap{
 	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")),
 	LowerPriority:  key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "lower priority")),
 	MoveToProject:  key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "move to project")),
+	MoveUp:         key.NewBinding(key.WithKeys("K"), key.WithHelp("K", "move up")),
+	MoveDown:       key.NewBinding(key.WithKeys("J"), key.WithHelp("J", "move down")),
 	OpenPalette:    key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("^p", "command palette")),
 	PageDown:       key.NewBinding(key.WithKeys("ctrl+f"), key.WithHelp("^f", "page down")),
 	PageHalfDown:   key.NewBinding(key.WithKeys("ctrl+d"), key.WithHelp("^d", "half page down")),
