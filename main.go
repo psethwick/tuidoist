@@ -279,6 +279,7 @@ func (m *mainModel) View() string {
 	popup := ""
 	switch {
 	case m.state == viewInput:
+		popup = m.inputModel.View()
 	case m.helpModel.ShowAll:
 		popup = m.helpModel.View(keyMap)
 	case m.state == viewChooser:
