@@ -274,7 +274,7 @@ func (m *mainModel) View() string {
 				lipgloss.Left, m.statusBarModel.View(), m.taskList.View(),
 			),
 		),
-		m.helpModel.View(keyMap),
+		m.helpModel.ShortHelpView(keyMap.ShortHelp()),
 	)
 	popup := ""
 	switch {
