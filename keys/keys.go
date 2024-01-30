@@ -93,7 +93,7 @@ var TaskListKeys = TaskListKeyMap{
 	Help:           key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")),
 	LowerPriority:  key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "lower priority")),
-	MoveToProject:  key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "move to project")),
+	MoveToProject:  key.NewBinding(key.WithKeys("m"), key.WithHelp("m", "move to project")),
 	MoveUp:         key.NewBinding(key.WithKeys("K"), key.WithHelp("K", "move up")),
 	MoveDown:       key.NewBinding(key.WithKeys("J"), key.WithHelp("J", "move down")),
 	OpenPalette:    key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("^p", "command palette")),
