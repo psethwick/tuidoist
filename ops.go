@@ -24,13 +24,13 @@ import (
 
 // todo confirm
 func (m *mainModel) deleteTasks() tea.Cmd {
-	return m.bulkOps("deleted", func(t task.Task) todoist.Command {
+	return m.bulkOps("deleted", true, func(t task.Task) todoist.Command {
 		return todoist.NewCommand("item_delete", map[string]interface{}{"id": t.Item.ID})
 	})
 }
 
 func (m *mainModel) completeTasks() tea.Cmd {
-	return m.bulkOps("completed", func(t task.Task) todoist.Command {
+	return m.bulkOps("completed", true, func(t task.Task) todoist.Command {
 		return todoist.NewCommand("item_close", map[string]interface{}{"id": t.Item.ID})
 	})
 }
@@ -40,7 +40,7 @@ func (m *mainModel) ReorderTasks(items []map[string]interface{}) tea.Cmd {
 }
 
 func (m *mainModel) rescheduleTasks(newDate string) tea.Cmd {
-	return m.bulkOps("rescheduled", func(t task.Task) todoist.Command {
+	return m.bulkOps("rescheduled", false, func(t task.Task) todoist.Command {
 		t.Item.Due = &todoist.Due{
 			String: newDate,
 		}
@@ -49,7 +49,7 @@ func (m *mainModel) rescheduleTasks(newDate string) tea.Cmd {
 }
 
 func (m *mainModel) MoveItemsToNewParent(newParentID string) tea.Cmd {
-	return m.bulkOps("moved", func(t task.Task) todoist.Command {
+	return m.bulkOps("moved", false, func(t task.Task) todoist.Command {
 		args := map[string]interface{}{"id": t.Item.ID}
 		args["parent_id"] = newParentID
 		return todoist.NewCommand("item_move", args)
@@ -57,7 +57,7 @@ func (m *mainModel) MoveItemsToNewParent(newParentID string) tea.Cmd {
 }
 
 func (m *mainModel) MoveItemsToProject(p project) tea.Cmd {
-	return m.bulkOps("moved", func(t task.Task) todoist.Command {
+	return m.bulkOps("moved", true, func(t task.Task) todoist.Command {
 		args := map[string]interface{}{"id": t.Item.ID}
 		if p.section.ID != "" {
 			args["section_id"] = p.section.ID
@@ -68,9 +68,14 @@ func (m *mainModel) MoveItemsToProject(p project) tea.Cmd {
 	})
 }
 
-func (m *mainModel) bulkOps(name string, builder func(task.Task) todoist.Command) tea.Cmd {
+func (m *mainModel) bulkOps(name string, clear bool, builder func(task.Task) todoist.Command) tea.Cmd {
 	var cmds []todoist.Command
-	for _, t := range m.taskList.SelectedItems() {
+	selector := m.taskList.SelectedItems
+	if clear {
+		selector = m.taskList.SelectedItemsClear
+	}
+
+	for _, t := range selector() {
 		m.statusBarModel.SetMessage(name, t.Title)
 		cmds = append(cmds, builder(t))
 	}
