@@ -28,6 +28,12 @@ type TaskSort uint
 
 var selected map[string]*task.Task = map[string]*task.Task{}
 
+var selectedParentLevel *string = nil
+
+func compareParentId(p1, p2 *string) bool {
+	return (p1 == nil && p2 == nil) || (p1 != nil && p2 != nil && *p1 == *p2)
+}
+
 const (
 	DefaultSort TaskSort = iota
 	NameSort
@@ -94,22 +100,34 @@ func (tl *TaskList) Select() {
 		return
 	}
 	task := str.(task.Task)
+
+	tparent := task.Item.ParentID
+
 	if _, ok := selected[task.Item.ID]; ok {
 		task.Selected = false
 		delete(selected, task.Item.ID)
+		if len(selected) == 0 {
+			selectedParentLevel = nil
+		}
 	} else {
+		if len(selected) > 0 && !compareParentId(tparent, selectedParentLevel) {
+			return
+		}
+		selectedParentLevel = tparent
 		task.Selected = true
 		selected[task.Item.ID] = &task
 	}
 	_ = tl.lists[tl.idx].UpdateItem(ci, updateTask(task))
 }
 
-func (tl *TaskList) SelectedItems() []task.Task {
+func (tl *TaskList) selectItems(clear bool) []task.Task {
 	var tasks []task.Task
 	for _, t := range selected {
 		tasks = append(tasks, *t)
 	}
-	tl.Unselect()
+	if clear {
+		tl.Unselect()
+	}
 	if len(tasks) == 0 {
 		itm, err := tl.lists[tl.idx].GetCursorItem()
 		if err != nil {
@@ -118,6 +136,14 @@ func (tl *TaskList) SelectedItems() []task.Task {
 		tasks = append(tasks, itm.(task.Task))
 	}
 	return tasks
+}
+
+func (tl *TaskList) SelectedItems() []task.Task {
+	return tl.selectItems(false)
+}
+
+func (tl *TaskList) SelectedItemsClear() []task.Task {
+	return tl.selectItems(true)
 }
 
 func (tl *TaskList) Unselect() {
