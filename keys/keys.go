@@ -87,7 +87,7 @@ var TaskListKeys = TaskListKeyMap{
 	AddTask:        key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "add task")),
 	Bottom:         key.NewBinding(key.WithKeys("G"), key.WithHelp("G", "goto bottom")),
 	Complete:       key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "complete")),
-	Delete:         key.NewBinding(key.WithKeys("del"), key.WithHelp("del", "delete")),
+	Delete:         key.NewBinding(key.WithKeys("delete"), key.WithHelp("del", "delete")),
 	Down:           key.NewBinding(key.WithKeys("j", "down"), key.WithHelp("↓/j", "down")),
 	GMenu:          key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "submenu")),
 	Help:           key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
