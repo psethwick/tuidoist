@@ -15,29 +15,31 @@ var GlobalKeys = GlobalKeyMap{
 type TaskListKeyMap struct {
 	AddTask        key.Binding
 	Bottom         key.Binding
+	Cancel         key.Binding
 	Complete       key.Binding
 	Delete         key.Binding
 	Down           key.Binding
 	GMenu          key.Binding
 	Help           key.Binding
 	Left           key.Binding
-	LowerPriority  key.Binding
+	MoveDown       key.Binding
 	MoveToProject  key.Binding
+	MoveUp         key.Binding
 	OpenPalette    key.Binding
 	PageDown       key.Binding
 	PageHalfDown   key.Binding
 	PageHalfUp     key.Binding
 	PageUp         key.Binding
+	Priority1      key.Binding
+	Priority2      key.Binding
+	Priority3      key.Binding
+	Priority4      key.Binding
 	Quit           key.Binding
-	RaisePriority  key.Binding
 	Reschedule     key.Binding
 	Right          key.Binding
 	Select         key.Binding
-	MoveUp         key.Binding
-	MoveDown       key.Binding
 	SubtaskDemote  key.Binding
 	SubtaskPromote key.Binding
-	Cancel         key.Binding
 	Up             key.Binding
 	VisitLinks     key.Binding
 }
@@ -61,8 +63,10 @@ func (k TaskListKeyMap) FullHelp() [][]key.Binding {
 		},
 		{
 			k.Complete,
-			k.RaisePriority,
-			k.LowerPriority,
+			k.Priority1,
+			k.Priority2,
+			k.Priority3,
+			k.Priority4,
 			k.Reschedule,
 			k.Delete,
 			k.SubtaskDemote,
@@ -92,7 +96,6 @@ var TaskListKeys = TaskListKeyMap{
 	GMenu:          key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "submenu")),
 	Help:           key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 	Left:           key.NewBinding(key.WithKeys("h", "left"), key.WithHelp("←/h", "left")),
-	LowerPriority:  key.NewBinding(key.WithKeys("-"), key.WithHelp("-", "lower priority")),
 	MoveToProject:  key.NewBinding(key.WithKeys("m"), key.WithHelp("m", "move to project")),
 	MoveUp:         key.NewBinding(key.WithKeys("K"), key.WithHelp("K", "move up")),
 	MoveDown:       key.NewBinding(key.WithKeys("J"), key.WithHelp("J", "move down")),
@@ -102,7 +105,10 @@ var TaskListKeys = TaskListKeyMap{
 	PageHalfUp:     key.NewBinding(key.WithKeys("ctrl+u"), key.WithHelp("^u", "half page up")),
 	PageUp:         key.NewBinding(key.WithKeys("ctrl+b"), key.WithHelp("^b", "page up")),
 	Quit:           key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
-	RaisePriority:  key.NewBinding(key.WithKeys("+"), key.WithHelp("+", "raise priority")),
+	Priority1:      key.NewBinding(key.WithKeys("1"), key.WithHelp("1", "priority 1")),
+	Priority2:      key.NewBinding(key.WithKeys("2"), key.WithHelp("2", "priority 2")),
+	Priority3:      key.NewBinding(key.WithKeys("3"), key.WithHelp("3", "priority 3")),
+	Priority4:      key.NewBinding(key.WithKeys("4"), key.WithHelp("4", "priority 4")),
 	Reschedule:     key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "reschedule")),
 	Right:          key.NewBinding(key.WithKeys("l", "right"), key.WithHelp("→/l", "right")),
 	Select:         key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle select")),

@@ -197,16 +197,14 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.taskList.Bottom()
 					m.inputModel.GetRepeat("add >", "", m.addTask)
 					m.state = viewInput
-				case key.Matches(msg, keys.TaskListKeys.RaisePriority):
-					if item, err := m.taskList.GetCursorItem(); err == nil {
-						item.Item.Priority = min(4, (item.Item.Priority + 1))
-						cmds = append(cmds, m.UpdateItem(item.Item))
-					}
-				case key.Matches(msg, keys.TaskListKeys.LowerPriority):
-					if item, err := m.taskList.GetCursorItem(); err == nil {
-						item.Item.Priority = max(1, (item.Item.Priority - 1))
-						cmds = append(cmds, m.UpdateItem(item.Item))
-					}
+				case key.Matches(msg, keys.TaskListKeys.Priority1):
+					cmds = append(cmds, m.setPriority(1))
+				case key.Matches(msg, keys.TaskListKeys.Priority2):
+					cmds = append(cmds, m.setPriority(2))
+				case key.Matches(msg, keys.TaskListKeys.Priority3):
+					cmds = append(cmds, m.setPriority(3))
+				case key.Matches(msg, keys.TaskListKeys.Priority4):
+					cmds = append(cmds, m.setPriority(4))
 				case key.Matches(msg, keys.TaskListKeys.SubtaskPromote):
 					if item, err := m.taskList.GetCursorItem(); err == nil {
 						if pitem, err := m.taskList.GetAboveItem(); err == nil {

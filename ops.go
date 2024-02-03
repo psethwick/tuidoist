@@ -35,6 +35,12 @@ func (m *mainModel) completeTasks() tea.Cmd {
 	})
 }
 
+func (m *mainModel) setPriority(p int) tea.Cmd {
+	return m.bulkOps(fmt.Sprint("priority", p), true, func(t task.Task) todoist.Command {
+		return todoist.NewCommand("item_update", map[string]interface{}{"id": t.Item.ID, "priority": p})
+	})
+}
+
 func (m *mainModel) ReorderTasks(items []map[string]interface{}) tea.Cmd {
 	return m.sync(todoist.NewCommand("item_reorder", map[string]interface{}{"items": items}))
 }
