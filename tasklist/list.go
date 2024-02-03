@@ -6,6 +6,7 @@ import (
 	"github.com/psethwick/tuidoist/bubblelister"
 	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/task"
+	todoist "github.com/sachaos/todoist/lib"
 )
 
 type listModel struct {
@@ -26,6 +27,7 @@ type TaskList struct {
 
 type TaskSort uint
 
+// map[item.ID]*task.Task
 var selected map[string]*task.Task = map[string]*task.Task{}
 
 var selectedParentLevel *string = nil
@@ -212,16 +214,56 @@ func (tl *TaskList) HalfPageUp() {
 }
 
 func (tl *TaskList) Move(amount int) []map[string]interface{} {
-	err := tl.lists[tl.idx].MoveCursorItemBy(amount)
-	if err != nil {
-		tl.logger("what", err)
+	// todo make this respect selection
+	// also send waaaay fewer reorder maps
+	// maybe also the map[string]interface{} should not leak to here
+
+	// plan
+	// get the possible set (same 'parent') and the selected set
+	// work out the 'displaced' item (above if up, etc)
+	// also need to grab any items intersperced in the selected set and make sure they go the other way
+	// only send updates for displaced + selected
+
+	var displaced todoist.Item
+
+	var selectedItems []todoist.Item
+	var selectedEdgeOrder int
+	for _, t := range selected {
+		if amount > 0 { // moving down
+			selectedEdgeOrder = max(selectedEdgeOrder, t.Item.ChildOrder)
+		} else { // moving up
+			selectedEdgeOrder = min(selectedEdgeOrder, t.Item.ChildOrder)
+		}
+		selectedItems = append(selectedItems, t.Item)
 	}
-	items := make([]map[string]interface{}, tl.lists[tl.idx].Len())
-	for i, strangers := range tl.lists[tl.idx].GetAllItems() {
+	// var possibles []todoist.Item
+	for _, strangers := range tl.lists[tl.idx].GetAllItems() {
 		item := strangers.(task.Task).Item
-		items[i] = map[string]interface{}{"id": item.ID, "child_order": i + 1}
+		if compareParentId(item.ParentID, selectedParentLevel) {
+			if amount > 0 && displaced.ID == "" && item.ChildOrder > selectedEdgeOrder {
+				// smash past the selected set, first one to match gets it
+				displaced = item
+			}
+			if amount < 0 && displaced.ChildOrder < selectedEdgeOrder {
+				// keep setting displaced until we reach selected items
+				displaced = item
+			}
+		}
 	}
-	return items
+	var changes []map[string]interface{}
+	if displaced.ID == "" {
+		return changes
+	}
+	if amount > 0 {
+		selectedItems = append([]todoist.Item{displaced}, selectedItems...)
+	} else {
+		selectedItems = append(selectedItems, displaced)
+	}
+	for i, si := range selectedItems {
+		newOrder := selectedItems[(i+amount)%len(selectedItems)]
+		changes = append(changes, map[string]interface{}{"id": si.ID, "child_order": newOrder})
+	}
+	return changes
 }
 
 func (tl *TaskList) HalfPageDown() {
