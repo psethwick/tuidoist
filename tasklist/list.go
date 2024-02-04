@@ -2,7 +2,6 @@ package tasklist
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/psethwick/tuidoist/bubblelister"
 	"github.com/psethwick/tuidoist/style"
@@ -215,61 +214,51 @@ func (tl *TaskList) HalfPageUp() {
 }
 
 func (tl *TaskList) Move(amount int) []map[string]interface{} {
-	// todo make this respect selection
-	// also send waaaay fewer reorder maps
-	// maybe also the map[string]interface{} should not leak to here
-
-	// plan
-	// get the possible set (same 'parent') and the selected set
-	// work out the 'displaced' item (above if up, etc)
-	// also need to grab any items intersperced in the selected set and make sure they go the other way
-	// only send updates for displaced + selected
-
 	var displaced todoist.Item
 
 	var selectedItems []todoist.Item
-	var selectedEdgeOrder int
-	if amount > 0 {
-		selectedEdgeOrder = math.MinInt
-	} else {
-		selectedEdgeOrder = math.MaxInt
-	}
-	for _, t := range tl.SelectedItems() {
-		if amount > 0 { // moving down
-			selectedEdgeOrder = max(selectedEdgeOrder, t.Item.ChildOrder)
-		} else { // moving up
-			selectedEdgeOrder = min(selectedEdgeOrder, t.Item.ChildOrder)
+
+	var topEdgeID string
+	var bottomEdgeID string
+
+	for i, t := range tl.SelectedItems() {
+		if i == 0 {
+			topEdgeID = t.Item.ID
 		}
+		bottomEdgeID = t.Item.ID
 		selectedItems = append(selectedItems, t.Item)
 	}
+
 	for _, strangers := range tl.lists[tl.idx].GetAllItems() {
 		item := strangers.(task.Task).Item
 		if compareParentId(item.ParentID, selectedParentLevel) {
-			if amount > 0 && displaced.ID == "" && item.ChildOrder > selectedEdgeOrder {
-				// smash past the selected set, first one to match gets it
+			if amount > 0 && displaced.ID == "" && item.ID != topEdgeID { // displaced should be above if at all
 				displaced = item
 			}
-			if amount < 0 && displaced.ChildOrder < selectedEdgeOrder {
-				// keep setting displaced until we reach selected items
-				tl.logger("amount", amount, "in block")
+			if amount < 0 && displaced.ID == "" && item.ID != bottomEdgeID { // displaced should be below if at all
 				displaced = item
 			}
 		}
 	}
-	tl.logger("displaced", displaced, "\n", "selectedEdgeOrder", selectedEdgeOrder)
+
 	changes := *new([]map[string]interface{})
 	if displaced.ID == "" {
 		return changes
+	} else {
+		tl.logger("DISPLACING", displaced.Content)
 	}
 	if amount > 0 {
 		selectedItems = append([]todoist.Item{displaced}, selectedItems...)
 	} else {
 		selectedItems = append(selectedItems, displaced)
 	}
-	for i, si := range selectedItems {
-		newOrder := selectedItems[(i+amount)%len(selectedItems)].ChildOrder
-		changes = append(changes, map[string]interface{}{"id": si.ID, "child_order": newOrder})
+	for _, si := range selectedItems {
+		tl.logger("SELECTED", si.Content)
 	}
+	// for i, si := range selectedItems {
+	// 	newOrder := selectedItems[(i+amount)%len(selectedItems)].ChildOrder
+	// 	changes = append(changes, map[string]interface{}{"id": si.ID, "child_order": newOrder})
+	// }
 	return changes
 }
 
