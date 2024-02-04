@@ -239,7 +239,6 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 			}
 			if amount < 0 && !foundTop { // displaced should be above if at all
 				displaced = item
-				tl.logger("FOUND TOP???", item.Content)
 			}
 			if amount > 0 && displaced.ID == "" && foundBottom { // displaced should be below if at all
 				displaced = item
@@ -264,16 +263,16 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 	for _, si := range selectedItems {
 		tl.logger("SELECTED", si.Content)
 	}
-	// var shift int
-	// if amount < 0 {
-	// 	shift = len(selectedItems) + 1
-	// } else {
-	// 	shift = 1
-	// }
-	// for i, si := range selectedItems {
-	// 	newOrder := selectedItems[(i+shift)%len(selectedItems)].ChildOrder
-	// 	changes = append(changes, map[string]interface{}{"id": si.ID, "child_order": newOrder})
-	// }
+	var shift int
+	if amount < 0 {
+		shift = len(selectedItems) + 1
+	} else {
+		shift = 1
+	}
+	for i, si := range selectedItems {
+		newOrder := selectedItems[(i+shift)%len(selectedItems)].ChildOrder
+		changes = append(changes, map[string]interface{}{"id": si.ID, "child_order": newOrder})
+	}
 	return changes
 }
 
