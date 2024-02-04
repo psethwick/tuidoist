@@ -228,7 +228,7 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 
 	var selectedItems []todoist.Item
 	var selectedEdgeOrder int
-	for _, t := range selected {
+	for _, t := range tl.SelectedItems() {
 		if amount > 0 { // moving down
 			selectedEdgeOrder = max(selectedEdgeOrder, t.Item.ChildOrder)
 		} else { // moving up
@@ -236,7 +236,8 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 		}
 		selectedItems = append(selectedItems, t.Item)
 	}
-	// var possibles []todoist.Item
+	tl.logger("selected", selected)
+	tl.logger("selectedItems", selectedItems, "\n\t", selectedEdgeOrder)
 	for _, strangers := range tl.lists[tl.idx].GetAllItems() {
 		item := strangers.(task.Task).Item
 		if compareParentId(item.ParentID, selectedParentLevel) {
@@ -260,7 +261,7 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 		selectedItems = append(selectedItems, displaced)
 	}
 	for i, si := range selectedItems {
-		newOrder := selectedItems[(i+amount)%len(selectedItems)]
+		newOrder := selectedItems[(i+amount)%len(selectedItems)].ChildOrder
 		changes = append(changes, map[string]interface{}{"id": si.ID, "child_order": newOrder})
 	}
 	return changes
