@@ -2,6 +2,7 @@ package tasklist
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/psethwick/tuidoist/bubblelister"
 	"github.com/psethwick/tuidoist/style"
@@ -228,6 +229,11 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 
 	var selectedItems []todoist.Item
 	var selectedEdgeOrder int
+	if amount > 0 {
+		selectedEdgeOrder = math.MinInt
+	} else {
+		selectedEdgeOrder = math.MaxInt
+	}
 	for _, t := range tl.SelectedItems() {
 		if amount > 0 { // moving down
 			selectedEdgeOrder = max(selectedEdgeOrder, t.Item.ChildOrder)
@@ -236,8 +242,6 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 		}
 		selectedItems = append(selectedItems, t.Item)
 	}
-	tl.logger("selected", selected)
-	tl.logger("selectedItems", selectedItems, "\n\t", selectedEdgeOrder)
 	for _, strangers := range tl.lists[tl.idx].GetAllItems() {
 		item := strangers.(task.Task).Item
 		if compareParentId(item.ParentID, selectedParentLevel) {
@@ -247,11 +251,13 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 			}
 			if amount < 0 && displaced.ChildOrder < selectedEdgeOrder {
 				// keep setting displaced until we reach selected items
+				tl.logger("amount", amount, "in block")
 				displaced = item
 			}
 		}
 	}
-	var changes []map[string]interface{}
+	tl.logger("displaced", displaced, "\n", "selectedEdgeOrder", selectedEdgeOrder)
+	changes := *new([]map[string]interface{})
 	if displaced.ID == "" {
 		return changes
 	}
