@@ -190,9 +190,9 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.inputModel.GetOnce("reschedule >", "", m.rescheduleTasks)
 					m.state = viewInput
 				case key.Matches(msg, keys.TaskListKeys.MoveUp):
-					cmds = append(cmds, m.ReorderTasks(m.taskList.Move(-1)))
+					cmds = append(cmds, m.ReorderTasks(m.taskList.SendToTop()))
 				case key.Matches(msg, keys.TaskListKeys.MoveDown):
-					cmds = append(cmds, m.ReorderTasks(m.taskList.Move(1)))
+					cmds = append(cmds, m.ReorderTasks(m.taskList.SendToBottom()))
 				case key.Matches(msg, keys.TaskListKeys.AddTask):
 					m.taskList.Bottom()
 					m.inputModel.GetRepeat("add >", "", m.addTask)

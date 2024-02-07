@@ -2,12 +2,11 @@ package tasklist
 
 import (
 	"fmt"
-	"sort"
+	"math"
 
 	"github.com/psethwick/tuidoist/bubblelister"
 	"github.com/psethwick/tuidoist/style"
 	"github.com/psethwick/tuidoist/task"
-	todoist "github.com/sachaos/todoist/lib"
 )
 
 type listModel struct {
@@ -151,6 +150,7 @@ func (tl *TaskList) SelectedItemsClear() []task.Task {
 
 func (tl *TaskList) Unselect() {
 	selected = map[string]*task.Task{}
+	selectedParentLevel = nil
 	for idx, l := range tl.lists {
 		for i, t := range l.GetAllItems() {
 			task := t.(task.Task)
@@ -214,83 +214,35 @@ func (tl *TaskList) HalfPageUp() {
 	_, _ = tl.lists[tl.idx].MoveCursor(-5)
 }
 
-func (tl *TaskList) Move(amount int) []map[string]interface{} {
-	var displaced todoist.Item
-	displacedExtra := make([]todoist.Item, 0)
-
-	var selectedItems []todoist.Item
-
-	var topEdgeID string
-	var bottomEdgeID string
-
-	for i, t := range tl.SelectedItems() {
-		if i == 0 {
-			topEdgeID = t.Item.ID
-		}
-		bottomEdgeID = t.Item.ID
-		selectedItems = append(selectedItems, t.Item)
-	}
-
-	foundTop := false
-	foundBottom := false
+func (tl *TaskList) SendToTop() []map[string]interface{} {
+	lessThan := math.MaxInt
 	for _, strangers := range tl.lists[tl.idx].GetAllItems() {
 		item := strangers.(task.Task).Item
 		if compareParentId(item.ParentID, selectedParentLevel) {
-			if item.ID == topEdgeID {
-				foundTop = true
-			}
-			if amount < 0 && !foundTop { // displaced should be above if at all
-				displaced = item
-			}
-			if amount > 0 && displaced.ID == "" && foundBottom { // displaced should be below if at all
-				displaced = item
-			}
-			if item.ID == bottomEdgeID {
-				foundBottom = true
-			}
-			if _, ok := selected[item.ID]; !ok && foundTop && !foundBottom {
-				displacedExtra = append(displacedExtra, item)
-			}
+			lessThan = min(item.ChildOrder, lessThan)
 		}
 	}
-
 	changes := *new([]map[string]interface{})
-	if displaced.ID == "" {
-		return changes
-	} else {
-		tl.logger("DISPLACING", displaced.Content)
+	for i, t := range tl.SelectedItems() {
+		changes = append(changes, map[string]interface{}{"id": t.Item.ID, "child_order": lessThan - 1 - i})
 	}
-	if amount > 0 {
-		displacedExtra = append(displacedExtra, displaced)
-	} else {
-		displacedExtra = append([]todoist.Item{displaced}, displacedExtra...)
-	}
+	tl.Unselect()
+	return changes
+}
 
-	var orders []int
-	for _, si := range selectedItems {
-		orders = append(orders, si.ChildOrder)
-		tl.logger("SELECTED", si.Content)
+func (tl *TaskList) SendToBottom() []map[string]interface{} {
+	moreThan := math.MinInt
+	for _, strangers := range tl.lists[tl.idx].GetAllItems() {
+		item := strangers.(task.Task).Item
+		if compareParentId(item.ParentID, selectedParentLevel) {
+			moreThan = max(item.ChildOrder, moreThan)
+		}
 	}
-	for _, de := range displacedExtra {
-		orders = append(orders, de.ChildOrder)
-		tl.logger("DISPLACING", de.Content)
+	changes := *new([]map[string]interface{})
+	for i, t := range tl.SelectedItems() {
+		changes = append(changes, map[string]interface{}{"id": t.Item.ID, "child_order": moreThan + 1 + i})
 	}
-	sort.Slice(orders, func(i, j int) bool {
-		return i < j
-	})
-	combined := *new([]todoist.Item)
-	if amount < 0 {
-		combined = append(combined, displacedExtra...)
-		combined = append(combined, selectedItems...)
-	} else {
-		combined = append(combined, displacedExtra...)
-		combined = append(combined, selectedItems...)
-	}
-	for i, c := range combined {
-		tl.logger(c.Content, "was", c.ChildOrder, "new", orders[i])
-		changes = append(changes, map[string]interface{}{"id": c.ID, "child_order": orders[i]})
-	}
-	// tl.MoveCursor(amount)
+	tl.Unselect()
 	return changes
 }
 
