@@ -2,6 +2,7 @@ package tasklist
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/psethwick/tuidoist/bubblelister"
 	"github.com/psethwick/tuidoist/style"
@@ -215,6 +216,7 @@ func (tl *TaskList) HalfPageUp() {
 
 func (tl *TaskList) Move(amount int) []map[string]interface{} {
 	var displaced todoist.Item
+	displacedExtra := make([]todoist.Item, 0)
 
 	var selectedItems []todoist.Item
 
@@ -246,6 +248,9 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 			if item.ID == bottomEdgeID {
 				foundBottom = true
 			}
+			if _, ok := selected[item.ID]; !ok && foundTop && !foundBottom {
+				displacedExtra = append(displacedExtra, item)
+			}
 		}
 	}
 
@@ -256,23 +261,36 @@ func (tl *TaskList) Move(amount int) []map[string]interface{} {
 		tl.logger("DISPLACING", displaced.Content)
 	}
 	if amount > 0 {
-		selectedItems = append([]todoist.Item{displaced}, selectedItems...)
+		displacedExtra = append(displacedExtra, displaced)
 	} else {
-		selectedItems = append(selectedItems, displaced)
+		displacedExtra = append([]todoist.Item{displaced}, displacedExtra...)
 	}
+
+	var orders []int
 	for _, si := range selectedItems {
+		orders = append(orders, si.ChildOrder)
 		tl.logger("SELECTED", si.Content)
 	}
-	var shift int
+	for _, de := range displacedExtra {
+		orders = append(orders, de.ChildOrder)
+		tl.logger("DISPLACING", de.Content)
+	}
+	sort.Slice(orders, func(i, j int) bool {
+		return i < j
+	})
+	combined := *new([]todoist.Item)
 	if amount < 0 {
-		shift = len(selectedItems) + 1
+		combined = append(combined, displacedExtra...)
+		combined = append(combined, selectedItems...)
 	} else {
-		shift = 1
+		combined = append(combined, displacedExtra...)
+		combined = append(combined, selectedItems...)
 	}
-	for i, si := range selectedItems {
-		newOrder := selectedItems[(i+shift)%len(selectedItems)].ChildOrder
-		changes = append(changes, map[string]interface{}{"id": si.ID, "child_order": newOrder})
+	for i, c := range combined {
+		tl.logger(c.Content, "was", c.ChildOrder, "new", orders[i])
+		changes = append(changes, map[string]interface{}{"id": c.ID, "child_order": orders[i]})
 	}
+	// tl.MoveCursor(amount)
 	return changes
 }
 
