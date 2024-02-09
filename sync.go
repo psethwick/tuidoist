@@ -17,6 +17,21 @@ func remove[T todoist.IDCarrier](s []T, ID string) []T {
 	return s
 }
 
+func removeWithChildren(s *todoist.Store, itemID string) {
+	removeIds := []string{itemID}
+	item := s.ItemMap[itemID]
+
+	childItem := item.ChildItem
+	for childItem != nil {
+		removeIds = append([]string{childItem.ID}, removeIds...)
+		childItem = childItem.ChildItem
+	}
+
+	for _, ri := range removeIds {
+		s.Items = remove(s.Items, ri)
+	}
+}
+
 func replace[T todoist.IDCarrier](s []T, ID string, n T) []T {
 	for i, item := range s {
 		if item.GetID() == ID {
@@ -71,7 +86,7 @@ func (m *mainModel) applyCmds(cmds []todoist.Command) {
 			fallthrough
 		case "item_close":
 			id := args["id"].(string)
-			m.local.Items = remove(m.local.Items, id)
+			removeWithChildren(m.local, id)
 		case "item_move":
 			id := args["id"].(string)
 			if sectionId, ok := args["section_id"].(string); ok {
