@@ -24,6 +24,11 @@ func removeWithChildren(s *todoist.Store, itemID string) {
 	childItem := item.ChildItem
 	for childItem != nil {
 		removeIds = append([]string{childItem.ID}, removeIds...)
+		brotherItem := childItem.BrotherItem
+		for brotherItem != nil {
+			removeIds = append([]string{brotherItem.ID}, removeIds...)
+			brotherItem = brotherItem.BrotherItem
+		}
 		childItem = childItem.ChildItem
 	}
 
