@@ -6,14 +6,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type paletteContext uint
-
-const (
-	paletteProject paletteContext = iota
-	paletteSection
-	paletteTask
-)
-
 type paletteCommand struct {
 	name    string
 	command func(*mainModel) tea.Cmd
@@ -23,7 +15,7 @@ var PaletteCommands = []fmt.Stringer{
 	paletteCommand{
 		"add project",
 		func(m *mainModel) tea.Cmd {
-			m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
+			m.inputModel.GetOnce("add project", "", func(input string) tea.Cmd {
 				return m.AddProject(input)
 			})
 			return nil
@@ -40,7 +32,7 @@ var PaletteCommands = []fmt.Stringer{
 		func(m *mainModel) tea.Cmd {
 			for _, sct := range m.local.Sections {
 				if sct.ID == m.sectionId {
-					m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
+					m.inputModel.GetOnce("rename section", "", func(input string) tea.Cmd {
 						return m.RenameSection(sct, input)
 					})
 				}
@@ -65,7 +57,7 @@ var PaletteCommands = []fmt.Stringer{
 				dbg("no project to add section to")
 				return nil
 			}
-			m.inputModel.GetOnce("", "", func(input string) tea.Cmd {
+			m.inputModel.GetOnce("add section", "", func(input string) tea.Cmd {
 				return m.AddSection(input, m.projectId)
 			})
 			return nil
@@ -76,7 +68,7 @@ var PaletteCommands = []fmt.Stringer{
 		func(m *mainModel) tea.Cmd {
 			for _, prj := range m.local.Projects {
 				if prj.ID == m.projectId {
-					m.inputModel.GetOnce("", prj.Name, func(input string) tea.Cmd {
+					m.inputModel.GetOnce("rename project", prj.Name, func(input string) tea.Cmd {
 						return m.RenameProject(prj.ID, input)
 					})
 				}
