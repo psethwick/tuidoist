@@ -146,6 +146,14 @@ func (m *mainModel) requestApiToken() tea.Cmd {
 			if err != nil {
 				dbg(err)
 			}
+			var store todoist.Store
+			clnt, err := client.GetClient(dbg, &store)
+			if err != nil {
+				dbg(err)
+			}
+			if clnt != nil {
+				m.client = clnt
+			}
 			return tea.Batch(waitForSync(m.sub), m.sync())
 		})
 	return nil
