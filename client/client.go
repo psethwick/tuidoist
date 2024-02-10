@@ -2,7 +2,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -120,23 +119,32 @@ func WriteCache(s *todoist.Store, o *todoist.Commands) error {
 	return nil
 }
 
-func GetClient(logger func(...any)) (*todoist.Client, *todoist.Store, *todoist.Commands) {
-	var store todoist.Store
-	var local todoist.Store
-	var ops todoist.Commands
-
-	if err := LoadCache(&store, &local, &ops); err != nil {
-		panic(err)
+func SetToken(token string) error {
+	viper.SetConfigType(configType)
+	viper.SetConfigName(configName)
+	viper.AddConfigPath(configPath)
+	viper.SetEnvPrefix("tuidoist")
+	viper.AutomaticEnv()
+	viper.Set("token", token)
+	buf, err := json.MarshalIndent(viper.AllSettings(), "", "  ")
+	if err != nil {
+		return fmt.Errorf("Fatal error config file: %s \n", err)
 	}
+	configFile := filepath.Join(configPath, configName+"."+configType)
+	err = os.WriteFile(configFile, buf, 0600)
+	if err != nil {
+		return fmt.Errorf("Fatal error config file: %s \n", err)
+	}
+	return nil
+}
+
+func GetClient(logger func(...any), store *todoist.Store) (*todoist.Client, error) {
 
 	viper.SetConfigType(configType)
 	viper.SetConfigName(configName)
 	viper.AddConfigPath(configPath)
-	viper.AddConfigPath(".")
 	viper.SetEnvPrefix("tuidoist")
 	viper.AutomaticEnv()
-
-	var token string
 
 	configFile := filepath.Join(configPath, configName+"."+configType)
 	if err := AssureExists(configFile); err != nil {
@@ -149,22 +157,9 @@ func GetClient(logger func(...any)) (*todoist.Client, *todoist.Store, *todoist.C
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, isConfigNotFoundError := err.(viper.ConfigFileNotFoundError); !isConfigNotFoundError {
-			// config file was found but could not be read => not recoverable
 			panic(err)
 		} else if !viper.IsSet("token") {
-			// config file not found and token missing (not provided via another source,
-			// such as environment variables) => ask interactively for token and store it in config file.
-			fmt.Printf("Input API Token: ")
-			fmt.Scan(&token)
-			viper.Set("token", token)
-			buf, err := json.MarshalIndent(viper.AllSettings(), "", "  ")
-			if err != nil {
-				panic(fmt.Errorf("Fatal error config file: %s \n", err))
-			}
-			err = os.WriteFile(configFile, buf, 0600)
-			if err != nil {
-				panic(fmt.Errorf("Fatal error config file: %s \n", err))
-			}
+			return nil, errors.New("need token")
 		}
 	}
 
@@ -182,22 +177,11 @@ func GetClient(logger func(...any)) (*todoist.Client, *todoist.Store, *todoist.C
 		}
 	}
 	config := &todoist.Config{
-		AccessToken:    viper.GetString("token"),
-		Color:          viper.GetBool("color"),
-		DateFormat:     viper.GetString("shortdateformat"),
-		DateTimeFormat: viper.GetString("shortdatetimeformat"),
-		DebugMode:      false, // len(os.Getenv("DEBUG")) > 0,
+		AccessToken: viper.GetString("token"),
+		DebugMode:   false, // len(os.Getenv("DEBUG")) > 0,
 	}
 
 	client := todoist.NewClient(config)
-	client.Store = &store
-	if len(store.Projects) == 0 {
-		err := client.Sync(context.Background())
-		if err != nil {
-			logger("Sync err", err)
-		}
-		WriteCache(&store, &ops)
-		ReadCache(&store, &local, &ops)
-	}
-	return client, &local, &ops
+	client.Store = store
+	return client, nil
 }

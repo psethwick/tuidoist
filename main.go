@@ -29,6 +29,7 @@ const (
 	viewInput
 	viewTaskMenu
 	viewHelp
+	needToken
 )
 
 func (m *mainModel) viewKeyMap() help.KeyMap {
@@ -84,7 +85,6 @@ func waitForSync(sub chan struct{}) tea.Cmd {
 
 func initialModel() *mainModel {
 	m := mainModel{}
-	m.client, m.local, m.cmdQueue = client.GetClient(dbg)
 	m.ctx = context.Background()
 	m.chooseModel = newChooseModel(&m, keys.InputKeys)
 	m.refresh = func() {}
@@ -93,13 +93,36 @@ func initialModel() *mainModel {
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
 	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks }, keys.InputKeys)
-	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
+	m.local = new(todoist.Store)
+	m.cmdQueue = new(todoist.Commands)
+
 	m.sub = make(chan struct{})
 	return &m
 }
 
 func (m *mainModel) Init() tea.Cmd {
+	dbg("INIT")
+	var store todoist.Store
+	err := client.LoadCache(&store, m.local, m.cmdQueue)
+	dbg("loaded cache")
+	if err != nil {
+		panic(err)
+	}
+	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
+	clnt, err := client.GetClient(dbg, &store)
+	if err != nil {
+		if err.Error() == "need token" {
+			dbg("need token")
+		} else {
+			panic(err)
+		}
+	}
+	if clnt != nil {
+		m.client = clnt
+	}
+	dbg("pre inbo")
 	m.openInbox()
+	dbg("END INIT")
 	return tea.Batch(waitForSync(m.sub), m.sync())
 }
 
