@@ -106,6 +106,7 @@ func (m *mainModel) openInbox() {
 				m.setTasksFromProject(&p)
 			}
 			m.refresh()
+			m.sub <- struct{}{}
 			return
 		}
 	}
