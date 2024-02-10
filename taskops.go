@@ -99,8 +99,6 @@ func (tm *mainModel) OpenUrl(url string) func() tea.Msg {
 }
 
 func (m *mainModel) openInbox() {
-	dbg("openInbox", len(m.local.Projects))
-
 	for _, tp := range m.local.Projects {
 		if tp.ID == m.local.User.InboxProjectID {
 			p := project{tp, todoist.Section{}}

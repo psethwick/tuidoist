@@ -118,8 +118,11 @@ func (m *mainModel) Init() tea.Cmd {
 			panic(err)
 		}
 	}
-	m.openInbox()
-	return tea.Batch(waitForSync(m.sub), m.sync())
+	return tea.Sequence(tea.Batch(waitForSync(m.sub), m.sync()),
+		func() tea.Msg {
+			m.openInbox()
+			return nil
+		})
 }
 
 func (m *mainModel) resetRefresh(listId interface{}) {
@@ -154,7 +157,10 @@ func (m *mainModel) requestApiToken() tea.Cmd {
 			if clnt != nil {
 				m.client = clnt
 			}
-			return tea.Batch(waitForSync(m.sub), m.sync())
+			return tea.Sequence(tea.Batch(waitForSync(m.sub), m.sync()), func() tea.Msg {
+				m.openInbox()
+				return nil
+			})
 		})
 	return nil
 }

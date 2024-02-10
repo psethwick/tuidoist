@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/psethwick/tuidoist/client"
 	"github.com/psethwick/tuidoist/status"
@@ -232,33 +234,39 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 				}
 			}
 		}
-		syncToken := m.client.Store.SyncToken
-		if syncToken == "" {
-			syncToken = "*"
-		}
-		incStore, err := m.client.IncrementalSync(m.ctx, syncToken)
-		if err != nil {
-			dbg(err)
-			m.statusBarModel.SetSyncStatus(status.Error)
-			return nil
-		}
-		m.client.Store.ApplyIncrementalSync(incStore)
-		m.local.ApplyIncrementalSync(incStore)
-		// if m.projectId == "CHANGEME" && m.local.User.InboxProjectID != "" {
-		// 	dbg("CHANGEME, doing inbox")
-		// 	m.openInbox()
-		// } else {
-		// }
-		err = client.WriteCache(m.client.Store, m.cmdQueue)
-		if err != nil {
-			dbg(err)
-			m.statusBarModel.SetSyncStatus(status.Error)
-			m.sub <- struct{}{}
-			return nil
+		if len(m.client.Store.Projects) == 0 {
+			err := m.client.Sync(context.Background())
+			if err != nil {
+				dbg(err)
+			}
+			err = client.WriteCache(m.client.Store, m.cmdQueue)
+			if err != nil {
+				dbg(err)
+			}
+			err = client.ReadCache(m.client.Store, m.local, m.cmdQueue)
+			if err != nil {
+				dbg(err)
+			}
+		} else {
+			syncToken := m.client.Store.SyncToken
+			incStore, err := m.client.IncrementalSync(m.ctx, syncToken)
+			if err != nil {
+				dbg(err)
+				m.statusBarModel.SetSyncStatus(status.Error)
+				return nil
+			}
+			m.client.Store.ApplyIncrementalSync(incStore)
+			m.local.ApplyIncrementalSync(incStore)
+			err = client.WriteCache(m.client.Store, m.cmdQueue)
+			if err != nil {
+				dbg(err)
+				m.statusBarModel.SetSyncStatus(status.Error)
+				m.sub <- struct{}{}
+				return nil
+			}
 		}
 		m.statusBarModel.SetSyncStatus(status.Synced)
 		m.sub <- struct{}{}
-		dbg("refreshing")
 		m.refresh()
 		return nil
 	}
