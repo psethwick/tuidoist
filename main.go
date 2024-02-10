@@ -101,28 +101,24 @@ func initialModel() *mainModel {
 }
 
 func (m *mainModel) Init() tea.Cmd {
-	dbg("INIT")
 	var store todoist.Store
 	err := client.LoadCache(&store, m.local, m.cmdQueue)
-	dbg("loaded cache")
 	if err != nil {
 		panic(err)
 	}
 	m.applyCmds(*m.cmdQueue) // update the local store with unflushed commands
 	clnt, err := client.GetClient(dbg, &store)
+	if clnt != nil {
+		m.client = clnt
+	}
 	if err != nil {
 		if err.Error() == "need token" {
-			dbg("need token")
+			return m.requestApiToken()
 		} else {
 			panic(err)
 		}
 	}
-	if clnt != nil {
-		m.client = clnt
-	}
-	dbg("pre inbo")
 	m.openInbox()
-	dbg("END INIT")
 	return tea.Batch(waitForSync(m.sub), m.sync())
 }
 
@@ -139,6 +135,20 @@ func (m *mainModel) resetRefresh(listId interface{}) {
 			m.setTasksFromProject(&typed)
 		}
 	}
+}
+
+func (m *mainModel) requestApiToken() tea.Cmd {
+	m.inputModel.GetOnce(
+		"API token from Todoist Integrations",
+		"",
+		func(s string) tea.Cmd {
+			err := client.SetToken(s)
+			if err != nil {
+				dbg(err)
+			}
+			return tea.Batch(waitForSync(m.sub), m.sync())
+		})
+	return nil
 }
 
 func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
