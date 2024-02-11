@@ -118,7 +118,7 @@ func (m *mainModel) Init() tea.Cmd {
 			panic(err)
 		}
 	}
-	return tea.Sequence(tea.Batch(waitForSync(m.sub), m.sync()),
+	return tea.Batch(waitForSync(m.sub), m.sync(),
 		func() tea.Msg {
 			m.openInbox()
 			return nil
@@ -352,7 +352,7 @@ func main() {
 		}
 		defer f.Close()
 	}
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel()) //, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
