@@ -98,7 +98,7 @@ func (tm *taskMenuModel) Update(msg tea.Msg) tea.Cmd {
 
 func (tm *taskMenuModel) View() string {
 	title := style.DialogTitle.Render("Task")
-	help := style.Help.Render("(e)dit (c)complete (m)ove (d)elete")
+	help := "(e)dit (c)complete (m)ove (d)elete"
 	ui := lipgloss.JoinVertical(lipgloss.Left, title, tm.content.View(), tm.desc.View(), tm.project.Name, help)
 
 	dialog := lipgloss.Place(tm.main.width, tm.main.height,

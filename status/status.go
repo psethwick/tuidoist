@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/mistakenelf/teacup/statusbar"
 	"github.com/psethwick/tuidoist/style"
 )
@@ -98,19 +99,19 @@ func New() Model {
 	sb := statusbar.New(
 		statusbar.ColorConfig{
 			Foreground: style.White,
-			Background: style.Pink,
+			Background: lipgloss.AdaptiveColor{},
 		},
 		statusbar.ColorConfig{
 			Foreground: style.White,
-			Background: style.Gray,
+			Background: lipgloss.AdaptiveColor{},
 		},
 		statusbar.ColorConfig{
 			Foreground: style.White,
-			Background: style.Gray,
+			Background: lipgloss.AdaptiveColor{},
 		},
 		statusbar.ColorConfig{
 			Foreground: style.White,
-			Background: style.Pink,
+			Background: lipgloss.AdaptiveColor{},
 		},
 	)
 	m := Model{
