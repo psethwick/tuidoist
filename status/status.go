@@ -79,10 +79,10 @@ func (sb *Model) SetMessage(m ...any) {
 	sb.bar.ThirdColumn = ellipsis(fmt.Sprint(m...))
 }
 
-func (sb *Model) SetNumber(n int) {
-	sb.count = n
-	sb.bar.FourthColumn = fmt.Sprint(sb.count, sb.sort)
-}
+// func (sb *Model) SetNumber(n int) {
+// 	sb.count = n
+// 	sb.bar.FourthColumn = fmt.Sprint(sb.count, sb.sort)
+// }
 
 func New() Model {
 	bg := style.Gray
@@ -107,7 +107,7 @@ func New() Model {
 	m := Model{
 		bar: &sb,
 	}
-	sb.SetContent("Syncing", "Inbox", "", "0")
+	sb.SetContent("Syncing", "Inbox", "", "")
 
 	return m
 }

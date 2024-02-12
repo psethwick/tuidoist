@@ -54,7 +54,7 @@ func (m *mainModel) setTasksFromProject(p *project) {
 	}
 	m.taskList.ResetItems(lists, selectedList)
 	m.statusBarModel.SetTitle(m.taskList.Title())
-	m.statusBarModel.SetNumber(m.taskList.Len())
+	// m.statusBarModel.SetNumber(m.taskList.Len())
 }
 
 type filterTitle struct {
