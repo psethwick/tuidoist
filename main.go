@@ -89,6 +89,15 @@ func initialModel() *mainModel {
 	m.chooseModel = newChooseModel(&m, keys.InputKeys)
 	m.refresh = func() {}
 	m.helpModel = help.New()
+	m.helpModel.Styles = help.Styles{
+		ShortKey:       style.HelpKeyStyle,
+		ShortDesc:      style.HelpDescStyle,
+		ShortSeparator: style.HelpSepStyle,
+		Ellipsis:       style.HelpSepStyle,
+		FullKey:        style.HelpKeyStyle,
+		FullDesc:       style.HelpDescStyle,
+		FullSeparator:  style.HelpSepStyle,
+	}
 	m.taskMenuModel = newTaskMenuModel(&m)
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)

@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mistakenelf/teacup/statusbar"
+
 	"github.com/psethwick/tuidoist/style"
 )
 
@@ -38,22 +39,10 @@ func (sb *Model) SetSyncStatus(ss SyncStatus) {
 	switch ss {
 	case Synced:
 		sb.bar.FirstColumn = "✅"
-		sb.bar.FirstColumnColors = statusbar.ColorConfig{
-			Foreground: style.White,
-			Background: style.Pink,
-		}
 	case Syncing:
 		sb.bar.FirstColumn = "🔁"
-		sb.bar.FirstColumnColors = statusbar.ColorConfig{
-			Foreground: style.White,
-			Background: style.Yellow,
-		}
 	case Error:
 		sb.bar.FirstColumn = "❌"
-		sb.bar.FirstColumnColors = statusbar.ColorConfig{
-			Foreground: style.White,
-			Background: style.Red,
-		}
 	}
 }
 
@@ -96,22 +85,23 @@ func (sb *Model) SetNumber(n int) {
 }
 
 func New() Model {
+	bg := style.Gray
 	sb := statusbar.New(
 		statusbar.ColorConfig{
-			Foreground: style.White,
-			Background: lipgloss.AdaptiveColor{},
+			Foreground: lipgloss.AdaptiveColor{},
+			Background: bg,
 		},
 		statusbar.ColorConfig{
-			Foreground: style.White,
-			Background: lipgloss.AdaptiveColor{},
+			Foreground: lipgloss.AdaptiveColor{},
+			Background: bg,
 		},
 		statusbar.ColorConfig{
-			Foreground: style.White,
-			Background: lipgloss.AdaptiveColor{},
+			Foreground: lipgloss.AdaptiveColor{},
+			Background: bg,
 		},
 		statusbar.ColorConfig{
-			Foreground: style.White,
-			Background: lipgloss.AdaptiveColor{},
+			Foreground: lipgloss.AdaptiveColor{},
+			Background: bg,
 		},
 	)
 	m := Model{
