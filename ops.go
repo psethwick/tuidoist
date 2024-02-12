@@ -140,6 +140,8 @@ func (m *mainModel) addTask(content string, top bool) tea.Cmd {
 	}
 	if top {
 		minChildOrder := math.MaxInt
+		// todo this really should be by project/section, etc
+		// much easier if I make my local store more useful (buckets of tasks by project)
 		for _, t := range m.local.Items {
 			minChildOrder = min(minChildOrder, t.ChildOrder)
 		}
