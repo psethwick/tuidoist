@@ -250,9 +250,13 @@ func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case key.Matches(msg, keys.TaskListKeys.MoveDown):
 					cmds = append(cmds, m.ReorderTasks(m.taskList.SendToBottom()))
 				case key.Matches(msg, keys.TaskListKeys.AddTask):
-					m.taskList.Bottom()
-					m.inputModel.GetRepeat("add >", "", m.addTask)
+					m.inputModel.GetRepeat("add >", "", m.addTaskBottom)
 					m.state = viewInput
+					m.taskList.Bottom()
+				case key.Matches(msg, keys.TaskListKeys.AddTaskTop):
+					m.inputModel.GetRepeat("add >", "", m.addTaskTop)
+					m.state = viewInput
+					m.taskList.Top()
 				case key.Matches(msg, keys.TaskListKeys.Priority1):
 					cmds = append(cmds, m.setPriority(4))
 				case key.Matches(msg, keys.TaskListKeys.Priority2):

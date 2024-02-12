@@ -14,6 +14,7 @@ var GlobalKeys = GlobalKeyMap{
 
 type TaskListKeyMap struct {
 	AddTask        key.Binding
+	AddTaskTop     key.Binding
 	Bottom         key.Binding
 	Cancel         key.Binding
 	Complete       key.Binding
@@ -79,6 +80,7 @@ func (k TaskListKeyMap) FullHelp() [][]key.Binding {
 		{
 			k.GMenu,
 			k.AddTask,
+			k.AddTaskTop,
 			k.Select,
 			k.OpenPalette,
 			k.Cancel,
@@ -89,6 +91,7 @@ func (k TaskListKeyMap) FullHelp() [][]key.Binding {
 
 var TaskListKeys = TaskListKeyMap{
 	AddTask:        key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "add task")),
+	AddTaskTop:     key.NewBinding(key.WithKeys("A"), key.WithHelp("A", "add task to top")),
 	Bottom:         key.NewBinding(key.WithKeys("G"), key.WithHelp("G", "goto bottom")),
 	Complete:       key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "complete")),
 	Delete:         key.NewBinding(key.WithKeys("delete"), key.WithHelp("del", "delete")),

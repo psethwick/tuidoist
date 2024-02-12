@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/psethwick/tuidoist/task"
@@ -92,7 +93,15 @@ func (m *mainModel) bulkOps(name string, clear bool, builder func(task.Task) tod
 	return m.sync(cmds...)
 }
 
-func (m *mainModel) addTask(content string) tea.Cmd {
+func (m *mainModel) addTaskBottom(content string) tea.Cmd {
+	return m.addTask(content, false)
+}
+
+func (m *mainModel) addTaskTop(content string) tea.Cmd {
+	return m.addTask(content, true)
+}
+
+func (m *mainModel) addTask(content string, top bool) tea.Cmd {
 	if content == "" {
 		return func() tea.Msg { return nil }
 	}
@@ -128,6 +137,13 @@ func (m *mainModel) addTask(content string) tea.Cmd {
 	}
 	if item.Due != nil {
 		args["due"] = item.Due
+	}
+	if top {
+		minChildOrder := math.MaxInt
+		for _, t := range m.local.Items {
+			minChildOrder = min(minChildOrder, t.ChildOrder)
+		}
+		args["child_order"] = minChildOrder
 	}
 	args["auto_reminder"] = item.AutoReminder
 
