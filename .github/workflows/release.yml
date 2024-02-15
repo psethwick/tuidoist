@@ -1,11 +1,9 @@
 name: Release
 
 on:
-  workflow_dispatch:
-  # release:
-  #
-  #   types: 
-  #       - created
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   generate:
@@ -17,8 +15,17 @@ jobs:
       - name: Generate build files
         uses: psethwick/go-cross-build@1.2.0
         with:
-            platforms: 'linux/amd64, darwin/amd64, windows/amd64'
-            package: ''
-            name: 'tuidoist'
-            compress: 'true'
-            dest: 'dist'
+          platforms: 'linux/amd64, darwin/amd64, windows/amd64'
+          package: ''
+          name: 'tuidoist'
+          compress: 'true'
+          dest: 'dist'
+      - name: Publish Binaries
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: Release ${{ github.ref }}
+          tag: ${{ github.ref }}
+          file: dist/*
+          file_glob: true
+          overwrite: true
