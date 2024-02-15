@@ -1,12 +1,12 @@
-initial startup
+# Tuidoist
 
-1. load cache into app lists
-1. apply any ops from offline queue
-1. start sync
-1. on sync, update app lists, refresh from lists
+A text user interface(TUI) todoist application.
 
-local change do op:
+# Thanks to the following projects:
 
-- change local list, refresh
-- add command and sync
-- on sync, update app lists
+- [todoist cli](https://github.com/sachaos/todoist)
+- [bubbletea](https://github.com/charmbracelet/bubbletea)
+- [promptkit](https://github.com/erikgeiser/promptkit)
+- [bubbles](https://github.com/charmbracelet/bubbles)
+- [bubblelister](https://github.com/treilik/bubblelister)
+- [teacup statusbar](github.com/mistakenelf/teacup/statusbar)
