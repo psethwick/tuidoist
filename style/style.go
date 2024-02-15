@@ -10,7 +10,7 @@ var (
 	Yellow = lipgloss.AdaptiveColor{Dark: "#daa520", Light: "#daa520"}
 	Red    = lipgloss.AdaptiveColor{Dark: "#ff0000", Light: "#ff0000"}
 	Pink   = lipgloss.AdaptiveColor{Light: "#F26D94", Dark: "#F25D94"}
-	Gray   = lipgloss.AdaptiveColor{Light: "#DCC3DB", Dark: "#958194"}
+	Gray   = lipgloss.AdaptiveColor{Light: "#8D788B", Dark: "#958194"}
 
 	DialogTitle = lipgloss.NewStyle().Width(50).Align(lipgloss.Center)
 	DialogBox   = lipgloss.NewStyle().
