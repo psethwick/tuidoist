@@ -330,7 +330,10 @@ func (m *Model) Bottom() error {
 		return nil
 	}
 	m.lineOffset = m.Height - m.CursorOffset
-	m.SetCursor(end)
+	_, err = m.SetCursor(end)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

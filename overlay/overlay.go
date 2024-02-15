@@ -127,10 +127,6 @@ func cutLeft(s string, cutWidth int) string {
 	return b.String()
 }
 
-func clamp(v, lower, upper int) int {
-	return min(max(v, lower), upper)
-}
-
 type whitespace struct {
 	style termenv.Style
 	chars string
