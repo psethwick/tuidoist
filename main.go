@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -68,7 +69,8 @@ type mainModel struct {
 	sub            chan struct{}
 	gMenu          bool
 
-	cmdQueue *todoist.Commands
+	cmdQueue  *todoist.Commands
+	syncMutex sync.Mutex
 
 	projectId string
 	sectionId string
@@ -102,8 +104,10 @@ func initialModel() *mainModel {
 	m.statusBarModel = status.New()
 	m.taskList = tasklist.New(func(t string) { m.statusBarModel.SetTitle(t) }, dbg)
 	m.inputModel = input.New(func() { m.state = viewInput }, func() { m.state = viewTasks }, keys.InputKeys)
+
 	m.local = new(todoist.Store)
 	m.cmdQueue = new(todoist.Commands)
+	m.syncMutex = sync.Mutex{}
 
 	m.sub = make(chan struct{})
 	return &m
@@ -365,7 +369,7 @@ func main() {
 		}
 		defer f.Close()
 	}
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel()) //, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

@@ -200,7 +200,9 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 	m.statusBarModel.SetSyncStatus(status.Syncing)
 	if len(cmds) > 0 {
 		m.applyCmds(cmds) // only 'new' ones
+		m.syncMutex.Lock()
 		*m.cmdQueue = append(*m.cmdQueue, cmds...)
+		m.syncMutex.Unlock()
 	}
 	return func() tea.Msg {
 		if len(*m.cmdQueue) > 0 {
@@ -209,7 +211,9 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 			if err != nil {
 				dbg(err)
 				// the cache is the 'real' store and any unflushed commands
+				m.syncMutex.Lock()
 				err = client.WriteCache(m.client.Store, m.cmdQueue)
+				m.syncMutex.Unlock()
 				dbg(err)
 				return nil // no reason to sync if api calls aren't working
 			}
@@ -248,6 +252,8 @@ func (m *mainModel) sync(cmds ...todoist.Command) tea.Cmd {
 				dbg(err)
 			}
 		} else {
+			m.syncMutex.Lock()
+			defer m.syncMutex.Unlock()
 			syncToken := m.client.Store.SyncToken
 			incStore, err := m.client.IncrementalSync(m.ctx, syncToken)
 			if err != nil {
